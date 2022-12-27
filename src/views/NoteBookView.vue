@@ -6,65 +6,35 @@
         <!-- <input type="checkbox" @change="allCheckButtonclick" value="全选" /> -->
         <!-- 全选 -->
       </div>
-      <img
-        id="ImageButtonAdd"
-        @click="addNewNotebook"
-        src="@/assets/addNewNoteBook.svg"
-        alt=""
-      />
+      <img id="ImageButtonAdd" @click="addNewNotebook" src="@/assets/addNewNoteBook.svg" alt="" />
     </div>
 
     <div id="left">
       <ul id="List-ul">
-        <li
-          v-for="(item, index) in leftArr"
-          :key="index"
-          @click="byIdSelContent(item['Notebookid'])"
-        >
+        <li v-for="(item, index) in leftArr" :key="index" @click="byIdSelContent(item['Notebookid'])">
           <div style="float: left">
-            <input
-              type="checkbox"
-              @change="check_change()"
-              v-model="check_button_list[index]"
-              name=""
-              class="checkbox"
-              id=""
-            />
+            <input type="checkbox" @change="check_change()" v-model="check_button_list[index]" name="" class="checkbox"
+              id="" />
           </div>
 
           <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
 
-          <p class="p_1" v-text="item['title'].substring(0,13)"></p>
-          <p class="p_2" v-text="item['content'].substring(0,15)"></p>
+          <p class="p_1" v-text="item['title'].substring(0, 13)"></p>
+          <p class="p_2" v-text="item['content'].substring(0, 15)"></p>
           <p class="p_3" v-text="item['createtime']"></p>
         </li>
       </ul>
     </div>
 
     <div id="TopRight">
-      <a
-        class="output"
-        href="https://ltyis.com:9999/output.json"
-        download="output.txt"
-        >导出</a
-      >
+      <a class="output" href="https://ltyis.com:9999/output.json" download="output.txt">导出</a>
     </div>
 
     <div id="right">
-      <input
-        type="text"
-        placeholder="请输入标题"
-        id="TextBoxTitle"
-        v-model="notebookTitle"
-      />
+      <input type="text" placeholder="请输入标题" id="TextBoxTitle" v-model="notebookTitle" />
       <hr />
-      <textarea
-        name="reworkmes"
-        placeholder="请输入内容"
-        id="txtContent"
-        style="overflow: auto"
-        v-model="notebookContent"
-      ></textarea>
+      <textarea name="reworkmes" placeholder="请输入内容" id="txtContent" style="overflow: auto"
+        v-model="notebookContent"></textarea>
     </div>
   </div>
 </template>
@@ -83,7 +53,7 @@ export default {
       nums: true, //计数器，用来标识只执行一次的填充
       times: 0, // 时间戳
       check_submit: false, //此值表示save方法是否可用，为false则save方法禁用
-      set_timeout: (() => {}, 1000),
+      set_timeout: (() => { }, 1000),
       server_url: "https://ltyis.com:9999",
       // server_url: "http://127.0.0.1:9999",
       check_button_list: [], // 用来保存被选中的文章的id,
@@ -132,7 +102,7 @@ export default {
       }
       that.check_bool = false;
     },
-  
+
     test: function () {
       console.log(this.check_button_list);
     },
@@ -174,7 +144,7 @@ export default {
           content: this.notebookContent,
           title: this.notebookTitle,
         })
-        .then(function (response) {});
+        .then(function (response) { });
     },
 
     // 接口返回左边列表
@@ -208,7 +178,7 @@ export default {
           id: Notebookid,
         })
         .then(function (response) {
-          console.log(response.data)
+          console.log(response.data);
           that.checkId = response.data[0].Notebookid;
           that.notebookContent = response.data[0].content;
           that.notebookTitle = response.data[0].title;
@@ -251,25 +221,183 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss">
+$shadow :14px 14px 8px #727272;
+$black-border :1px solid black;
+body {
+  margin: 0px;
+  padding: 0px;
+  background-color: #dddddd;
+}
+#box {
+  margin: auto;
+  width: 872px;
+  height: 739px;
+  border: $black-border;
+  position: relative;
+  top: 60px;
+  color: black;
+  border: 0px;
+}
+
+#TopLeft {
+  width: 245px;
+  height: 70px;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  background-color: azure;
+  border-radius: 0;
+  background-color: white;
+  box-shadow: $shadow;
+}
+
+#left {
+  padding: 0px;
+  height: 655px;
+  width: 245px;
+  position: absolute;
+  left: 0px;
+  top: 90px;
+  overflow: auto;
+  background-color: white;
+  box-shadow: $shadow ;
+
+  ul {
+    margin-top: 0%;
+
+    padding: 0px;
+  }
+
+  p {
+    line-height: 12px;
+    height: 14px;
+  }
+
+  li {
+    list-style: none;
+    border-bottom: 1px solid #909090;
+    width: inherit;
+    height: 90px;
+    padding-top: 1px;
+    padding-left: 5px;
+  }
+}
+
+#right {
+  width: 600px;
+  height: 655px;
+  border-bottom: 0px;
+  float: left;
+  position: absolute;
+  top: 90px;
+  left: 265px;
+  background-color: azure;
+  border-radius: 0;
+  background-color: white;
+  box-shadow: $shadow;
+}
+
+#TopRight {
+  width: 600px;
+  height: 70px;
+  background-color: azure;
+  position: absolute;
+  top: 0px;
+  left: 265px;
+  border-radius: 0;
+  background-color: white;
+  box-shadow:$shadow;
+}
+
+
+.p_1 {
+  font-size: 14px;
+  margin-left: 30px;
+  margin-top: 5px;
+}
+.p_2 {
+  font-size: 12px;
+  margin-left: 30px;
+}
+
+.p_3 {
+  font-size: 12px;
+  margin-left: 30px;
+  color: gray;
+}
+
+#TextBoxTitle {
+  margin-left: 0px;
+  margin-top: 0px;
+  border: 1px solid gray;
+  width: 596px;
+  height: 35px;
+  font-weight: 400;
+  font-size: 30px;
+  border-radius: 5px;
+  outline: none;
+  border: none;
+}
+
+#txtContent {
+  margin-left: 0px;
+  margin-top: 0px;
+  height: 596px;
+  width: 596px;
+  font-size: 20px;
+  font-family: "微软雅黑";
+  border: 1px solid gray;
+  border-radius: 5px;
+  outline: none;
+  border: none;
+}
+
+#btnUpd {
+  position: absolute;
+  left: 45px;
+  color: black;
+  font-size: medium;
+  margin-top: 10px;
+  width: 200px;
+  height: 45px;
+  margin-left: 310px;
+  font-size: 20px;
+  border-radius: 9px;
+}
+
+#btnUpd:hover {
+  background: black;
+  color: whitesmoke;
+}
+
+
+
+#allnote {
+  margin-top: 10px;
+  font-size: 30px;
+  text-align: center;
+  line-height: 50px;
+  float: left;
+  margin-left: 10px;
+}
+
 .output {
   margin: 20px 20px 0 0;
   float: right;
   text-decoration: none;
   color: black;
 }
-
+.output:hover {
+  color: cadetblue;
+}
 .checkbox {
   margin: 5px 5px;
   z-index: 2;
 }
 
-.output:hover {
-  color: cadetblue;
-}
-
 li:hover {
-  background-color: burlywood;
+  background-color:#dddddd;
 }
 
 .del-btn {
@@ -296,9 +424,5 @@ li:hover {
   top: 8px;
 }
 
-#all-checkBox {
-  position: absolute;
-  top: 45px;
-  left: 5px;
-}
+
 </style>
