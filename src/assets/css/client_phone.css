@@ -1,0 +1,137 @@
+﻿body {
+  margin: 0px;
+  padding: 0px;
+  background-color: #dddddd;
+}
+
+#box {
+  margin: 0px;
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0px;
+}
+#NoteBook-List {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+#List-ul {
+  margin: 0px;
+  padding: 0px;
+  height: 100vh;
+  width: 100vw;
+
+  overflow: auto;
+
+  background-color: white;
+
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 1;
+}
+
+#NoteBook-List p {
+  /* line-height: 12px; */
+  line-height: 5vw;
+  margin-left: 3vw;
+  height: 6vw;
+}
+
+#NoteBook-List li {
+  list-style: none;
+  border-bottom: 1px solid #909090;
+  width: 96vw;
+  /* height: 90px; */
+  height: 38vw;
+  padding-top: 1px;
+  padding-left: 5px;
+  margin-left: 1vw;
+}
+
+li:last-child {
+  border: 0px;
+}
+
+.p_1 {
+  /* font-size: 14px; */
+  font-size: 6vw;
+  /* margin-left: 10px; */
+  margin-left: 4vw;
+}
+
+.p_2 {
+  /* font-size: 12px; */
+  font-size: 5vw;
+
+  margin-left: 10px;
+}
+
+.p_3 {
+  /* font-size: 12px; */
+  font-size: 5vw;
+
+  margin-left: 10px;
+  color: gray;
+}
+
+#ImageButtonAdd {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  z-index: 2;
+  margin: 0%;
+  top: 87vh;
+  left: 73vw;
+}
+
+#NoteBook-Content {
+  width: 100vw;
+
+  border-bottom: 0px;
+  float: left;
+
+  background-color: azure;
+  border-radius: 0;
+  background-color: white;
+  box-shadow: 14px 14px 8px #727272;
+}
+
+#menu {
+  width: 100%;
+  height: 7vh;
+}
+
+#return-button {
+  width: 6vw;
+  height: 6vw;
+  margin-left: 2vw;
+  margin-top: 2vw;
+}
+#TextBoxTitle {
+  margin-left: 5vw;
+  margin-top: 0px;
+
+  width: 90vw;
+  height: 7vh;
+  font-weight: 500;
+  font-size: 8vw;
+  border-radius: 5px;
+  outline: none;
+  border: none;
+}
+
+#txtContent {
+  margin-left: 5vw;
+  margin-top: 0px;
+  height: 86vh;
+  width: 90vw;
+  font-size: 4vw;
+  font-weight: 400;
+  font-family: "微软雅黑";
+  border-radius: 5px;
+  outline: none;
+  border: 0px;
+}

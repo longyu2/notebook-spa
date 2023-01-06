@@ -6,15 +6,30 @@
         <!-- <input type="checkbox" @change="allCheckButtonclick" value="全选" /> -->
         <!-- 全选 -->
       </div>
-      <img id="ImageButtonAdd" @click="addNewNotebook" src="@/assets/addNewNoteBook.svg" alt="" />
+      <img
+        id="ImageButtonAdd"
+        @click="addNewNotebook"
+        src="@/assets/addNewNoteBook.svg"
+        alt=""
+      />
     </div>
 
     <div id="left">
       <ul id="List-ul">
-        <li v-for="(item, index) in leftArr" :key="index" @click="byIdSelContent(item['Notebookid'])">
+        <li
+          v-for="(item, index) in leftArr"
+          :key="index"
+          @click="byIdSelContent(item['Notebookid'])"
+        >
           <div style="float: left">
-            <input type="checkbox" @change="check_change()" v-model="check_button_list[index]" name="" class="checkbox"
-              id="" />
+            <input
+              type="checkbox"
+              @change="check_change()"
+              v-model="check_button_list[index]"
+              name=""
+              class="checkbox"
+              id=""
+            />
           </div>
 
           <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
@@ -27,14 +42,29 @@
     </div>
 
     <div id="TopRight">
-      <a class="output" href="https://ltyis.com:9999/output.json" download="output.txt">导出</a>
+      <a
+        class="output"
+        href="https://ltyis.com:9999/output.json"
+        download="output.txt"
+        >导出</a
+      >
     </div>
 
     <div id="right">
-      <input type="text" placeholder="请输入标题" id="TextBoxTitle" v-model="notebookTitle" />
+      <input
+        type="text"
+        placeholder="请输入标题"
+        id="TextBoxTitle"
+        v-model="notebookTitle"
+      />
       <hr />
-      <textarea name="reworkmes" placeholder="请输入内容" id="txtContent" style="overflow: auto"
-        v-model="notebookContent"></textarea>
+      <textarea
+        name="reworkmes"
+        placeholder="请输入内容"
+        id="txtContent"
+        style="overflow: auto"
+        v-model="notebookContent"
+      ></textarea>
     </div>
   </div>
 </template>
@@ -53,9 +83,9 @@ export default {
       nums: true, //计数器，用来标识只执行一次的填充
       times: 0, // 时间戳
       check_submit: false, //此值表示save方法是否可用，为false则save方法禁用
-      set_timeout: (() => { }, 1000),
+      set_timeout: (() => {}, 1000),
       server_url: "https://ltyis.com:9999",
-      // server_url: "http://127.0.0.1:9999",
+
       check_button_list: [], // 用来保存被选中的文章的id,
       check_bool: false, //当check_button_list 的值全为false，check——bool为false
     };
@@ -125,6 +155,7 @@ export default {
         that.check_bool = false;
         // 重新填充左边
         that.leftPost();
+        console.log(res.data);
       });
     },
     // 将内容保存到云
@@ -144,7 +175,9 @@ export default {
           content: this.notebookContent,
           title: this.notebookTitle,
         })
-        .then(function (response) { });
+        .then(function (response) {
+          console.log(response.data);
+        });
     },
 
     // 接口返回左边列表
@@ -222,8 +255,8 @@ export default {
 </script>
 
 <style lang="scss">
-$shadow :14px 14px 8px #727272;
-$black-border :1px solid black;
+$shadow: 14px 14px 8px #727272;
+$black-border: 1px solid black;
 body {
   margin: 0px;
   padding: 0px;
@@ -261,7 +294,7 @@ body {
   top: 90px;
   overflow: auto;
   background-color: white;
-  box-shadow: $shadow ;
+  box-shadow: $shadow;
 
   ul {
     margin-top: 0%;
@@ -307,9 +340,8 @@ body {
   left: 265px;
   border-radius: 0;
   background-color: white;
-  box-shadow:$shadow;
+  box-shadow: $shadow;
 }
-
 
 .p_1 {
   font-size: 14px;
@@ -371,8 +403,6 @@ body {
   color: whitesmoke;
 }
 
-
-
 #allnote {
   margin-top: 10px;
   font-size: 30px;
@@ -397,7 +427,7 @@ body {
 }
 
 li:hover {
-  background-color:#dddddd;
+  background-color: #dddddd;
 }
 
 .del-btn {
@@ -423,6 +453,4 @@ li:hover {
   left: 170px;
   top: 8px;
 }
-
-
 </style>
