@@ -55,7 +55,7 @@ import axios from "axios";
 export default {
   data() {
     return {
-      server_url: "https://ltyis.com:9999",
+      server_url: "https://note.misaka-mikoto.cn:9999",
       notebookContent: "",
       notebookTitle: "",
       lastTime: 0,

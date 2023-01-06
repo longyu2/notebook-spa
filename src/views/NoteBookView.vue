@@ -82,30 +82,26 @@ export default {
       checkId: 0, //用来指示当前选中的是哪一篇笔记
       nums: true, //计数器，用来标识只执行一次的填充
       times: 0, // 时间戳
-      check_submit: false, //此值表示save方法是否可用，为false则save方法禁用
+
       set_timeout: (() => {}, 1000),
-      server_url: "https://ltyis.com:9999",
+      server_url: "https://note.misaka-mikoto.cn:9999",
 
       check_button_list: [], // 用来保存被选中的文章的id,
       check_bool: false, //当check_button_list 的值全为false，check——bool为false
     };
   },
   watch: {
-    checkId: function () {
-      this.save();
-    },
     notebookContent: function (newVal, oldVal) {
       // 保证节流的最后一次能触发
       // 新旧值不同，说明发生了修改，执行保存
       if (newVal != oldVal) {
         if (parseInt(new Date().getTime() / 1000) - this.times < 3) {
           clearTimeout(this.set_timeout);
-          if (this.check_submit) {
-            this.set_timeout = setTimeout(() => {
-              // 完成了节流的最后一次修改
-              this.save();
-            }, 3500);
-          }
+          this.set_timeout = setTimeout(() => {
+            // 完成了节流的最后一次修改
+            this.save();
+          }, 3000);
+
           // 3秒内修改不提交 ,并且刷新settimeout
           return;
         }
@@ -132,11 +128,6 @@ export default {
       }
       that.check_bool = false;
     },
-
-    test: function () {
-      console.log(this.check_button_list);
-    },
-
     // 将选中的内容删除
     delete_content: function () {
       let that = this;
@@ -150,44 +141,61 @@ export default {
       }
 
       axios.post(`${this.server_url}/delContent`, del_object).then((res) => {
+        if (res == null) {
+          console.error("res is null!");
+        }
         // 清除选中
         that.check_button_list = [];
         that.check_bool = false;
         // 重新填充左边
         that.leftPost();
-        console.log(res.data);
       });
     },
+
     // 将内容保存到云
     save: function () {
       let that = this;
       // 完成之后修改leftarr左边显示的值
       that.leftArr.forEach((element) => {
         if (element.Notebookid == that.checkId) {
+          //  如果新旧值相同，不必提交到服务器
+          if (
+            element.content == that.notebookContent &&
+            element.title == that.notebookTitle
+          ) {
+            // 清除时间戳，不然会导致立即打字不会同步到左边，因为watch已经被触发过了。
+            that.times = 0;
+
+            return;
+          }
+
           element.content = that.notebookContent;
           element.title = that.notebookTitle;
+
+          // 提交到服务器
+          axios
+            .post(this.server_url + "/updateContent", {
+              Notebookid: this.checkId,
+              content: this.notebookContent,
+              title: this.notebookTitle,
+            })
+            .then(function (response) {
+              if (response.data != "修改成功") {
+                console.error("修改出现错误！请检查！");
+              }
+            });
         }
       });
-      // 提交到服务器
-      axios
-        .post(this.server_url + "/updateContent", {
-          Notebookid: this.checkId,
-          content: this.notebookContent,
-          title: this.notebookTitle,
-        })
-        .then(function (response) {
-          console.log(response.data);
-        });
     },
 
-    // 接口返回左边列表
+    // 接口返回左边列表(包括所有的文章信息)
     leftPost: function () {
       let that = this;
       axios.get(this.server_url + "/getNotebookList").then(
         function (response) {
           that.leftArr = response.data;
           // 将第一篇文章内容查询
-          that.byIdSelContent(that.leftArr[that.leftArr.length - 1].Notebookid);
+          that.byIdSelContent(that.leftArr[0].Notebookid);
 
           that.$nextTick(function () {
             // document.getElementById("left").scrollTop = 1000000;
@@ -201,17 +209,16 @@ export default {
 
     // 根据id查询标题和内容
     byIdSelContent: function (Notebookid) {
-      this.save(); // 切换时存储
-
-      // 禁用save方法，因为查询标题和内容会改变notebookTitle和notebookContent 的值，会触发不必要的提交，在解除禁用
-      this.check_submit = false;
       let that = this;
       axios
         .post(this.server_url + "/byIdSelContent", {
           id: Notebookid,
         })
         .then(function (response) {
-          console.log(response.data);
+          if (response.data == null) {
+            console.error("接口返回的数据为空");
+          }
+
           that.checkId = response.data[0].Notebookid;
           that.notebookContent = response.data[0].content;
           that.notebookTitle = response.data[0].title;
@@ -219,7 +226,10 @@ export default {
         .catch(function (error) {
           console.log(error);
         });
-      that.check_submit = true; //接触save方法的禁用
+
+      this.$nextTick(function () {
+        // that.check_submit = true; //接触save方法的禁用
+      });
     },
     // 添加新文章
     addNewNotebook: function () {
@@ -232,6 +242,10 @@ export default {
           that.checkId = response.data[0].Notebookid;
           that.notebookContent = "";
           that.notebookTitle = "";
+
+          if (response.data == null) {
+            console.error("接口返回数据为空");
+          }
 
           //返回的是只有一个元素的数组，还是需要用下标0取
           that.leftArr.push(response["data"][0]);
@@ -257,11 +271,13 @@ export default {
 <style lang="scss">
 $shadow: 14px 14px 8px #727272;
 $black-border: 1px solid black;
+
 body {
   margin: 0px;
   padding: 0px;
   background-color: #dddddd;
 }
+
 #box {
   margin: auto;
   width: 872px;
@@ -348,6 +364,7 @@ body {
   margin-left: 30px;
   margin-top: 5px;
 }
+
 .p_2 {
   font-size: 12px;
   margin-left: 30px;
@@ -418,9 +435,11 @@ body {
   text-decoration: none;
   color: black;
 }
+
 .output:hover {
   color: cadetblue;
 }
+
 .checkbox {
   margin: 5px 5px;
   z-index: 2;
