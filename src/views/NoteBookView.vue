@@ -44,7 +44,7 @@
     <div id="TopRight">
       <a
         class="output"
-        href="https://ltyis.com:9999/output.json"
+        :href="`${server_url}/output.json`"
         download="output.txt"
         >导出</a
       >
@@ -269,8 +269,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$shadow: 14px 14px 8px #727272;
 $black-border: 1px solid black;
+$radius: 10px;
 
 #box {
   margin: auto;
@@ -279,191 +279,189 @@ $black-border: 1px solid black;
   border: $black-border;
   position: relative;
   top: 60px;
-  color: black;
+  color: #111111;
   border: 0px;
-}
 
-#TopLeft {
-  width: 245px;
-  height: 70px;
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  background-color: azure;
-  border-radius: 0;
-  background-color: white;
-  box-shadow: $shadow;
-}
+  #TopLeft {
+    width: 245px;
+    height: 70px;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    border-radius: 0;
+    background-color: white;
+    border-radius: $radius;
+  }
 
-#left {
-  padding: 0px;
-  height: 655px;
-  width: 245px;
-  position: absolute;
-  left: 0px;
-  top: 90px;
-  overflow: auto;
-  background-color: white;
-  box-shadow: $shadow;
-
-  ul {
-    margin-top: 0%;
-
+  #left {
     padding: 0px;
+    height: 655px;
+    width: 245px;
+    position: absolute;
+    left: 0px;
+    top: 90px;
+    overflow: auto;
+    background-color: white;
+    border-radius: $radius;
+
+    ul {
+      margin-top: 0%;
+
+      padding: 0px;
+    }
+
+    li {
+      list-style: none;
+      border-bottom: 1px solid #909090;
+      width: inherit;
+      height: 90px;
+      padding-top: 12px;
+      padding-left: 5px;
+
+      p {
+        line-height: 12px;
+        height: 14px;
+      }
+
+      .p_1 {
+        font-size: 14px;
+        margin-left: 30px;
+        margin-top: 5px;
+      }
+
+      .p_2 {
+        font-size: 12px;
+        margin-left: 30px;
+      }
+
+      .p_3 {
+        font-size: 12px;
+        margin-left: 30px;
+        color: gray;
+      }
+    }
   }
 
-  li {
-    list-style: none;
-    border-bottom: 1px solid #909090;
-    width: inherit;
-    height: 90px;
-    padding-top: 12px;
-    padding-left: 5px;
+  #right {
+    width: 100;
+    height: 655px;
+    border-bottom: 0px;
+    float: left;
+    position: absolute;
+    top: 90px;
+    left: 265px;
+    background-color: azure;
+    background-color: white;
+    border-radius: $radius;
 
-    p {
-      line-height: 12px;
-      height: 14px;
+    #TextBoxTitle {
+      margin-left: 0px;
+      margin-top: 0px;
+      border: 1px solid gray;
+      width: 596px;
+      height: 35px;
+      font-weight: 400;
+      font-size: 30px;
+      border-radius: 5px;
+      outline: none;
+      border: none;
     }
 
-    .p_1 {
-      font-size: 14px;
-      margin-left: 30px;
-      margin-top: 5px;
-    }
-
-    .p_2 {
-      font-size: 12px;
-      margin-left: 30px;
-    }
-
-    .p_3 {
-      font-size: 12px;
-      margin-left: 30px;
-      color: gray;
+    #txtContent {
+      margin-left: 0px;
+      margin-top: 0px;
+      height: 596px;
+      width: 596px;
+      font-size: 20px;
+      font-family: "微软雅黑";
+      border: 1px solid gray;
+      border-radius: 5px;
+      outline: none;
+      border: none;
     }
   }
-}
 
-#right {
-  width: 600px;
-  height: 655px;
-  border-bottom: 0px;
-  float: left;
-  position: absolute;
-  top: 90px;
-  left: 265px;
-  background-color: azure;
-  border-radius: 0;
-  background-color: white;
-  box-shadow: $shadow;
-}
+  #TopRight {
+    width: 600px;
+    height: 70px;
+    background-color: azure;
+    position: absolute;
+    top: 0px;
+    left: 265px;
+    border-radius: $radius;
 
-#TopRight {
-  width: 600px;
-  height: 70px;
-  background-color: azure;
-  position: absolute;
-  top: 0px;
-  left: 265px;
-  border-radius: 0;
-  background-color: white;
-  box-shadow: $shadow;
-}
+    background-color: white;
+  }
 
-#TextBoxTitle {
-  margin-left: 0px;
-  margin-top: 0px;
-  border: 1px solid gray;
-  width: 596px;
-  height: 35px;
-  font-weight: 400;
-  font-size: 30px;
-  border-radius: 5px;
-  outline: none;
-  border: none;
-}
+  #btnUpd {
+    position: absolute;
+    left: 45px;
+    color: black;
+    font-size: medium;
+    margin-top: 10px;
+    width: 200px;
+    height: 45px;
+    margin-left: 310px;
+    font-size: 20px;
+    border-radius: 9px;
+  }
 
-#txtContent {
-  margin-left: 0px;
-  margin-top: 0px;
-  height: 596px;
-  width: 596px;
-  font-size: 20px;
-  font-family: "微软雅黑";
-  border: 1px solid gray;
-  border-radius: 5px;
-  outline: none;
-  border: none;
-}
+  #btnUpd:hover {
+    background: black;
+    color: whitesmoke;
+  }
 
-#btnUpd {
-  position: absolute;
-  left: 45px;
-  color: black;
-  font-size: medium;
-  margin-top: 10px;
-  width: 200px;
-  height: 45px;
-  margin-left: 310px;
-  font-size: 20px;
-  border-radius: 9px;
-}
+  #allnote {
+    margin-top: 10px;
+    font-size: 30px;
+    text-align: center;
+    line-height: 50px;
+    float: left;
+    margin-left: 10px;
+  }
 
-#btnUpd:hover {
-  background: black;
-  color: whitesmoke;
-}
+  .output {
+    margin: 20px 20px 0 0;
+    float: right;
+    text-decoration: none;
+    color: black;
+  }
 
-#allnote {
-  margin-top: 10px;
-  font-size: 30px;
-  text-align: center;
-  line-height: 50px;
-  float: left;
-  margin-left: 10px;
-}
+  .output:hover {
+    color: cadetblue;
+  }
 
-.output {
-  margin: 20px 20px 0 0;
-  float: right;
-  text-decoration: none;
-  color: black;
-}
+  .checkbox {
+    margin: 5px 5px;
+    z-index: 2;
+  }
 
-.output:hover {
-  color: cadetblue;
-}
+  li:hover {
+    background-color: #dddddd;
+  }
 
-.checkbox {
-  margin: 5px 5px;
-  z-index: 2;
-}
+  .del-btn {
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    color: white;
+    background-color: cornflowerblue;
+    padding: 5px 10px;
+    font-size: 18px;
+    border: 0ch;
+    border-radius: 5px;
+  }
 
-li:hover {
-  background-color: #dddddd;
-}
+  .del-btn:hover {
+    background-color: crimson;
+  }
 
-.del-btn {
-  position: absolute;
-  top: 7px;
-  left: 7px;
-  color: white;
-  background-color: cornflowerblue;
-  padding: 5px 10px;
-  font-size: 18px;
-  border: 0ch;
-  border-radius: 5px;
-}
-
-.del-btn:hover {
-  background-color: crimson;
-}
-
-#ImageButtonAdd {
-  height: 50px;
-  width: 50px;
-  position: absolute;
-  left: 170px;
-  top: 8px;
+  #ImageButtonAdd {
+    height: 50px;
+    width: 50px;
+    position: absolute;
+    left: 170px;
+    top: 8px;
+  }
 }
 </style>
