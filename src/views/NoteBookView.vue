@@ -268,15 +268,9 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 $shadow: 14px 14px 8px #727272;
 $black-border: 1px solid black;
-
-body {
-  margin: 0px;
-  padding: 0px;
-  background-color: #dddddd;
-}
 
 #box {
   margin: auto;
@@ -318,18 +312,35 @@ body {
     padding: 0px;
   }
 
-  p {
-    line-height: 12px;
-    height: 14px;
-  }
-
   li {
     list-style: none;
     border-bottom: 1px solid #909090;
     width: inherit;
     height: 90px;
-    padding-top: 1px;
+    padding-top: 12px;
     padding-left: 5px;
+
+    p {
+      line-height: 12px;
+      height: 14px;
+    }
+
+    .p_1 {
+      font-size: 14px;
+      margin-left: 30px;
+      margin-top: 5px;
+    }
+
+    .p_2 {
+      font-size: 12px;
+      margin-left: 30px;
+    }
+
+    .p_3 {
+      font-size: 12px;
+      margin-left: 30px;
+      color: gray;
+    }
   }
 }
 
@@ -357,23 +368,6 @@ body {
   border-radius: 0;
   background-color: white;
   box-shadow: $shadow;
-}
-
-.p_1 {
-  font-size: 14px;
-  margin-left: 30px;
-  margin-top: 5px;
-}
-
-.p_2 {
-  font-size: 12px;
-  margin-left: 30px;
-}
-
-.p_3 {
-  font-size: 12px;
-  margin-left: 30px;
-  color: gray;
 }
 
 #TextBoxTitle {

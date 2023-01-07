@@ -10,11 +10,7 @@
     />
     <div id="NoteBook-List" v-show="!is_Content_Show">
       <ul id="List-ul">
-        <li
-          v-for="i in leftArr_re"
-          :key="i"
-          @click="byIdSelContent(i.Notebookid)"
-        >
+        <li v-for="i in leftArr" :key="i" @click="byIdSelContent(i.Notebookid)">
           <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
           <p class="p_1" v-html="i.title.substring(0, 16)"></p>
           <p class="p_2" v-html="i.content.substring(0, 18)"></p>
@@ -60,7 +56,7 @@ export default {
       notebookTitle: "",
       lastTime: 0,
       leftArr: [],
-      leftArr_re: [],
+
       checkId: 0, //用来指示当前选中的是哪一篇笔记
       nums: true, //计数器，用来标识只执行一次的填充
       times: 0, // 时间戳
@@ -73,9 +69,7 @@ export default {
     checkId: function () {
       this.save();
     },
-    leftArr: function () {
-      this.leftArr_re = this.leftArr.reverse(); // 返回倒序的在页面显示
-    },
+
     notebookContent: function (newVal, oldVal) {
       // 保证节流的最后一次能触发
       // 新旧值不同，说明发生了修改，执行保存
