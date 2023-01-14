@@ -53,6 +53,7 @@ export default{
 
             axios.post(`${this.server_url}/FolderAddArticle`,jsonObj).then((results)=>{
                 console.log(results)
+                this.close()
             })
 
         },
@@ -78,8 +79,9 @@ export default{
     padding-bottom: 100px;
     z-index: 3;
     position: absolute;
-    margin: auto;
-    margin-top: 160px;
+    top: 22%;
+    left: 38%;
+   
     background-color: #FFF;
     border-radius: 10px;
     border: 2px solid gainsboro;

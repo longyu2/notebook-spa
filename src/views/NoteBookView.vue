@@ -12,7 +12,7 @@
       </ul>
     </div>
 
-    <div class="listAndcontent">
+    <div class="article-list-box">
       <div id="TopLeft">
         <div class="isChecked-area">
           <a class="del-btn" v-if="check_bool" @click="delete_content()"
@@ -65,7 +65,9 @@
           </li>
         </ul>
       </div>
+    </div>
 
+    <div class="article-content-box">
       <div id="TopRight">
         <a
           class="output"
@@ -92,16 +94,16 @@
         ></textarea>
       </div>
     </div>
-
-    <MoveToFolder
-      v-if="IsShowMoveToFolder"
-      :folderList="folders"
-      :check_list="check_id_list"
-      :server_url="server_url"
-      @some-event="IsShowMoveToFolder = false"
-    >
-    </MoveToFolder>
   </div>
+
+  <MoveToFolder
+    v-if="IsShowMoveToFolder"
+    :folderList="folders"
+    :check_list="check_id_list"
+    :server_url="server_url"
+    @some-event="IsShowMoveToFolder = false"
+  >
+  </MoveToFolder>
 </template>
 
 <script>
@@ -214,7 +216,9 @@ export default {
 
     // 将内容保存到云
     save: function () {
-      if(this.leftArr==[]){return}
+      if (this.leftArr == []) {
+        return;
+      }
 
       let that = this;
       // 完成之后修改leftarr左边显示的值
@@ -257,9 +261,9 @@ export default {
           that.leftArr = response.data;
 
           // 如果文章列表为空。停止查询
-          if (that.leftArr.length !=0) {
+          if (that.leftArr.length != 0) {
             // 将第一篇文章内容查询
-            console.log(that.leftArr)
+            console.log(that.leftArr);
             that.byIdSelContent(that.leftArr[0].Notebookid);
           }
 
@@ -275,7 +279,7 @@ export default {
     // 根据id查询标题和内容
     byIdSelContent: function (Notebookid) {
       // 如果文章列表为空。停止查询
-      if (this.leftArr.length==0) {
+      if (this.leftArr.length == 0) {
         return;
       }
 
@@ -363,48 +367,66 @@ export default {
 <style lang="scss" scoped>
 $black-border: 1px solid black;
 $radius: 10px;
+$box-height :805px;
 
 #notebook-box {
+  height: 100vh;
   display: flex;
-  justify-content: center;
-  height: 739px;
-
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0px 20px;
+  position: relative;
+  z-index: 1;
   #folder {
-    margin-top: 60px;
+    flex-shrink:0;
+
     width: 200px;
-    height: 745px;
+    height: $box-height;
     background-color: white;
     border-radius: $radius;
+    padding: 0%;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: flex-start;
 
     ul {
       list-style: none;
+      display: flex;
+      flex-flow: column nowrap;
 
       li {
-        border: $black-border;
+        border: 0px;
         line-height: 40px;
         width: 100%;
+
+        button {
+          background: 0%;
+          border: 0px;
+        }
       }
     }
   }
 
-  .listAndcontent {
-    margin: 0px;
-    width: 872px;
-    height: 739px;
+  .article-list-box {
+    margin-left: 20px;
+    width: auto;
+    height: $box-height;
     border: $black-border;
-    top: 60px;
+    
     color: #111111;
     border: 0px;
-    margin-left: 30px;
+   
     position: relative;
 
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    
     #TopLeft {
       width: 245px;
       height: 70px;
-      position: absolute;
 
-      left: 0px;
-      top: 0px;
       border-radius: 0;
       background-color: white;
       border-radius: $radius;
@@ -459,11 +481,9 @@ $radius: 10px;
 
     #left {
       padding: 0px;
-      height: 655px;
+      height: 715px;
       width: 245px;
-      position: absolute;
-      left: 0px;
-      top: 90px;
+
       overflow: auto;
       background-color: white;
       border-radius: $radius;
@@ -504,26 +524,37 @@ $radius: 10px;
           color: gray;
         }
       }
+    
     }
 
-    #right {
-      position: absolute;
+    .checkbox {
+      margin: 5px 5px;
+      z-index: 2;
+    }
 
-      width: 100;
-      height: 655px;
+    li:hover {
+      background-color: #dddddd;
+    }
+  }
+
+  .article-content-box {
+    min-width:400px;
+    height: $box-height;
+    margin-left: 22px;
+    flex-grow: 4;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    #right {
+      height: 715px;
       border-bottom: 0px;
-      float: left;
-      top: 90px;
-      left: 265px;
       background-color: azure;
       background-color: white;
       border-radius: $radius;
-
+      
+    
       #TextBoxTitle {
-        margin-left: 0px;
-        margin-top: 0px;
-        border: 1px solid gray;
-        width: 596px;
+        flex-grow: 4;
         height: 35px;
         font-weight: 400;
         font-size: 30px;
@@ -533,10 +564,12 @@ $radius: 10px;
       }
 
       #txtContent {
-        margin-left: 0px;
-        margin-top: 0px;
-        height: 596px;
-        width: 596px;
+        
+        flex-grow: 4;
+        width: 98%;
+        margin-top: 10px;
+        margin-left: 1%;
+        height: 90%;
         font-size: 20px;
         font-family: "微软雅黑";
         border: 1px solid gray;
@@ -547,9 +580,7 @@ $radius: 10px;
     }
 
     #TopRight {
-      position: absolute;
-
-      width: 600px;
+      width: 100%;
       height: 70px;
       background-color: azure;
       top: 0px;
@@ -557,53 +588,17 @@ $radius: 10px;
       border-radius: $radius;
 
       background-color: white;
-    }
 
-    #btnUpd {
-      position: absolute;
-      left: 45px;
-      color: black;
-      font-size: medium;
-      margin-top: 10px;
-      width: 200px;
-      height: 45px;
-      margin-left: 310px;
-      font-size: 20px;
-      border-radius: 9px;
-    }
+      .output {
+        margin: 20px 20px 0 0;
+        float: right;
+        text-decoration: none;
+        color: black;
+      }
 
-    #btnUpd:hover {
-      background: black;
-      color: whitesmoke;
-    }
-
-    #allnote {
-      margin-top: 10px;
-      font-size: 30px;
-      text-align: center;
-      line-height: 50px;
-      float: left;
-      margin-left: 10px;
-    }
-
-    .output {
-      margin: 20px 20px 0 0;
-      float: right;
-      text-decoration: none;
-      color: black;
-    }
-
-    .output:hover {
-      color: cadetblue;
-    }
-
-    .checkbox {
-      margin: 5px 5px;
-      z-index: 2;
-    }
-
-    li:hover {
-      background-color: #dddddd;
+      .output:hover {
+        color: cadetblue;
+      }
     }
   }
 }
