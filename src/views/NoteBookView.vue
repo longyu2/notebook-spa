@@ -1,93 +1,140 @@
 <template>
-  <div id="box">
-    <div id="TopLeft">
-      <a class="del-btn" v-if="check_bool" @click="delete_content()">删除</a>
-      <div id="all-checkBox">
-        <!-- <input type="checkbox" @change="allCheckButtonclick" value="全选" /> -->
-        <!-- 全选 -->
-      </div>
-      <img
-        id="ImageButtonAdd"
-        @click="addNewNotebook"
-        src="@/assets/addNewNoteBook.svg"
-        alt=""
-      />
-    </div>
+  <div id="notebook-box">
+    <div id="folder">
+      <p>文件夹</p>
+      <button @click="createFolder">新建文件夹</button>
 
-    <div id="left">
-      <ul id="List-ul">
-        <li
-          v-for="(item, index) in leftArr"
-          :key="index"
-          @click="byIdSelContent(item['Notebookid'])"
-        >
-          <div style="float: left">
-            <input
-              type="checkbox"
-              @change="check_change()"
-              v-model="check_button_list[index]"
-              name=""
-              class="checkbox"
-              id=""
-            />
-          </div>
-
-          <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
-
-          <p class="p_1" v-text="item['title'].substring(0, 13)"></p>
-          <p class="p_2" v-text="item['content'].substring(0, 15)"></p>
-          <p class="p_3" v-text="item['createtime']"></p>
+      <ul>
+        <li v-for="item in folders" :key="item.id">
+          <button>X</button>
+          {{ item.folder_name }}
         </li>
       </ul>
     </div>
 
-    <div id="TopRight">
-      <a
-        class="output"
-        :href="`${server_url}/output.json`"
-        download="output.txt"
-        >导出</a
-      >
+    <div class="listAndcontent">
+      <div id="TopLeft">
+        <div class="isChecked-area">
+          <a class="del-btn" v-if="check_bool" @click="delete_content()"
+            >删除</a
+          >
+
+          <span
+            class="move-btn"
+            v-if="check_bool"
+            @click="IsShowMoveToFolder = true"
+            >移动到...</span
+          >
+        </div>
+
+        <!-- <div id="all-checkBox">
+          <input type="checkbox" @change="allCheckButtonclick" value="全选" /> 
+            全选 
+        </div> -->
+        <img
+          id="ImageButtonAdd"
+          @click="addNewNotebook"
+          src="@/assets/addNewNoteBook.svg"
+          alt=""
+        />
+      </div>
+
+      <div id="left">
+        <ul id="List-ul">
+          <li
+            v-for="(item, index) in leftArr"
+            :key="index"
+            @click="byIdSelContent(item['Notebookid'])"
+          >
+            <div style="float: left">
+              <input
+                type="checkbox"
+                @change="check_change()"
+                v-model="checkBtnCheckedList[index]"
+                name=""
+                class="checkbox"
+                id=""
+              />
+            </div>
+
+            <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
+
+            <p class="p_1" v-text="item['title'].substring(0, 13)"></p>
+            <p class="p_2" v-text="item['content'].substring(0, 15)"></p>
+            <p class="p_3" v-text="item['createtime']"></p>
+          </li>
+        </ul>
+      </div>
+
+      <div id="TopRight">
+        <a
+          class="output"
+          :href="`${server_url}/output.json`"
+          download="output.txt"
+          >导出</a
+        >
+      </div>
+
+      <div id="right">
+        <input
+          type="text"
+          placeholder="请输入标题"
+          id="TextBoxTitle"
+          v-model="notebookTitle"
+        />
+        <hr />
+        <textarea
+          name="reworkmes"
+          placeholder="请输入内容"
+          id="txtContent"
+          style="overflow: auto"
+          v-model="notebookContent"
+        ></textarea>
+      </div>
     </div>
 
-    <div id="right">
-      <input
-        type="text"
-        placeholder="请输入标题"
-        id="TextBoxTitle"
-        v-model="notebookTitle"
-      />
-      <hr />
-      <textarea
-        name="reworkmes"
-        placeholder="请输入内容"
-        id="txtContent"
-        style="overflow: auto"
-        v-model="notebookContent"
-      ></textarea>
-    </div>
+    <MoveToFolder
+      v-if="IsShowMoveToFolder"
+      :folderList="folders"
+      :check_list="check_id_list"
+      :server_url="server_url"
+      @some-event="IsShowMoveToFolder = false"
+    >
+    </MoveToFolder>
   </div>
 </template>
 
 <script>
+import MoveToFolder from "../components/MoveToFolder.vue";
+
+import Vditor from "vditor";
 import axios from "axios";
+import { getTransitionRawChildren } from "vue";
+
 export default {
+  components: {
+    MoveToFolder,
+  },
   data: function () {
     return {
       notebookContent: "",
       notebookTitle: "",
       lastTime: 0,
       leftArr: [],
-      leftArr_re: [],
       checkId: 0, //用来指示当前选中的是哪一篇笔记
       nums: true, //计数器，用来标识只执行一次的填充
       times: 0, // 时间戳
 
       set_timeout: (() => {}, 1000),
-      server_url: "https://note.misaka-mikoto.cn:9999",
+      // server_url: "https://note.misaka-mikoto.cn:9999",
+      server_url: "http://127.0.0.1:9999",
 
-      check_button_list: [], // 用来保存被选中的文章的id,
-      check_bool: false, //当check_button_list 的值全为false，check——bool为false
+      checkBtnCheckedList: [], // 用来保存被选中的文章的id, 以布尔值存储
+      check_id_list: [], //用来保存被选中的文章的id,只存储 已选中的id
+      check_bool: false, //当checkBtnCheckedList 的值全为false，check——bool为false
+
+      folders: [],
+      IsShowMoveToFolder: false, // 是否显示移动文件夹的悬浮窗
     };
   },
   watch: {
@@ -117,35 +164,48 @@ export default {
     },
   },
   methods: {
-    // 复选按钮改变事件
+    // closeMoveCallback
+    closeMoveCallback: function () {
+      console.log("closer");
+      this.IsShowMoveToFolder = false;
+    },
+    // all复选按钮改变事件
     check_change: function () {
       let that = this;
-      for (let i = 0; i < that.check_button_list.length; i++) {
-        if (that.check_button_list[i] == true) {
+      for (let i = 0; i < that.checkBtnCheckedList.length; i++) {
+        if (that.checkBtnCheckedList[i] == true) {
           that.check_bool = true;
-          return;
+        } else if (i == that.checkBtnCheckedList.length - 1) {
+          that.check_bool = false;
         }
       }
-      that.check_bool = false;
+
+      for (let i = 0; i < this.checkBtnCheckedList.length; i++) {
+        if (this.checkBtnCheckedList[i] == true) {
+          // 如果 该id 不存在于列表，则添加进去,因为每次change 会重复扫描
+          if (this.check_id_list.indexOf(this.leftArr[i].Notebookid) == -1) {
+            this.check_id_list.push(this.leftArr[i].Notebookid); // 将id值添加到列表
+          }
+        } else {
+          // 如果该id不存在，不必管，如果存在，删去
+          this.check_id_list.splice(i, 1);
+        }
+      }
     },
     // 将选中的内容删除
     delete_content: function () {
       let that = this;
-      //  check_button_list 这个数组只根据leftarr的索引保存了布尔值数组，此处为了数据库转换方便，将其转换为notebookid的数组，
+      //  checkBtnCheckedList 这个数组只根据leftarr的索引保存了布尔值数组，此处为了数据库转换方便，将其转换为notebookid的数组，
       //  只保留值为true的id
-      let del_object = { del_sql_notebookid_list: [] }; // 此数组中存放的id为数据库显示的id，比leftarr 的id +1
-      for (let i = 0; i < this.check_button_list.length; i++) {
-        if (this.check_button_list[i] == true) {
-          del_object.del_sql_notebookid_list.push(this.leftArr[i].Notebookid);
-        }
-      }
+      let del_object = { del_sql_notebookid_list: this.check_id_list }; // 此数组中存放的id为数据库显示的id，比leftarr 的id +1
 
+      console.log(this.check_id_list);
       axios.post(`${this.server_url}/delContent`, del_object).then((res) => {
         if (res == null) {
           console.error("res is null!");
         }
         // 清除选中
-        that.check_button_list = [];
+        that.checkBtnCheckedList = [];
         that.check_bool = false;
         // 重新填充左边
         that.leftPost();
@@ -154,6 +214,8 @@ export default {
 
     // 将内容保存到云
     save: function () {
+      if(this.leftArr==[]){return}
+
       let that = this;
       // 完成之后修改leftarr左边显示的值
       that.leftArr.forEach((element) => {
@@ -165,7 +227,6 @@ export default {
           ) {
             // 清除时间戳，不然会导致立即打字不会同步到左边，因为watch已经被触发过了。
             that.times = 0;
-
             return;
           }
 
@@ -194,8 +255,13 @@ export default {
       axios.get(this.server_url + "/getNotebookList").then(
         function (response) {
           that.leftArr = response.data;
-          // 将第一篇文章内容查询
-          that.byIdSelContent(that.leftArr[0].Notebookid);
+
+          // 如果文章列表为空。停止查询
+          if (that.leftArr.length !=0) {
+            // 将第一篇文章内容查询
+            console.log(that.leftArr)
+            that.byIdSelContent(that.leftArr[0].Notebookid);
+          }
 
           that.$nextTick(function () {
             // document.getElementById("left").scrollTop = 1000000;
@@ -206,9 +272,13 @@ export default {
         }
       );
     },
-
     // 根据id查询标题和内容
     byIdSelContent: function (Notebookid) {
+      // 如果文章列表为空。停止查询
+      if (this.leftArr.length==0) {
+        return;
+      }
+
       let that = this;
       axios
         .post(this.server_url + "/byIdSelContent", {
@@ -233,13 +303,17 @@ export default {
     },
     // 添加新文章
     addNewNotebook: function () {
-      this.save();
       let that = this;
+      this.save();
+      console.log(`checkid:${that.checkId}`);
+
       axios
         .get(this.server_url + "/addnewNotebook")
         .then(function (response) {
           response.data[0].Notebookid += 1;
           that.checkId = response.data[0].Notebookid;
+
+          console.log(`checkid:${that.checkId}`);
           that.notebookContent = "";
           that.notebookTitle = "";
 
@@ -259,11 +333,29 @@ export default {
           console.log(error);
         });
     },
+    // 新建文件夹
+    createFolder: function () {
+      const name = prompt("请输入文件夹名");
+
+      axios
+        .post(`${this.server_url}/CreateFolder`, {
+          folder_name: name,
+        })
+        .then((res) => {
+          console.log(res.data);
+          this.folders.push(res.data[0]);
+        });
+    },
   },
 
   // 页面加载时执行
   created: function () {
     this.leftPost();
+
+    // 填充文件夹
+    axios.get(`${this.server_url}/QueryFolder`).then((res) => {
+      this.folders = res.data;
+    });
   },
 };
 </script>
@@ -272,196 +364,247 @@ export default {
 $black-border: 1px solid black;
 $radius: 10px;
 
-#box {
-  margin: auto;
-  width: 872px;
+#notebook-box {
+  display: flex;
+  justify-content: center;
   height: 739px;
-  border: $black-border;
-  position: relative;
-  top: 60px;
-  color: #111111;
-  border: 0px;
 
-  #TopLeft {
-    width: 245px;
-    height: 70px;
-    position: absolute;
-    left: 0px;
-    top: 0px;
-    border-radius: 0;
-    background-color: white;
-    border-radius: $radius;
-  }
-
-  #left {
-    padding: 0px;
-    height: 655px;
-    width: 245px;
-    position: absolute;
-    left: 0px;
-    top: 90px;
-    overflow: auto;
+  #folder {
+    margin-top: 60px;
+    width: 200px;
+    height: 745px;
     background-color: white;
     border-radius: $radius;
 
     ul {
-      margin-top: 0%;
-
-      padding: 0px;
-    }
-
-    li {
       list-style: none;
-      border-bottom: 1px solid #909090;
-      width: inherit;
-      height: 90px;
-      padding-top: 12px;
-      padding-left: 5px;
 
-      p {
-        line-height: 12px;
-        height: 14px;
-      }
-
-      .p_1 {
-        font-size: 14px;
-        margin-left: 30px;
-        margin-top: 5px;
-      }
-
-      .p_2 {
-        font-size: 12px;
-        margin-left: 30px;
-      }
-
-      .p_3 {
-        font-size: 12px;
-        margin-left: 30px;
-        color: gray;
+      li {
+        border: $black-border;
+        line-height: 40px;
+        width: 100%;
       }
     }
   }
 
-  #right {
-    width: 100;
-    height: 655px;
-    border-bottom: 0px;
-    float: left;
-    position: absolute;
-    top: 90px;
-    left: 265px;
-    background-color: azure;
-    background-color: white;
-    border-radius: $radius;
+  .listAndcontent {
+    margin: 0px;
+    width: 872px;
+    height: 739px;
+    border: $black-border;
+    top: 60px;
+    color: #111111;
+    border: 0px;
+    margin-left: 30px;
+    position: relative;
 
-    #TextBoxTitle {
-      margin-left: 0px;
-      margin-top: 0px;
-      border: 1px solid gray;
-      width: 596px;
-      height: 35px;
-      font-weight: 400;
-      font-size: 30px;
-      border-radius: 5px;
-      outline: none;
-      border: none;
+    #TopLeft {
+      width: 245px;
+      height: 70px;
+      position: absolute;
+
+      left: 0px;
+      top: 0px;
+      border-radius: 0;
+      background-color: white;
+      border-radius: $radius;
+      display: flex;
+      justify-content: center;
+      flex-direction: row;
+      align-items: center;
+
+      .isChecked-area {
+        width: 180px;
+
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+
+        .del-btn {
+          margin-left: 15px;
+          height: 30px;
+          color: white;
+          background-color: cornflowerblue;
+          padding: 5px 10px;
+          font-size: 18px;
+          border: 0ch;
+          border-radius: 5px;
+        }
+
+        .del-btn:hover {
+          background-color: crimson;
+        }
+
+        .move-btn {
+          height: 30px;
+          margin-left: 20px;
+
+          color: white;
+          background-color: cornflowerblue;
+          padding: 5px 10px;
+          font-size: 18px;
+          border: 0ch;
+          border-radius: 5px;
+        }
+      }
+
+      #ImageButtonAdd {
+        margin-left: 10px;
+
+        height: 50px;
+        width: 50px;
+      }
     }
 
-    #txtContent {
-      margin-left: 0px;
-      margin-top: 0px;
-      height: 596px;
-      width: 596px;
+    #left {
+      padding: 0px;
+      height: 655px;
+      width: 245px;
+      position: absolute;
+      left: 0px;
+      top: 90px;
+      overflow: auto;
+      background-color: white;
+      border-radius: $radius;
+
+      ul {
+        margin-top: 0%;
+
+        padding: 0px;
+      }
+
+      li {
+        list-style: none;
+        border-bottom: 1px solid #909090;
+        width: inherit;
+        height: 90px;
+        padding-top: 12px;
+        padding-left: 5px;
+
+        p {
+          line-height: 12px;
+          height: 14px;
+        }
+
+        .p_1 {
+          font-size: 14px;
+          margin-left: 30px;
+          margin-top: 5px;
+        }
+
+        .p_2 {
+          font-size: 12px;
+          margin-left: 30px;
+        }
+
+        .p_3 {
+          font-size: 12px;
+          margin-left: 30px;
+          color: gray;
+        }
+      }
+    }
+
+    #right {
+      position: absolute;
+
+      width: 100;
+      height: 655px;
+      border-bottom: 0px;
+      float: left;
+      top: 90px;
+      left: 265px;
+      background-color: azure;
+      background-color: white;
+      border-radius: $radius;
+
+      #TextBoxTitle {
+        margin-left: 0px;
+        margin-top: 0px;
+        border: 1px solid gray;
+        width: 596px;
+        height: 35px;
+        font-weight: 400;
+        font-size: 30px;
+        border-radius: 5px;
+        outline: none;
+        border: none;
+      }
+
+      #txtContent {
+        margin-left: 0px;
+        margin-top: 0px;
+        height: 596px;
+        width: 596px;
+        font-size: 20px;
+        font-family: "微软雅黑";
+        border: 1px solid gray;
+        border-radius: 5px;
+        outline: none;
+        border: none;
+      }
+    }
+
+    #TopRight {
+      position: absolute;
+
+      width: 600px;
+      height: 70px;
+      background-color: azure;
+      top: 0px;
+      left: 265px;
+      border-radius: $radius;
+
+      background-color: white;
+    }
+
+    #btnUpd {
+      position: absolute;
+      left: 45px;
+      color: black;
+      font-size: medium;
+      margin-top: 10px;
+      width: 200px;
+      height: 45px;
+      margin-left: 310px;
       font-size: 20px;
-      font-family: "微软雅黑";
-      border: 1px solid gray;
-      border-radius: 5px;
-      outline: none;
-      border: none;
+      border-radius: 9px;
     }
-  }
 
-  #TopRight {
-    width: 600px;
-    height: 70px;
-    background-color: azure;
-    position: absolute;
-    top: 0px;
-    left: 265px;
-    border-radius: $radius;
+    #btnUpd:hover {
+      background: black;
+      color: whitesmoke;
+    }
 
-    background-color: white;
-  }
+    #allnote {
+      margin-top: 10px;
+      font-size: 30px;
+      text-align: center;
+      line-height: 50px;
+      float: left;
+      margin-left: 10px;
+    }
 
-  #btnUpd {
-    position: absolute;
-    left: 45px;
-    color: black;
-    font-size: medium;
-    margin-top: 10px;
-    width: 200px;
-    height: 45px;
-    margin-left: 310px;
-    font-size: 20px;
-    border-radius: 9px;
-  }
+    .output {
+      margin: 20px 20px 0 0;
+      float: right;
+      text-decoration: none;
+      color: black;
+    }
 
-  #btnUpd:hover {
-    background: black;
-    color: whitesmoke;
-  }
+    .output:hover {
+      color: cadetblue;
+    }
 
-  #allnote {
-    margin-top: 10px;
-    font-size: 30px;
-    text-align: center;
-    line-height: 50px;
-    float: left;
-    margin-left: 10px;
-  }
+    .checkbox {
+      margin: 5px 5px;
+      z-index: 2;
+    }
 
-  .output {
-    margin: 20px 20px 0 0;
-    float: right;
-    text-decoration: none;
-    color: black;
-  }
-
-  .output:hover {
-    color: cadetblue;
-  }
-
-  .checkbox {
-    margin: 5px 5px;
-    z-index: 2;
-  }
-
-  li:hover {
-    background-color: #dddddd;
-  }
-
-  .del-btn {
-    position: absolute;
-    top: 7px;
-    left: 7px;
-    color: white;
-    background-color: cornflowerblue;
-    padding: 5px 10px;
-    font-size: 18px;
-    border: 0ch;
-    border-radius: 5px;
-  }
-
-  .del-btn:hover {
-    background-color: crimson;
-  }
-
-  #ImageButtonAdd {
-    height: 50px;
-    width: 50px;
-    position: absolute;
-    left: 170px;
-    top: 8px;
+    li:hover {
+      background-color: #dddddd;
+    }
   }
 }
 </style>

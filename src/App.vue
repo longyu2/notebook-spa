@@ -18,6 +18,8 @@ export default {
   mounted() {
     if (this._isMobile()) {
       this.$router.replace("/notebook_phone");
+
+      console.log("sdsd")
     } else {
       this.$router.replace("/notebook");
     }
