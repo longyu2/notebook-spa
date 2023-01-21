@@ -126,15 +126,15 @@ export default {
       checkId: 0, //用来指示当前选中的是哪一篇笔记
       nums: true, //计数器，用来标识只执行一次的填充
       times: 0, // 时间戳
+      
 
       set_timeout: (() => {}, 1000),
-      // server_url: "https://note.misaka-mikoto.cn:9999",
-      server_url: "http://127.0.0.1:9999",
+      server_url: "https://note.misaka-mikoto.cn:9999",
+      // server_url: "http://127.0.0.1:9999",
 
       checkBtnCheckedList: [], // 用来保存被选中的文章的id, 以布尔值存储
       check_id_list: [], //用来保存被选中的文章的id,只存储 已选中的id
       check_bool: false, //当checkBtnCheckedList 的值全为false，check——bool为false
-
       folders: [],
       IsShowMoveToFolder: false, // 是否显示移动文件夹的悬浮窗
     };
@@ -289,11 +289,14 @@ export default {
           id: Notebookid,
         })
         .then(function (response) {
-          if (response.data == null) {
+          if (response.data == null || response.data == []) {
             console.error("接口返回的数据为空");
+            return
           }
 
+          console.log(response.data)
           that.checkId = response.data[0].Notebookid;
+
           that.notebookContent = response.data[0].content;
           that.notebookTitle = response.data[0].title;
         })
@@ -309,28 +312,21 @@ export default {
     addNewNotebook: function () {
       let that = this;
       this.save();
-      console.log(`checkid:${that.checkId}`);
-
       axios
         .get(this.server_url + "/addnewNotebook")
         .then(function (response) {
-          response.data[0].Notebookid += 1;
           that.checkId = response.data[0].Notebookid;
-
-          console.log(`checkid:${that.checkId}`);
+          console.log(response.data[0].Notebookid)
           that.notebookContent = "";
           that.notebookTitle = "";
-
           if (response.data == null) {
             console.error("接口返回数据为空");
           }
-
           //返回的是只有一个元素的数组，还是需要用下标0取
           that.leftArr.push(response["data"][0]);
-
           // 滚动条到底
           that.$nextTick(function () {
-            // document.getElementById("left").scrollTop = 1000000;
+            document.getElementById("left").scrollTop = 1000000;
           });
         })
         .catch(function (error) {
@@ -351,7 +347,6 @@ export default {
         });
     },
   },
-
   // 页面加载时执行
   created: function () {
     this.leftPost();
