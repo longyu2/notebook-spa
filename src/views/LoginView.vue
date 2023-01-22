@@ -1,48 +1,54 @@
 <template>
-  <div id="Log" style="width: 500px" v-show="isloginShow">
-    <p class="headp" style="color: #ff6700">
-      <span>登录</span>
-    </p>
-
-    <div id="reg-mid">
+  <div id="Log-box">
+    <h2 style="color: #ff6700">登录</h2>
+    <div class="middle">
       <p class="text" style="text-align: left">用户名：</p>
-      <p><input type="text" id="TextBox1" class="tx" /></p>
+      <input type="text" v-model="username" class="input" />
 
-      <p class="text" style="text-align: left">密码：</p>
-      <p><input type="password" id="TextBox2" class="tx" /></p>
+      <p class="text">密码：</p>
 
-      <p>
-        <input
-          type="button"
-          id="BtnLogin"
-          class="tx"
-          value="登录"
-          @click="login_click()"
-        />
-      </p>
-      <p>
-        <a>忘记密码？</a>
-      </p>
+      <input type="password" v-model="userpwd" id="TextBox2" class="input" />
+
+      <button id="BtnLogin" @click="login_click()">Login</button>
+
+      <span>忘记密码</span>
     </div>
   </div>
 </template>
 
-<script lang="ts">
+<script>
+import axios from "axios";
+
 export default {
+  props: ["server_url"],
   data() {
     return {
       isloginShow: true,
+      username: "",
+      userpwd: "",
     };
   },
   methods: {
-    login_click: () => {
-      console.log("click");
+    login_click() {
+      console.log(this.server_url);
+      axios
+        .post(`${this.server_url}/login`, {
+          username: this.username,
+          userpwd: this.userpwd,
+        })
+        .then((results) => {
+          localStorage.setItem("token", results.data.data.token); // 将token 存储
+        });
     },
   },
 };
 </script>
 
-<style>
+<style lang="scss">
+* {
+  margin: 0%;
+  padding: 0%;
+}
 .white {
   color: white;
 }
@@ -51,73 +57,60 @@ export default {
   color: red;
 }
 
-h1 {
-  color: #d2d2d2;
-}
-
-#shang {
-  width: 100%;
-  height: 100px;
-}
-
-#Log {
-  border: 10px solid black;
-  margin: 50px auto 0px;
+#Log-box {
+  width: 380px;
+  padding: 50px 30px;
+  border: 1px solid black;
+  margin: 100px auto;
   background: white;
-  line-height: 80px;
-}
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 20px;
+  h1 {
+    margin: 0%;
+  }
+  .middle {
+    margin: 0%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 
-#Log p {
-  position: relative;
-  top: -30px;
-}
+    align-items: flex-start;
 
-#reg {
-  border: 10px solid black;
-  margin: 50px auto 0px;
-  background: white;
-  line-height: 80px;
-}
+    .text {
+      margin-top: 30px;
+      font-size: medium;
+    }
+    .input {
+      margin-top: 10px;
+      width: 270px;
+      height: 45px;
+      border-radius: 15px;
+      border: 1px solid slateblue;
+      padding-left: 15px;
+    }
 
-#reg-mid {
-  width: 400px;
-  margin-left: 50px;
-}
+    #BtnLogin {
+      margin-top: 60px;
+      color: white;
+      background: #ff6700;
+      font-size: 16px;
+      border: 0px;
+      width: 290px;
+      height: 45px;
+      border-radius: 15px;
+    }
 
-#reg-mid p {
-  margin-top: 0px;
-  margin-bottom: 0px;
-}
+    #BtnLogin:hover {
+      background: orange;
+      color: whitesmoke;
+    }
 
-.text {
-  margin-top: 0px;
-  height: 40px;
-  position: relative;
-  top: -20px;
-}
-.tx {
-  width: 400px;
-  height: 50px;
-  border: 1px solid gray;
-}
-
-#BtnLogin {
-  color: white;
-  background: #ff6700;
-  font-size: 20px;
-  border: 0px;
-  text-align: center;
-  margin-top: 40px;
-}
-
-#BtnLogin:hover {
-  background: black;
-  color: whitesmoke;
-}
-.headp {
-  font-size: 30px;
-  font-family: 微软雅黑;
-  margin-bottom: 0%;
-  margin-left: 43%;
+    span {
+      margin-top: 30px;
+    }
+  }
 }
 </style>

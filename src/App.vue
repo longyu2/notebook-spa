@@ -1,11 +1,14 @@
 <template>
-  <router-view></router-view>
+  <router-view :server_url="server_url"></router-view>
 </template>
 
 <script>
 export default {
   data() {
-    return {};
+    return {
+      // server_url: "http://127.0.0.1:9999",
+      server_url: "https://note.misaka-mikoto.cn:9999",
+    };
   },
   methods: {
     _isMobile: function () {
@@ -15,11 +18,10 @@ export default {
       return flag;
     },
   },
-  mounted() {
+  created() {
+    console.log("mou");
     if (this._isMobile()) {
       this.$router.replace("/notebook_phone");
-
-      console.log("sdsd")
     } else {
       this.$router.replace("/notebook");
     }

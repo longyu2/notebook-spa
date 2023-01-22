@@ -14,6 +14,10 @@
 
     <div class="article-list-box">
       <div id="TopLeft">
+        <span class="folderName">
+          {{ folderChecked.folderName }}
+        </span>
+
         <div class="isChecked-area">
           <a class="del-btn" v-if="check_bool" @click="delete_content()"
             >删除</a
@@ -26,11 +30,6 @@
             >移动到...</span
           >
         </div>
-
-        <!-- <div id="all-checkBox">
-          <input type="checkbox" @change="allCheckButtonclick" value="全选" /> 
-            全选 
-        </div> -->
         <img
           id="ImageButtonAdd"
           @click="addNewNotebook"
@@ -46,22 +45,21 @@
             :key="index"
             @click="byIdSelContent(item['Notebookid'])"
           >
-            <div style="float: left">
-              <input
-                type="checkbox"
-                @change="check_change()"
-                v-model="checkBtnCheckedList[index]"
-                name=""
-                class="checkbox"
-                id=""
-              />
-            </div>
+            <input
+              type="checkbox"
+              @change="check_change()"
+              v-model="checkBtnCheckedList[index]"
+              name=""
+              class="checkbox"
+              id=""
+            />
 
             <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
-
-            <p class="p_1" v-text="item['title'].substring(0, 13)"></p>
-            <p class="p_2" v-text="item['content'].substring(0, 15)"></p>
-            <p class="p_3" v-text="item['createtime']"></p>
+            <div class="article-information-box">
+              <p class="p_1" v-text="item['title'].substring(0, 20)"></p>
+              <p class="p_2" v-text="item['content'].substring(0, 32)"></p>
+              <p class="p_3" v-text="item['createtime']"></p>
+            </div>
           </li>
         </ul>
       </div>
@@ -75,6 +73,8 @@
           download="output.txt"
           >导出</a
         >
+
+        <router-link to="login" class="output">登录</router-link>
       </div>
 
       <div id="right">
@@ -108,12 +108,21 @@
 
 <script>
 import MoveToFolder from "../components/MoveToFolder.vue";
-
-import Vditor from "vditor";
 import axios from "axios";
-import { getTransitionRawChildren } from "vue";
+// 请求拦截, 给axios 添加请求头，设置token
+axios.interceptors.request.use(
+  (config) => {
+    // 添加自定义token
+    config.headers.authorization = localStorage.getItem("token");
+    return config;
+  },
+  (error) => {
+    return Promise.error(error);
+  }
+);
 
 export default {
+  props: ["server_url"],
   components: {
     MoveToFolder,
   },
@@ -126,16 +135,13 @@ export default {
       checkId: 0, //用来指示当前选中的是哪一篇笔记
       nums: true, //计数器，用来标识只执行一次的填充
       times: 0, // 时间戳
-      
 
       set_timeout: (() => {}, 1000),
-      server_url: "https://note.misaka-mikoto.cn:9999",
-      // server_url: "http://127.0.0.1:9999",
-
       checkBtnCheckedList: [], // 用来保存被选中的文章的id, 以布尔值存储
       check_id_list: [], //用来保存被选中的文章的id,只存储 已选中的id
       check_bool: false, //当checkBtnCheckedList 的值全为false，check——bool为false
-      folders: [],
+      folders: [], // 文件夹
+      folderChecked: { folderId: "-1", folderName: "未分类" },
       IsShowMoveToFolder: false, // 是否显示移动文件夹的悬浮窗
     };
   },
@@ -213,7 +219,6 @@ export default {
         that.leftPost();
       });
     },
-
     // 将内容保存到云
     save: function () {
       if (this.leftArr == []) {
@@ -252,7 +257,6 @@ export default {
         }
       });
     },
-
     // 接口返回左边列表(包括所有的文章信息)
     leftPost: function () {
       let that = this;
@@ -291,10 +295,10 @@ export default {
         .then(function (response) {
           if (response.data == null || response.data == []) {
             console.error("接口返回的数据为空");
-            return
+            return;
           }
 
-          console.log(response.data)
+          console.log(response.data);
           that.checkId = response.data[0].Notebookid;
 
           that.notebookContent = response.data[0].content;
@@ -316,7 +320,7 @@ export default {
         .get(this.server_url + "/addnewNotebook")
         .then(function (response) {
           that.checkId = response.data[0].Notebookid;
-          console.log(response.data[0].Notebookid)
+          console.log(response.data[0].Notebookid);
           that.notebookContent = "";
           that.notebookTitle = "";
           if (response.data == null) {
@@ -362,8 +366,8 @@ export default {
 <style lang="scss" scoped>
 $black-border: 1px solid black;
 $radius: 10px;
-$box-height :805px;
-
+$box-height: 805px;
+$left-width: 300px;
 #notebook-box {
   height: 100vh;
   display: flex;
@@ -374,8 +378,7 @@ $box-height :805px;
   position: relative;
   z-index: 1;
   #folder {
-    flex-shrink:0;
-
+    flex-shrink: 0;
     width: 200px;
     height: $box-height;
     background-color: white;
@@ -408,18 +411,18 @@ $box-height :805px;
     width: auto;
     height: $box-height;
     border: $black-border;
-    
+
     color: #111111;
     border: 0px;
-   
+
     position: relative;
 
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    
+
     #TopLeft {
-      width: 245px;
+      width: $left-width;
       height: 70px;
 
       border-radius: 0;
@@ -429,10 +432,11 @@ $box-height :805px;
       justify-content: center;
       flex-direction: row;
       align-items: center;
-
+      .folderName {
+        font-size: large;
+      }
       .isChecked-area {
         width: 180px;
-
         display: flex;
         flex-direction: row;
         justify-content: center;
@@ -440,11 +444,11 @@ $box-height :805px;
 
         .del-btn {
           margin-left: 15px;
-          height: 30px;
+          height: 23px;
           color: white;
           background-color: cornflowerblue;
           padding: 5px 10px;
-          font-size: 18px;
+          font-size: 17px;
           border: 0ch;
           border-radius: 5px;
         }
@@ -454,9 +458,8 @@ $box-height :805px;
         }
 
         .move-btn {
-          height: 30px;
+          height: 23px;
           margin-left: 20px;
-
           color: white;
           background-color: cornflowerblue;
           padding: 5px 10px;
@@ -464,20 +467,21 @@ $box-height :805px;
           border: 0ch;
           border-radius: 5px;
         }
+        .move-btn:hover {
+          background-color: orange;
+        }
       }
 
       #ImageButtonAdd {
         margin-left: 10px;
-
-        height: 50px;
-        width: 50px;
+        height: 44px;
       }
     }
 
     #left {
       padding: 0px;
       height: 715px;
-      width: 245px;
+      width: $left-width;
 
       overflow: auto;
       background-color: white;
@@ -493,33 +497,36 @@ $box-height :805px;
         list-style: none;
         border-bottom: 1px solid #909090;
         width: inherit;
-        height: 90px;
-        padding-top: 12px;
-        padding-left: 5px;
 
-        p {
-          line-height: 12px;
-          height: 14px;
-        }
-
-        .p_1 {
-          font-size: 14px;
-          margin-left: 30px;
+        padding: 10px 10px;
+        display: flex;
+        align-items: flex-start;
+        .checkbox {
           margin-top: 5px;
         }
+        .article-information-box {
+          margin-left: 10px;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          p {
+            margin: 3px 0px;
+          }
+          .p_1 {
+            font-size: 15px;
+            font-weight: 600;
+          }
 
-        .p_2 {
-          font-size: 12px;
-          margin-left: 30px;
-        }
+          .p_2 {
+            font-size: 14px;
+          }
 
-        .p_3 {
-          font-size: 12px;
-          margin-left: 30px;
-          color: gray;
+          .p_3 {
+            font-size: 13px;
+            color: gray;
+          }
         }
       }
-    
     }
 
     .checkbox {
@@ -533,7 +540,7 @@ $box-height :805px;
   }
 
   .article-content-box {
-    min-width:400px;
+    min-width: 400px;
     height: $box-height;
     margin-left: 22px;
     flex-grow: 4;
@@ -546,8 +553,7 @@ $box-height :805px;
       background-color: azure;
       background-color: white;
       border-radius: $radius;
-      
-    
+
       #TextBoxTitle {
         flex-grow: 4;
         height: 35px;
@@ -559,7 +565,6 @@ $box-height :805px;
       }
 
       #txtContent {
-        
         flex-grow: 4;
         width: 98%;
         margin-top: 10px;

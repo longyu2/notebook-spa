@@ -1,57 +1,66 @@
 <template>
-  <div id="box">
-    <div id="leftTop"></div>
+  <div class="container"></div>
 
+  <div id="NoteBook-List" v-show="!is_Content_Show">
     <img
       v-show="!is_Content_Show"
       id="ImageButtonAdd"
       src="@/assets//addNewNotebook.svg"
       @click="addNewNotebook()"
     />
-    <div id="NoteBook-List" v-show="!is_Content_Show">
-      <ul id="List-ul">
-        <li v-for="i in leftArr" :key="i" @click="byIdSelContent(i.Notebookid)">
-          <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
-          <p class="p_1" v-html="i.title.substring(0, 16)"></p>
-          <p class="p_2" v-html="i.content.substring(0, 18)"></p>
-          <p class="p_3" v-html="i.createtime"></p>
-        </li>
-      </ul>
-    </div>
 
-    <div id="NoteBook-Content" v-show="is_Content_Show">
-      <div id="menu">
-        <img
-          src="@/assets/返回箭头.svg"
-          id="return-button"
-          @click="change_list_Or_Content()"
-        />
-      </div>
-      <input
-        type="text"
-        placeholder="标题"
-        id="TextBoxTitle"
-        v-model="notebookTitle"
+    <ul id="List-ul">
+      <li v-for="i in leftArr" :key="i" @click="byIdSelContent(i.Notebookid)">
+        <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
+        <p class="p_1" v-html="i.title.substring(0, 16)"></p>
+        <p class="p_2" v-html="i.content.substring(0, 18)"></p>
+        <p class="p_3" v-html="i.createtime"></p>
+      </li>
+    </ul>
+  </div>
+  <div id="NoteBook-Content" v-show="is_Content_Show">
+    <div id="menu">
+      <img
+        src="@/assets/返回箭头.svg"
+        id="return-button"
+        @click="change_list_Or_Content()"
       />
-
-      <textarea
-        name="reworkmes"
-        placeholder="开始书写"
-        id="txtContent"
-        style="overflow: auto"
-        v-model="notebookContent"
-      ></textarea>
     </div>
+    <input
+      type="text"
+      placeholder="标题"
+      id="TextBoxTitle"
+      v-model="notebookTitle"
+    />
+
+    <textarea
+      name="reworkmes"
+      placeholder="开始书写"
+      id="txtContent"
+      style="overflow: auto"
+      v-model="notebookContent"
+    ></textarea>
   </div>
 </template>
 
 <script>
 import axios from "axios";
+// 请求拦截, 给axios 添加请求头，设置token
+axios.interceptors.request.use(
+  (config) => {
+    // 添加自定义token
+    config.headers.authorization = localStorage.getItem("token");
+    return config;
+  },
+  (error) => {
+    return Promise.error(error);
+  }
+);
 
 export default {
+  props: ["server_url"],
   data() {
     return {
-      server_url: "https://note.misaka-mikoto.cn:9999",
       notebookContent: "",
       notebookTitle: "",
       lastTime: 0,
@@ -69,7 +78,6 @@ export default {
     checkId: function () {
       this.save();
     },
-
     notebookContent: function (newVal, oldVal) {
       // 保证节流的最后一次能触发
       // 新旧值不同，说明发生了修改，执行保存
@@ -162,8 +170,8 @@ export default {
     },
     // 添加新文章
     addNewNotebook: function () {
-      document.getElementById("List-ul").scrollTop = 0;
       this.change_list_Or_Content(); // 切换到内容页
+
       this.save();
       let that = this;
       axios
@@ -197,142 +205,86 @@ export default {
 };
 </script>
 
-<style scoped>
-body {
+<style scoped lang="scss">
+* {
   margin: 0px;
   padding: 0px;
-  background-color: #dddddd;
-}
-
-#box {
-  margin: 0px;
-  width: 100vw;
-  height: 100vh;
-  position: absolute;
-  top: 0px;
-}
-#NoteBook-List {
-  width: 100vw;
-  height: 100vh;
-  position: relative;
-}
-
-#List-ul {
-  margin: 0px;
-  padding: 0px;
-  height: 100vh;
-  width: 100vw;
-
-  overflow: auto;
-
   background-color: white;
-
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  z-index: 1;
 }
 
-#NoteBook-List p {
-  /* line-height: 12px; */
-  line-height: 5vw;
-  margin-left: 3vw;
-  height: 6vw;
-}
+#NoteBook-List {
+  #ImageButtonAdd {
+    position: fixed;
+    width: 20vmin;
+    height: 20vmin;
+    z-index: 2;
+    top: 90vh;
+    left: 80vw;
+    border-radius: 50%;
+  }
+  ul {
+    z-index: 1;
+    li {
+      list-style: none;
+      border-bottom: 1px solid #909090;
+      padding: 3vmin 3vmin;
+      margin-left: 1vmin;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      p {
+        margin-top: 3vmin;
+      }
 
-#NoteBook-List li {
-  list-style: none;
-  border-bottom: 1px solid #909090;
-  width: 96vw;
-  /* height: 90px; */
-  height: 38vw;
-  padding-top: 1px;
-  padding-left: 5px;
-  margin-left: 1vw;
-}
+      .p_1 {
+        font-size: 6vmin;
+      }
 
-li:last-child {
-  border: 0px;
-}
+      .p_2 {
+        font-size: 5vmin;
+      }
 
-.p_1 {
-  /* font-size: 14px; */
-  font-size: 6vw;
-  /* margin-left: 10px; */
-  margin-left: 4vw;
-}
-
-.p_2 {
-  /* font-size: 12px; */
-  font-size: 5vw;
-
-  margin-left: 10px;
-}
-
-.p_3 {
-  /* font-size: 12px; */
-  font-size: 5vw;
-
-  margin-left: 10px;
-  color: gray;
-}
-
-#ImageButtonAdd {
-  position: fixed;
-  width: 80px;
-  height: 80px;
-  z-index: 2;
-  margin: 0%;
-  top: 80vh;
-  left: 73vw;
+      .p_3 {
+        font-size: 5vmin;
+        margin-left: 10px;
+        color: gray;
+      }
+    }
+  }
 }
 
 #NoteBook-Content {
   width: 100vw;
-
   border-bottom: 0px;
   float: left;
-
   background-color: azure;
   border-radius: 0;
   background-color: white;
   box-shadow: 14px 14px 8px #727272;
-}
 
-#menu {
-  width: 100%;
-  height: 7vh;
-}
-
-#return-button {
-  width: 6vw;
-  height: 6vw;
-  margin-left: 2vw;
-  margin-top: 2vw;
-}
-#TextBoxTitle {
-  margin-left: 5vw;
-  margin-top: 0px;
-
-  width: 90vw;
-  height: 7vh;
-  font-weight: 500;
-  font-size: 8vw;
-  border-radius: 5px;
-  outline: none;
-  border: none;
-}
-
-#txtContent {
-  margin-left: 5vw;
-  margin-top: 0px;
-  height: 86vh;
-  width: 90vw;
-  font-size: 4vw;
-  font-weight: 400;
-  font-family: "微软雅黑";
-  border-radius: 5px;
-  outline: none;
-  border: 0px;
+  #TextBoxTitle {
+    margin-left: 5vw;
+    margin-top: 0px;
+    width: 90vw;
+    height: 7vh;
+    font-weight: 500;
+    font-size: 8vw;
+    border-radius: 5px;
+    outline: none;
+    border: none;
+  }
+  #txtContent {
+    margin-left: 5vw;
+    margin-top: 0px;
+    height: 86vh;
+    width: 90vw;
+    font-size: 4vw;
+    font-weight: 400;
+    font-family: "微软雅黑";
+    border-radius: 5px;
+    outline: none;
+    border: 0px;
+  }
 }
 </style>
