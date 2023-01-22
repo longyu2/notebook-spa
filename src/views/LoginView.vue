@@ -18,7 +18,6 @@
 
 <script>
 import axios from "axios";
-
 export default {
   props: ["server_url"],
   data() {
@@ -38,6 +37,7 @@ export default {
         })
         .then((results) => {
           localStorage.setItem("token", results.data.data.token); // 将token 存储
+          this.$router.push({ path: "/" });
         });
     },
   },
