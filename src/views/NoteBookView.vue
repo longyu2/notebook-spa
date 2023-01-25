@@ -67,12 +67,8 @@
 
     <div class="article-content-box">
       <div id="TopRight">
-        <a
-          class="output"
-          :href="`${server_url}/output.json`"
-          download="output.txt"
-          >导出</a
-        >
+        <button class="output" @click="outputJson">导出</button>
+        <a href=""></a>
 
         <router-link to="login" class="output">登录</router-link>
       </div>
@@ -172,6 +168,18 @@ export default {
     },
   },
   methods: {
+    outputJson: function () {
+      axios.get(`${this.server_url}/output`).then((results) => {
+        console.log(results.data);
+
+        // 生成a标签并调用下载
+        let link = document.createElement("a");
+        link.download = "output.json";
+        link.href = "data:text/plain," + JSON.stringify(results.data);
+        link.click();
+      });
+    },
+
     // closeMoveCallback
     closeMoveCallback: function () {
       console.log("closer");
@@ -346,7 +354,6 @@ export default {
           folder_name: name,
         })
         .then((res) => {
-          console.log(res.data);
           this.folders.push(res.data[0]);
         });
     },
@@ -594,6 +601,9 @@ $left-width: 300px;
         float: right;
         text-decoration: none;
         color: black;
+        border: 0px;
+        background: 0%;
+        font-size: large;
       }
 
       .output:hover {
