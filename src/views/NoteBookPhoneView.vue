@@ -222,8 +222,8 @@ export default {
     width: 20vmin;
     height: 20vmin;
     z-index: 2;
-    top: 90vh;
-    left: 80vw;
+    top: 85vh;
+    left: 75vw;
     border-radius: 50%;
   }
   ul {

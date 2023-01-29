@@ -1,12 +1,10 @@
 <template>
   <div id="notebook-box">
     <div id="folder">
-      <p>文件夹</p>
-      <button @click="createFolder">新建文件夹</button>
+      <button class="addFolderBtn" @click="createFolder">新建文件夹</button>
 
       <ul>
         <li v-for="item in folders" :key="item.id">
-          <button>X</button>
           {{ item.folder_name }}
         </li>
       </ul>
@@ -382,6 +380,7 @@ $radius: 10px;
 $box-height: 805px;
 $left-width: 300px;
 #notebook-box {
+  background-color: #125677;
   height: 100vh;
   display: flex;
   flex-direction: row;
@@ -392,15 +391,25 @@ $left-width: 300px;
   z-index: 1;
   #folder {
     flex-shrink: 0;
-    width: 200px;
-    height: $box-height;
+    width: 160px;
+    height: 765px;
     background-color: white;
     border-radius: $radius;
-    padding: 0%;
+    padding: 20px 20px;
     display: flex;
     flex-flow: column nowrap;
     align-items: flex-start;
-
+    .addFolderBtn{
+      background:#255475;
+      border: 0;
+      font-size: large;
+      border-radius:5px ;
+      padding: 5px 5px;
+      color: white;
+    }
+    .addFolderBtn:hover{
+      background-color: #55A6FB;
+    }
     ul {
       list-style: none;
       display: flex;
@@ -488,6 +497,9 @@ $left-width: 300px;
       #ImageButtonAdd {
         margin-left: 10px;
         height: 44px;
+      }
+      #ImageButtonAdd:hover{
+        transform: scale(1.2);
       }
     }
 
