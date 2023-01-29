@@ -18,21 +18,22 @@
       </li>
     </ul>
   </div>
+
   <div id="NoteBook-Content" v-show="is_Content_Show">
-    <div id="menu">
-      <img
-        src="@/assets/返回箭头.svg"
-        id="return-button"
-        @click="change_list_Or_Content()"
-      />
-    </div>
+    <img
+      class="return-btn"
+      src="@/assets/返回箭头.svg"
+      id="return-button"
+      @click="change_list_Or_Content()"
+    />
+
     <input
       type="text"
       placeholder="标题"
       id="TextBoxTitle"
       v-model="notebookTitle"
     />
-
+    <hr />
     <textarea
       name="reworkmes"
       placeholder="开始书写"
@@ -65,7 +66,6 @@ export default {
       notebookTitle: "",
       lastTime: 0,
       leftArr: [],
-
       checkId: 0, //用来指示当前选中的是哪一篇笔记
       nums: true, //计数器，用来标识只执行一次的填充
       times: 0, // 时间戳
@@ -171,20 +171,24 @@ export default {
     // 添加新文章
     addNewNotebook: function () {
       this.change_list_Or_Content(); // 切换到内容页
-
-      this.save();
       let that = this;
+      this.save();
       axios
         .get(this.server_url + "/addnewNotebook")
         .then(function (response) {
-          response.data[0].Notebookid += 1;
-          // console.log(response.data);
           that.checkId = response.data[0].Notebookid;
+          console.log(response.data[0].Notebookid);
           that.notebookContent = "";
           that.notebookTitle = "";
-
+          if (response.data == null) {
+            console.error("接口返回数据为空");
+          }
           //返回的是只有一个元素的数组，还是需要用下标0取
-          that.leftArr.push(response.data[0]);
+          that.leftArr.push(response["data"][0]);
+          // 滚动条到底
+          that.$nextTick(function () {
+            document.getElementById("left").scrollTop = 1000000;
+          });
         })
         .catch(function (error) {
           console.log(error);
@@ -255,34 +259,37 @@ export default {
 }
 
 #NoteBook-Content {
-  width: 100vw;
-  border-bottom: 0px;
-  float: left;
-  background-color: azure;
-  border-radius: 0;
-  background-color: white;
-  box-shadow: 14px 14px 8px #727272;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 2.5vw;
+  .return-btn {
+    width: 30px;
+    height: 30px;
+  }
 
   #TextBoxTitle {
-    margin-left: 5vw;
-    margin-top: 0px;
-    width: 90vw;
-    height: 7vh;
+    margin-top: 10px;
+    width: 95vw;
     font-weight: 500;
-    font-size: 8vw;
+    font-size: 7vw;
     border-radius: 5px;
     outline: none;
     border: none;
+    min-height: 7vw;
+  }
+
+  hr {
+    width: 95vw;
   }
   #txtContent {
-    margin-left: 5vw;
-    margin-top: 0px;
-    height: 86vh;
-    width: 90vw;
+    margin-top: 10px;
+
+    height: 90vh;
+    width: 95vw;
     font-size: 4vw;
     font-weight: 400;
     font-family: "微软雅黑";
-    border-radius: 5px;
     outline: none;
     border: 0px;
   }

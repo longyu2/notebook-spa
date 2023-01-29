@@ -29,7 +29,6 @@ export default {
   },
   methods: {
     login_click() {
-      console.log(this.server_url);
       axios
         .post(`${this.server_url}/login`, {
           username: this.username,

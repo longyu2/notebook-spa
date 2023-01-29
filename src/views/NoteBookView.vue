@@ -275,7 +275,6 @@ export default {
           // 如果文章列表为空。停止查询
           if (that.leftArr.length != 0) {
             // 将第一篇文章内容查询
-            console.log(that.leftArr);
             that.byIdSelContent(that.leftArr[0].Notebookid);
           }
 
@@ -306,7 +305,6 @@ export default {
             return;
           }
 
-          console.log(response.data);
           that.checkId = response.data[0].Notebookid;
 
           that.notebookContent = response.data[0].content;
@@ -360,8 +358,16 @@ export default {
   },
   // 页面加载时执行
   created: function () {
-    this.leftPost();
+    // 测试token 是否有效
+    let IsTokenTrue = false;
+    axios
+      .get(`${this.server_url}/testToken`)
+      .then((results) => {})
+      .catch((err) => {
+        this.$router.push("/login"); // 出现
+      });
 
+    this.leftPost();
     // 填充文件夹
     axios.get(`${this.server_url}/QueryFolder`).then((res) => {
       this.folders = res.data;

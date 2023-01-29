@@ -19,7 +19,6 @@ export default {
     },
   },
   created() {
-    console.log("mou");
     if (this._isMobile()) {
       this.$router.replace("/notebook_phone");
     } else {
@@ -33,6 +32,5 @@ export default {
 body {
   margin: 0px;
   padding: 0px;
-  background-color: #225577;
 }
 </style>

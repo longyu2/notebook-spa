@@ -30,7 +30,6 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from) => {
-  console.log(from.path);
   if (to.path != "/login") {
     if (localStorage.getItem("token") != null) {
       console.log("有token");
