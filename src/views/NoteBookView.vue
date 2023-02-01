@@ -4,7 +4,7 @@
       <button class="addFolderBtn" @click="createFolder">新建文件夹</button>
 
       <ul>
-        <li v-for="item in folders" :key="item.id">
+        <li v-for="item in folders" @click="changeFolder(item.folder_id)" :key="item.id">
           {{ item.folder_name }}
         </li>
       </ul>
@@ -166,6 +166,10 @@ export default {
     },
   },
   methods: {
+    changeFolder:function(folderId){
+      console.log(folderId)
+    },
+
     outputJson: function () {
       axios.get(`${this.server_url}/output`).then((results) => {
         console.log(results.data);
@@ -351,13 +355,13 @@ export default {
         })
         .then((res) => {
           this.folders.push(res.data[0]);
+          console.log(this.folders)
         });
     },
   },
   // 页面加载时执行
   created: function () {
     // 测试token 是否有效
-    let IsTokenTrue = false;
     axios
       .get(`${this.server_url}/testToken`)
       .then((results) => {})
