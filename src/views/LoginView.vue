@@ -30,13 +30,18 @@ export default {
   methods: {
     login_click() {
       axios
-        .post(`${this.server_url}/login`, {
+        .post(`${this.server_url}/session`, {
           username: this.username,
-          userpwd: this.userpwd,
+          passwd: this.userpwd,
         })
         .then((results) => {
-          localStorage.setItem("token", results.data.data.token); // 将token 存储
-          this.$router.push({ path: "/" });
+          if (results.data.status == "成功") {
+            localStorage.setItem("token", results.data.data.token); // 将token 存储
+            this.$router.push({ path: "/" });
+          }
+          else{
+            alert("登录失败！")
+          }
         });
     },
   },
