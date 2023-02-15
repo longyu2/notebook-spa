@@ -3,13 +3,22 @@
     <div id="folder">
       <button class="addFolderBtn" @click="createFolder">新建文件夹</button>
       <ul>
-        <li @click="changeFolder(-2, '全部笔记')" :class="{buttonchecked:-2===folderChecked.folderId}">全部笔记</li>
-        <li @click="changeFolder(-1, '未分类')"  :class="{buttonchecked:-1===folderChecked.folderId}">未分类</li>
+        <li
+          @click="changeFolder(-2, '全部笔记')"
+          :class="{ buttonchecked: -2 === folderChecked.folderId }"
+        >
+          全部笔记
+        </li>
+        <li
+          @click="changeFolder(-1, '未分类')"
+          :class="{ buttonchecked: -1 === folderChecked.folderId }"
+        >
+          未分类
+        </li>
         <li
           v-for="item in folders"
-          :class="{buttonchecked:folderChecked.folderId===item.folder_id}"
-
-          @click="changeFolder(item.folder_id,item.folder_name)"
+          :class="{ buttonchecked: folderChecked.folderId === item.folder_id }"
+          @click="changeFolder(item.folder_id, item.folder_name)"
           :key="item.id"
         >
           {{ item.folder_name }}
@@ -23,24 +32,27 @@
           {{ folderChecked.folderName }}
         </span>
 
-        <div class="isChecked-area">
-          <a class="del-btn" v-if="check_bool" @click="delete_content()"
-            >删除</a
-          >
+        <div class="topleft-bottom">
+          <div class="isChecked-area">
+            <a class="del-btn" v-if="check_bool" @click="delete_content()"
+              >删除</a
+            >
 
-          <span
-            class="move-btn"
-            v-if="check_bool"
-            @click="IsShowMoveToFolder = true"
-            >移动到...</span
-          >
+            <span
+              class="move-btn"
+              v-if="check_bool"
+              @click="IsShowMoveToFolder = true"
+              >移动到..</span
+            >
+          </div>
+
+          <img
+            id="ImageButtonAdd"
+            @click="addNewNotebook"
+            src="@/assets/addNewNoteBook.svg"
+            alt=""
+          />
         </div>
-        <img
-          id="ImageButtonAdd"
-          @click="addNewNotebook"
-          src="@/assets/addNewNoteBook.svg"
-          alt=""
-        />
       </div>
 
       <div id="left">
@@ -49,6 +61,7 @@
             v-for="(item, index) in NoteBookList"
             :key="index"
             @click="byIdSelContent(item['Notebookid'])"
+            :class="{buttonchecked:item.Notebookid === checkId}"
           >
             <input
               type="checkbox"
@@ -60,9 +73,9 @@
             />
 
             <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
-            <div class="article-information-box">
-              <p class="p_1" v-text="item['title'].substring(0, 20)"></p>
-              <p class="p_2" v-text="item['content'].substring(0, 32)"></p>
+            <div class="article-information-box" >
+              <p class="p_1" v-text="item['title'].substring(0, 14)"></p>
+              <p class="p_2" v-text="item['content'].substring(0, 16)"></p>
               <p class="p_3" v-text="item['createtime']"></p>
             </div>
           </li>
@@ -413,7 +426,7 @@ export default {
 <style lang="scss" scoped>
 $black-border: 1px solid black;
 $radius: 10px;
-$box-height: 805px;
+$box-height: 905px;
 $left-width: 300px;
 #notebook-box {
   background-color: #125677;
@@ -427,8 +440,8 @@ $left-width: 300px;
   z-index: 1;
   #folder {
     flex-shrink: 0;
-    width: 160px;
-    height: 765px;
+    width: 140px;
+    height: 865px;
     background-color: white;
     border-radius: $radius;
     padding: 20px 20px;
@@ -469,85 +482,99 @@ $left-width: 300px;
     width: auto;
     height: $box-height;
     border: $black-border;
-
     color: #111111;
     border: 0px;
 
     position: relative;
-
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 
     #TopLeft {
       width: $left-width;
-      height: 70px;
-
+      height: 100px;
       border-radius: 0;
       background-color: white;
       border-radius: $radius;
       display: flex;
       justify-content: center;
-      flex-direction: row;
-      align-items: center;
+      flex-direction: column;
+      align-items: flex-start;
       .folderName {
+        margin-left: 20px;
         font-size: large;
+        color: green;
       }
-      .isChecked-area {
-        width: 180px;
+      .topleft-bottom {
+        padding: 0%;
+        width: 300px;
+        height: 55px;
         display: flex;
-        flex-direction: row;
-        justify-content: center;
+        justify-content: flex-end;
         align-items: center;
+        .isChecked-area {
+          padding: 0;
+          width: 75%;
+          padding: 10px;
+          display: flex;
+          flex-direction: row;
+          justify-content: center;
+          align-items: center;
 
-        .del-btn {
-          margin-left: 15px;
-          height: 23px;
-          color: white;
-          background-color: cornflowerblue;
-          padding: 5px 10px;
-          font-size: 17px;
-          border: 0ch;
-          border-radius: 5px;
+          .del-btn {
+            margin-left: 20px;
+            width: 50px;
+            height: 18px;
+            color: white;
+            background-color: cornflowerblue;
+            padding: 5px 10px;
+            font-size: medium;
+            border: 0ch;
+            border-radius: 5px;
+            line-height: 18px;
+          }
+
+          .del-btn:hover {
+            background-color: crimson;
+            transform: scale(1.2);
+          }
+
+          .move-btn {
+            height: 18px;
+            width: 70px;
+            margin-left: 20px;
+            color: white;
+            background-color: cornflowerblue;
+            padding: 5px 10px;
+            font-size: medium;
+            border: 0ch;
+            border-radius: 5px;
+            line-height: 18px;
+
+          }
+          .move-btn:hover {
+            background-color: orange;
+            transform: scale(1.2);
+          }
         }
 
-        .del-btn:hover {
-          background-color: crimson;
+        #ImageButtonAdd {
+          margin-right: 10px;
+          height: 44px;
         }
-
-        .move-btn {
-          height: 23px;
-          margin-left: 20px;
-          color: white;
-          background-color: cornflowerblue;
-          padding: 5px 10px;
-          font-size: 18px;
-          border: 0ch;
-          border-radius: 5px;
+        #ImageButtonAdd:hover {
+          transform: scale(1.2);
         }
-        .move-btn:hover {
-          background-color: orange;
-        }
-      }
-
-      #ImageButtonAdd {
-        margin-left: 10px;
-        height: 44px;
-      }
-      #ImageButtonAdd:hover {
-        transform: scale(1.2);
       }
     }
 
     #left {
       padding: 0px;
-      height: 715px;
+      height: 785px;
       width: $left-width;
-
       overflow: auto;
       background-color: white;
       border-radius: $radius;
-
       ul {
         margin-top: 0%;
 
@@ -558,7 +585,7 @@ $left-width: 300px;
         list-style: none;
         border-bottom: 1px solid #909090;
         width: inherit;
-
+        height: 70px;
         padding: 10px 10px;
         display: flex;
         align-items: flex-start;
@@ -609,17 +636,17 @@ $left-width: 300px;
     flex-direction: column;
     justify-content: space-between;
     #right {
-      height: 715px;
+      height: 785px;
       border-bottom: 0px;
       background-color: azure;
       background-color: white;
       border-radius: $radius;
-
       #TextBoxTitle {
+        width: 100%;
         flex-grow: 4;
         height: 35px;
         font-weight: 400;
-        font-size: 30px;
+        font-size: 24px;
         border-radius: 5px;
         outline: none;
         border: none;
@@ -631,7 +658,7 @@ $left-width: 300px;
         margin-top: 10px;
         margin-left: 1%;
         height: 90%;
-        font-size: 20px;
+        font-size: 18px;
         font-family: "微软雅黑";
         border: 1px solid gray;
         border-radius: 5px;
@@ -642,7 +669,7 @@ $left-width: 300px;
 
     #TopRight {
       width: 100%;
-      height: 70px;
+      height: 100px;
       background-color: azure;
       top: 0px;
       left: 265px;
@@ -667,7 +694,7 @@ $left-width: 300px;
   }
 }
 
-.buttonchecked{
-  background-color: #55a6fb;
+.buttonchecked {
+  background-color: #c0c0c0;
 }
 </style>
