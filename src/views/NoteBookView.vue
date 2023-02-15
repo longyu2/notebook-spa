@@ -2,9 +2,16 @@
   <div id="notebook-box">
     <div id="folder">
       <button class="addFolderBtn" @click="createFolder">新建文件夹</button>
-
       <ul>
-        <li v-for="item in folders" @click="changeFolder(item.folder_id)" :key="item.id">
+        <li @click="changeFolder(-2, '全部笔记')" :class="{buttonchecked:-2===folderChecked.folderId}">全部笔记</li>
+        <li @click="changeFolder(-1, '未分类')"  :class="{buttonchecked:-1===folderChecked.folderId}">未分类</li>
+        <li
+          v-for="item in folders"
+          :class="{buttonchecked:folderChecked.folderId===item.folder_id}"
+
+          @click="changeFolder(item.folder_id,item.folder_name)"
+          :key="item.id"
+        >
           {{ item.folder_name }}
         </li>
       </ul>
@@ -39,7 +46,7 @@
       <div id="left">
         <ul id="List-ul">
           <li
-            v-for="(item, index) in leftArr"
+            v-for="(item, index) in NoteBookList"
             :key="index"
             @click="byIdSelContent(item['Notebookid'])"
           >
@@ -70,7 +77,6 @@
 
         <router-link to="login" class="output">登录</router-link>
       </div>
-
       <div id="right">
         <input
           type="text"
@@ -125,17 +131,16 @@ export default {
       notebookContent: "",
       notebookTitle: "",
       lastTime: 0,
-      leftArr: [],
+      NoteBookList: [],
       checkId: 0, //用来指示当前选中的是哪一篇笔记
       nums: true, //计数器，用来标识只执行一次的填充
       times: 0, // 时间戳
-
       set_timeout: (() => {}, 1000),
       checkBtnCheckedList: [], // 用来保存被选中的文章的id, 以布尔值存储
       check_id_list: [], //用来保存被选中的文章的id,只存储 已选中的id
       check_bool: false, //当checkBtnCheckedList 的值全为false，check——bool为false
       folders: [], // 文件夹
-      folderChecked: { folderId: "-1", folderName: "未分类" },
+      folderChecked: { folderId: "-2", folderName: "所有笔记" },
       IsShowMoveToFolder: false, // 是否显示移动文件夹的悬浮窗
     };
   },
@@ -166,14 +171,38 @@ export default {
     },
   },
   methods: {
-    changeFolder:function(folderId){
-      console.log(folderId)
-    },
+    // 根据输入的folderid 来进行视图的切换
+    changeFolder: function (folderId, folderName) {
+      this.getindex = folderId;
+      this.folderChecked = { folderId: folderId, folderName: folderName };
+      const that = this;
+      if (folderName == "全部笔记") {
+        this.getAllArticle();
+        return;
+      }
+      if (folderName == "未分类") {
+        axios.get(`${this.server_url}/articles?folderid=-1`).then((results) => {
+          that.NoteBookList = results.data.data; // 查询回来的数据可以直接使用
+          that.QueryTopArticle();
+        });
+        return;
+      }
+      this.folderChecked = { folderId: folderId, folderName: folderName };
 
+      axios
+        .get(`${this.server_url}/articles?folderid=${folderId}`)
+        .then((result) => {
+          if (result.data.status == "查询成功") {
+            const article_list = result.data.data;
+            that.NoteBookList = article_list;
+            that.QueryTopArticle();
+          }
+        });
+    },
+    // 导出0
     outputJson: function () {
       axios.get(`${this.server_url}/output`).then((results) => {
         console.log(results.data);
-
         // 生成a标签并调用下载
         let link = document.createElement("a");
         link.download = "output.json";
@@ -182,7 +211,7 @@ export default {
       });
     },
 
-    // closeMoveCallback
+    // closeMoveCallback 根据emit事件关闭 文件夹移动框
     closeMoveCallback: function () {
       console.log("closer");
       this.IsShowMoveToFolder = false;
@@ -201,8 +230,10 @@ export default {
       for (let i = 0; i < this.checkBtnCheckedList.length; i++) {
         if (this.checkBtnCheckedList[i] == true) {
           // 如果 该id 不存在于列表，则添加进去,因为每次change 会重复扫描
-          if (this.check_id_list.indexOf(this.leftArr[i].Notebookid) == -1) {
-            this.check_id_list.push(this.leftArr[i].Notebookid); // 将id值添加到列表
+          if (
+            this.check_id_list.indexOf(this.NoteBookList[i].Notebookid) == -1
+          ) {
+            this.check_id_list.push(this.NoteBookList[i].Notebookid); // 将id值添加到列表
           }
         } else {
           // 如果该id不存在，不必管，如果存在，删去
@@ -213,9 +244,9 @@ export default {
     // 将选中的内容删除
     delete_content: function () {
       let that = this;
-      //  checkBtnCheckedList 这个数组只根据leftarr的索引保存了布尔值数组，此处为了数据库转换方便，将其转换为notebookid的数组，
+      //  checkBtnCheckedList 这个数组只根据NoteBookList的索引保存了布尔值数组，此处为了数据库转换方便，将其转换为notebookid的数组，
       //  只保留值为true的id
-      let del_object = { del_sql_notebookid_list: this.check_id_list }; // 此数组中存放的id为数据库显示的id，比leftarr 的id +1
+      let del_object = { del_sql_notebookid_list: this.check_id_list }; // 此数组中存放的id为数据库显示的id，比NoteBookList 的id +1
 
       console.log(this.check_id_list);
       axios.post(`${this.server_url}/delContent`, del_object).then((res) => {
@@ -226,18 +257,18 @@ export default {
         that.checkBtnCheckedList = [];
         that.check_bool = false;
         // 重新填充左边
-        that.leftPost();
+        that.getAllArticle();
       });
     },
     // 将内容保存到云
     save: function () {
-      if (this.leftArr == []) {
+      if (this.NoteBookList == []) {
         return;
       }
 
       let that = this;
-      // 完成之后修改leftarr左边显示的值
-      that.leftArr.forEach((element) => {
+      // 完成之后修改NoteBookList左边显示的值
+      that.NoteBookList.forEach((element) => {
         if (element.Notebookid == that.checkId) {
           //  如果新旧值相同，不必提交到服务器
           if (
@@ -267,19 +298,13 @@ export default {
         }
       });
     },
-    // 接口返回左边列表(包括所有的文章信息)
-    leftPost: function () {
+    // 获取所有的文章信息并且渲染视图
+    getAllArticle: function () {
       let that = this;
       axios.get(this.server_url + "/getNotebookList").then(
         function (response) {
-          that.leftArr = response.data;
-
-          // 如果文章列表为空。停止查询
-          if (that.leftArr.length != 0) {
-            // 将第一篇文章内容查询
-            that.byIdSelContent(that.leftArr[0].Notebookid);
-          }
-
+          that.NoteBookList = response.data;
+          that.QueryTopArticle();
           that.$nextTick(function () {
             // document.getElementById("left").scrollTop = 1000000;
           });
@@ -292,7 +317,7 @@ export default {
     // 根据id查询标题和内容
     byIdSelContent: function (Notebookid) {
       // 如果文章列表为空。停止查询
-      if (this.leftArr.length == 0) {
+      if (this.NoteBookList.length == 0) {
         return;
       }
 
@@ -308,7 +333,6 @@ export default {
           }
 
           that.checkId = response.data[0].Notebookid;
-
           that.notebookContent = response.data[0].content;
           that.notebookTitle = response.data[0].title;
         })
@@ -335,7 +359,7 @@ export default {
             console.error("接口返回数据为空");
           }
           //返回的是只有一个元素的数组，还是需要用下标0取
-          that.leftArr.push(response["data"][0]);
+          that.NoteBookList.push(response["data"][0]);
           // 滚动条到底
           that.$nextTick(function () {
             document.getElementById("left").scrollTop = 1000000;
@@ -355,8 +379,16 @@ export default {
         })
         .then((res) => {
           this.folders.push(res.data[0]);
-          console.log(this.folders)
+          console.log(this.folders);
         });
+    },
+    // 查询列表中的第一篇文章
+    QueryTopArticle: function () {
+      // 如果文章列表为空。停止查询
+      if (this.NoteBookList.length != 0) {
+        // 将第一篇文章内容查询
+        this.byIdSelContent(this.NoteBookList[0].Notebookid);
+      }
     },
   },
   // 页面加载时执行
@@ -369,7 +401,7 @@ export default {
         this.$router.push("/login"); // 出现
       });
 
-    this.leftPost();
+    this.getAllArticle();
     // 填充文件夹
     axios.get(`${this.server_url}/QueryFolder`).then((res) => {
       this.folders = res.data;
@@ -403,16 +435,16 @@ $left-width: 300px;
     display: flex;
     flex-flow: column nowrap;
     align-items: flex-start;
-    .addFolderBtn{
-      background:#255475;
+    .addFolderBtn {
+      background: #255475;
       border: 0;
       font-size: large;
-      border-radius:5px ;
+      border-radius: 5px;
       padding: 5px 5px;
       color: white;
     }
-    .addFolderBtn:hover{
-      background-color: #55A6FB;
+    .addFolderBtn:hover {
+      background-color: #55a6fb;
     }
     ul {
       list-style: none;
@@ -502,7 +534,7 @@ $left-width: 300px;
         margin-left: 10px;
         height: 44px;
       }
-      #ImageButtonAdd:hover{
+      #ImageButtonAdd:hover {
         transform: scale(1.2);
       }
     }
@@ -633,5 +665,9 @@ $left-width: 300px;
       }
     }
   }
+}
+
+.buttonchecked{
+  background-color: #55a6fb;
 }
 </style>

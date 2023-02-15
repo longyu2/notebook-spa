@@ -49,13 +49,13 @@ export default {
 
       let jsonObj = {
         folder_id: item.folder_id,
-        check_id_list: id_list,
+        article_id: id_list[0],
       };
 
       axios
-        .post(`${this.server_url}/FolderAddArticle`, jsonObj)
+        .put(`${this.server_url}/FolderAddArticle`, jsonObj)
         .then((results) => {
-          console.log(results);
+          console.log(results.data);
           this.close();
         });
     },

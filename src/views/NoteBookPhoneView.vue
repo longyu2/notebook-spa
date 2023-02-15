@@ -284,7 +284,6 @@ export default {
   }
   #txtContent {
     margin-top: 10px;
-
     height: 90vh;
     width: 95vw;
     font-size: 4vw;
