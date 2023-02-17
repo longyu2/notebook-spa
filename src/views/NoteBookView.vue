@@ -48,7 +48,7 @@
 
           <img
             id="ImageButtonAdd"
-            @click="addNewNotebook"
+            @click="addNewNotebook()"
             src="@/assets/addNewNoteBook.svg"
             alt=""
           />
@@ -61,7 +61,7 @@
             v-for="(item, index) in NoteBookList"
             :key="index"
             @click="byIdSelContent(item['Notebookid'])"
-            :class="{buttonchecked:item.Notebookid === checkId}"
+            :class="{ buttonchecked: item.Notebookid === checkId }"
           >
             <input
               type="checkbox"
@@ -73,7 +73,7 @@
             />
 
             <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
-            <div class="article-information-box" >
+            <div class="article-information-box">
               <p class="p_1" v-text="item['title'].substring(0, 14)"></p>
               <p class="p_2" v-text="item['content'].substring(0, 16)"></p>
               <p class="p_3" v-text="item['createtime']"></p>
@@ -153,7 +153,7 @@ export default {
       check_id_list: [], //用来保存被选中的文章的id,只存储 已选中的id
       check_bool: false, //当checkBtnCheckedList 的值全为false，check——bool为false
       folders: [], // 文件夹
-      folderChecked: { folderId: "-2", folderName: "所有笔记" },
+      folderChecked: { folderId: -2, folderName: "所有笔记" },
       IsShowMoveToFolder: false, // 是否显示移动文件夹的悬浮窗
     };
   },
@@ -314,7 +314,7 @@ export default {
     // 获取所有的文章信息并且渲染视图
     getAllArticle: function () {
       let that = this;
-      axios.get(this.server_url + "/getNotebookList").then(
+      axios.get(this.server_url + "/articles").then(
         function (response) {
           that.NoteBookList = response.data;
           that.QueryTopArticle();
@@ -362,17 +362,15 @@ export default {
       let that = this;
       this.save();
       axios
-        .get(this.server_url + "/addnewNotebook")
-        .then(function (response) {
-          that.checkId = response.data[0].Notebookid;
-          console.log(response.data[0].Notebookid);
+        // 在发起请求时，传给后端此时的folderid
+        .post(`${this.server_url}/articles`,{folderid:this.folderChecked.folderId})
+        .then(function (result) {
+          const newArticle = result.data.data.articleInfo
+          that.checkId = newArticle.Notebookid;
           that.notebookContent = "";
           that.notebookTitle = "";
-          if (response.data == null) {
-            console.error("接口返回数据为空");
-          }
           //返回的是只有一个元素的数组，还是需要用下标0取
-          that.NoteBookList.push(response["data"][0]);
+          that.NoteBookList.push(newArticle);
           // 滚动条到底
           that.$nextTick(function () {
             document.getElementById("left").scrollTop = 1000000;
@@ -550,7 +548,6 @@ $left-width: 300px;
             border: 0ch;
             border-radius: 5px;
             line-height: 18px;
-
           }
           .move-btn:hover {
             background-color: orange;
