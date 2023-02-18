@@ -214,8 +214,7 @@ export default {
     },
     // 导出0
     outputJson: function () {
-      axios.get(`${this.server_url}/output`).then((results) => {
-        console.log(results.data);
+      axios.get(`${this.server_url}/backups`).then((results) => {
         // 生成a标签并调用下载
         let link = document.createElement("a");
         link.download = "output.json";
