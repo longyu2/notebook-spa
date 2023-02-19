@@ -6,8 +6,8 @@
 export default {
   data() {
     return {
-      server_url: "http://127.0.0.1:9999/v1",
-      // server_url: "https://note.misaka-mikoto.cn:9999/v1",
+      // server_url: "http://127.0.0.1:9999/v1",
+      server_url: "https://note.misaka-mikoto.cn:9999/v1",
     };
   },
   methods: {
