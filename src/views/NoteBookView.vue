@@ -214,13 +214,7 @@ export default {
     },
     // 导出0
     outputJson: function () {
-      axios.get(`${this.server_url}/backups`).then((results) => {
-        // 生成a标签并调用下载
-        let link = document.createElement("a");
-        link.download = "output.json";
-        link.href = "data:text/plain," + JSON.stringify(results.data);
-        link.click();
-      });
+      alert("导出功能已停用")
     },
 
     // closeMoveCallback 根据emit事件关闭 文件夹移动框
