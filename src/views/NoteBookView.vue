@@ -1,3 +1,60 @@
+<script setup>
+import { ref } from "vue";
+const props = defineProps(["server_url"]);
+
+let folders = ref([]); // 定义响应式文件夹
+
+//初始化，填充文件夹
+axios
+  .get(`${props.server_url}/QueryFolder`)
+  .then((res) => (folders.value = res.data));
+
+// 新建文件夹
+function createFolder() {
+  const name = prompt("请输入文件夹名");
+  axios
+    .post(`${props.server_url}/folders`, {
+      folder_name: name,
+    })
+    .then((res) => {
+      folders.value.push(res.data[0]);
+      console.log(this.folders);
+    });
+}
+// 文件夹更名
+function folderRename(folder_id, index) {
+  const newName = prompt("请输入新文件夹名");
+  axios
+    .put(`${props.server_url}/folders`, { folder_id, newName })
+    .then((result) => {
+      console.log(result.data);
+      folders.value[index].folder_name = newName;
+    });
+}
+
+let foldeDelDialogVisible = ref(false); // 控制删除对话框的出现
+let delFolder = { id: 0, index: 0 }; // 定义一个将要确认删除的文件夹的id 以及在数组中的索引
+
+// 文件夹删除
+function deleteFolder(folder_id, index) {
+  foldeDelDialogVisible.value = true;
+  delFolder = { folder_id, index };
+  console.log(delFolder);
+}
+// 确认删除
+function confirmDelFolder() {
+  foldeDelDialogVisible.value = false;
+  console.log(delFolder.id);
+  const folder_id = delFolder.id;
+  axios
+    .delete(`${props.server_url}/folders`, {
+      params: { folder_id: delFolder.folder_id },
+    })
+    .then((restults) => console.log(restults.data));
+  folders.value.splice(delFolder.index, 1);
+}
+</script>
+
 <template>
   <div id="notebook-box">
     <div id="folder">
@@ -16,14 +73,41 @@
           未分类
         </li>
         <li
-          v-for="item in folders"
+          v-for="(item, index) in folders"
           :class="{ buttonchecked: folderChecked.folderId === item.folder_id }"
           @click="changeFolder(item.folder_id, item.folder_name)"
-          :key="item.id"
+          :key="index"
         >
+          <span style="color: red" @click="deleteFolder(item.folder_id, index)"
+            >X</span
+          >
           {{ item.folder_name }}
+
+          <span
+            style="color: blueviolet"
+            @click="folderRename(item.folder_id, index)"
+            >更名</span
+          >
         </li>
       </ul>
+
+      <el-dialog
+        v-model="foldeDelDialogVisible"
+        title="Tips"
+        width="30%"
+        :before-close="handleClose"
+      >
+        <span> 你确定要删除这个文件夹吗？ </span>
+
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="foldeDelDialogVisible = false">取消</el-button>
+            <el-button type="primary" @click="confirmDelFolder()">
+              确认
+            </el-button>
+          </span>
+        </template>
+      </el-dialog>
     </div>
 
     <div class="article-list-box">
@@ -152,7 +236,7 @@ export default {
       checkBtnCheckedList: [], // 用来保存被选中的文章的id, 以布尔值存储
       check_id_list: [], //用来保存被选中的文章的id,只存储 已选中的id
       check_bool: false, //当checkBtnCheckedList 的值全为false，check——bool为false
-      folders: [], // 文件夹
+
       folderChecked: { folderId: -2, folderName: "所有笔记" },
       IsShowMoveToFolder: false, // 是否显示移动文件夹的悬浮窗
     };
@@ -214,7 +298,7 @@ export default {
     },
     // 导出0
     outputJson: function () {
-      alert("导出功能已停用")
+      alert("导出功能已停用");
     },
 
     // closeMoveCallback 根据emit事件关闭 文件夹移动框
@@ -356,9 +440,11 @@ export default {
       this.save();
       axios
         // 在发起请求时，传给后端此时的folderid
-        .post(`${this.server_url}/articles`,{folderid:this.folderChecked.folderId})
+        .post(`${this.server_url}/articles`, {
+          folderid: this.folderChecked.folderId,
+        })
         .then(function (result) {
-          const newArticle = result.data.data.articleInfo
+          const newArticle = result.data.data.articleInfo;
           that.checkId = newArticle.Notebookid;
           that.notebookContent = "";
           that.notebookTitle = "";
@@ -371,19 +457,6 @@ export default {
         })
         .catch(function (error) {
           console.log(error);
-        });
-    },
-    // 新建文件夹
-    createFolder: function () {
-      const name = prompt("请输入文件夹名");
-
-      axios
-        .post(`${this.server_url}/CreateFolder`, {
-          folder_name: name,
-        })
-        .then((res) => {
-          this.folders.push(res.data[0]);
-          console.log(this.folders);
         });
     },
     // 查询列表中的第一篇文章
@@ -406,10 +479,6 @@ export default {
       });
 
     this.getAllArticle();
-    // 填充文件夹
-    axios.get(`${this.server_url}/QueryFolder`).then((res) => {
-      this.folders = res.data;
-    });
   },
 };
 </script>
