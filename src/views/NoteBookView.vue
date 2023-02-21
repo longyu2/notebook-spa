@@ -204,7 +204,7 @@ function confirmDelFolder() {
 </template>
 
 <script>
-import MoveToFolder from "../components/MoveToFolder.vue";
+import MoveToFolder from "@/components/pc/MoveToFolder.vue";
 import axios from "axios";
 // 请求拦截, 给axios 添加请求头，设置token
 axios.interceptors.request.use(

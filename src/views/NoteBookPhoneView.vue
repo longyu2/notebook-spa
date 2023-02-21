@@ -1,50 +1,6 @@
-<template>
-  <div class="container"></div>
-
-  <div id="NoteBook-List" v-show="!is_Content_Show">
-    <img
-      v-show="!is_Content_Show"
-      id="ImageButtonAdd"
-      src="@/assets//addNewNotebook.svg"
-      @click="addNewNotebook()"
-    />
-
-    <ul id="List-ul">
-      <li v-for="i in leftArr" :key="i" @click="byIdSelContent(i.Notebookid)">
-        <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
-        <p class="p_1" v-html="i.title.substring(0, 16)"></p>
-        <p class="p_2" v-html="i.content.substring(0, 18)"></p>
-        <p class="p_3" v-html="i.createtime"></p>
-      </li>
-    </ul>
-  </div>
-
-  <div id="NoteBook-Content" v-show="is_Content_Show">
-    <img
-      class="return-btn"
-      src="@/assets/返回箭头.svg"
-      id="return-button"
-      @click="change_list_Or_Content()"
-    />
-
-    <input
-      type="text"
-      placeholder="标题"
-      id="TextBoxTitle"
-      v-model="notebookTitle"
-    />
-    <hr />
-    <textarea
-      name="reworkmes"
-      placeholder="开始书写"
-      id="txtContent"
-      style="overflow: auto"
-      v-model="notebookContent"
-    ></textarea>
-  </div>
-</template>
-
-<script>
+<script setup>
+import { ref } from "vue";
+import { server_url } from "@/assets/constants/index.js";
 import axios from "axios";
 // 请求拦截, 给axios 添加请求头，设置token
 axios.interceptors.request.use(
@@ -58,6 +14,73 @@ axios.interceptors.request.use(
   }
 );
 
+const articleList = ref([]);
+const loading = ref(false);
+const finished = ref(false);
+
+console.log(server_url);
+
+function getAllArticle() {
+  axios.get(server_url + "/getNotebookList").then(
+    function (response) {
+      // 每次获取10条
+      articleList.value = response.data;
+      loading.value = true;
+      finished.value = true;
+    },
+    function (err) {
+      console.log(err);
+    }
+  );
+}
+
+getAllArticle(); // 查询所有文章
+
+// 根据id查询标题和内容
+function byIdSelContent(Notebookid) {
+  // router.push("/content");
+}
+</script>
+<template>
+  <div id="NoteBook-List">
+    <img
+      v-show="!is_Content_Show"
+      id="ImageButtonAdd"
+      src="@/assets//addNewNotebook.svg"
+      @click="addNewNotebook()"
+    />
+
+    <van-list
+      v-model:loading="loading"
+      :finished="finished"
+      finished-text="没有更多了"
+      @load="getAllArticle"
+    >
+      <van-cell v-for="item in articleList" :key="item.title" class="van-cell">
+        <div class="cell-content">
+          <p class="item-title">
+            {{ item.title.substring(0, 13) }}
+          </p>
+          <p class="item-content">
+            {{ item.content.substring(0, 46) }}
+          </p>
+
+          <span class="item-createtime">
+            {{ item.createtime }}
+          </span>
+        </div>
+      </van-cell>
+    </van-list>
+
+    <van-tag type="success">df</van-tag>
+    <van-tag type="danger">标签</van-tag>
+    <van-tag type="warning">标签</van-tag>
+  </div>
+
+  <!-- <router-view></router-view> -->
+</template>
+
+<script>
 export default {
   props: ["server_url"],
   data() {
@@ -128,83 +151,68 @@ export default {
         });
     },
 
-    // 接口返回左边列表
-    leftPost: function () {
-      let that = this;
-      axios.get(this.server_url + "/getNotebookList").then(
-        function (response) {
-          that.leftArr = response.data;
-          // 将第一篇文章内容查询
-          that.byIdSelContent(that.leftArr[0].Notebookid);
-        },
-        function (err) {
-          console.log(err);
-        }
-      );
-    },
+    // // 根据id查询标题和内容
+    // byIdSelContent: function (Notebookid) {
+    //   this.change_list_Or_Content(); // 切换到内容页
 
-    // 根据id查询标题和内容
-    byIdSelContent: function (Notebookid) {
-      this.change_list_Or_Content(); // 切换到内容页
+    //   this.save(); // 切换时存储
 
-      this.save(); // 切换时存储
+    //   // 禁用save方法，因为查询标题和内容会改变notebookTitle和notebookContent 的值，会触发不必要的提交，在解除禁用
+    //   this.check_submit = false;
 
-      // 禁用save方法，因为查询标题和内容会改变notebookTitle和notebookContent 的值，会触发不必要的提交，在解除禁用
-      this.check_submit = false;
-
-      let that = this;
-      axios
-        .post(this.server_url + "/byIdSelContent", {
-          id: Notebookid,
-        })
-        .then(function (response) {
-          // console.log(response.data);
-          that.checkId = response.data[0].Notebookid;
-          that.notebookContent = response.data[0].content;
-          that.notebookTitle = response.data[0].title;
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      that.check_submit = true; //接触save方法的禁用
-    },
+    //   let that = this;
+    //   axios
+    //     .post(this.server_url + "/byIdSelContent", {
+    //       id: Notebookid,
+    //     })
+    //     .then(function (response) {
+    //       // console.log(response.data);
+    //       that.checkId = response.data[0].Notebookid;
+    //       that.notebookContent = response.data[0].content;
+    //       that.notebookTitle = response.data[0].title;
+    //     })
+    //     .catch(function (error) {
+    //       console.log(error);
+    //     });
+    //   that.check_submit = true; //接触save方法的禁用
+    // },
     // 添加新文章
-    addNewNotebook: function () {
-      this.change_list_Or_Content(); // 切换到内容页
-      let that = this;
-      this.save();
-      axios
-        .get(this.server_url + "/addnewNotebook")
-        .then(function (response) {
-          that.checkId = response.data[0].Notebookid;
-          console.log(response.data[0].Notebookid);
-          that.notebookContent = "";
-          that.notebookTitle = "";
-          if (response.data == null) {
-            console.error("接口返回数据为空");
-          }
-          //返回的是只有一个元素的数组，还是需要用下标0取
-          that.leftArr.push(response["data"][0]);
-          // 滚动条到底
-          that.$nextTick(function () {
-            document.getElementById("left").scrollTop = 1000000;
-          });
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-    },
-    //切换列表页与内容页面
-    change_list_Or_Content: function () {
-      // 值为true则进入内容页，反之则返回列表页
-      this.is_Content_Show = !this.is_Content_Show;
-      console.log("change");
-    },
+    //   addNewNotebook: function () {
+    //     this.change_list_Or_Content(); // 切换到内容页
+    //     let that = this;
+    //     this.save();
+    //     axios
+    //       .get(this.server_url + "/addnewNotebook")
+    //       .then(function (response) {
+    //         that.checkId = response.data[0].Notebookid;
+    //         console.log(response.data[0].Notebookid);
+    //         that.notebookContent = "";
+    //         that.notebookTitle = "";
+    //         if (response.data == null) {
+    //           console.error("接口返回数据为空");
+    //         }
+    //         //返回的是只有一个元素的数组，还是需要用下标0取
+    //         that.leftArr.push(response["data"][0]);
+    //         // 滚动条到底
+    //         that.$nextTick(function () {
+    //           document.getElementById("left").scrollTop = 1000000;
+    //         });
+    //       })
+    //       .catch(function (error) {
+    //         console.log(error);
+    //       });
+    //   },
+    //   //切换列表页与内容页面
+    //   change_list_Or_Content: function () {
+    //     // 值为true则进入内容页，反之则返回列表页
+    //     this.is_Content_Show = !this.is_Content_Show;
+    //     console.log("change");
+    //   },
   },
 
   // 页面加载时执行
   created: function () {
-    this.leftPost();
+    // this.leftPost();
   },
 };
 </script>
@@ -240,20 +248,27 @@ export default {
       p {
         margin-top: 3vmin;
       }
+    }
+  }
+}
 
-      .p_1 {
-        font-size: 6vmin;
-      }
-
-      .p_2 {
-        font-size: 5vmin;
-      }
-
-      .p_3 {
-        font-size: 5vmin;
-        margin-left: 10px;
-        color: gray;
-      }
+.van-cell {
+  padding-left: 5%;
+  .cell-content {
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    .item-title {
+      font-size: 4vw;
+      color: #333;
+    }
+    .item-content {
+      font-size: 3.5vw;
+      text-align: left;
+    }
+    .item-createtime {
+      font-size: 3vw;
     }
   }
 }
