@@ -1,2 +1,2 @@
 // 中转导出
-export {server_url} from "./server_url.js"
+export { server_url } from "./server_url.js";

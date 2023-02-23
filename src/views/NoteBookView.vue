@@ -359,7 +359,6 @@ export default {
       let that = this;
       // 完成之后修改NoteBookList左边显示的值
 
-   
       that.NoteBookList.forEach((element) => {
         if (element.Notebookid == that.checkId) {
           //  如果新旧值相同，不必提交到服务器

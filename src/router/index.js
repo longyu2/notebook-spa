@@ -30,13 +30,14 @@ const router = createRouter({
       redirect: "/notebook_phone/list",
       children: [
         {
-          path: 'list',
-          component: ArticleList
+          path: "list",
+          component: ArticleList,
         },
         {
           path: "content",
-          component: ArticleContent
-        }]
+          component: ArticleContent,
+        },
+      ],
     },
   ],
 });

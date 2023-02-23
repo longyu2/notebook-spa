@@ -43,19 +43,37 @@ function save() {
       title: title.value,
     })
     .then(function (response) {
-      console.log(response.data);
+      if (response.data == null) {
+        console.error("error");
+      }
     });
 }
 </script>
 
 <template>
-  <div>
-    <van-icon name="arrow-left" @click="router.push('/notebook_phone')" />
+  <div class="article-content-contanier">
+    <van-icon
+      name="arrow-left"
+      size="5vw"
+      class="return-icon"
+      @click="router.push('/notebook_phone')"
+    />
     <van-field placeholder="请输入标题" v-model="title" />
-    <van-field type="textarea" placeholder="请输入正文" v-model="content" />
-
-    <div>sdsdsd{{ props.checkArticleId }}</div>
+    <van-field
+      type="textarea"
+      placeholder="请输入正文"
+      autosize
+      v-model="content"
+    />
   </div>
 </template>
 
-<style></style>
+<style lang="scss">
+.article-content-contanier {
+  margin: 0%;
+  padding: 0%;
+  .return-icon {
+    margin: 3vw 3vw;
+  }
+}
+</style>
