@@ -358,9 +358,13 @@ export default {
 
       let that = this;
       // 完成之后修改NoteBookList左边显示的值
+
+   
       that.NoteBookList.forEach((element) => {
         if (element.Notebookid == that.checkId) {
           //  如果新旧值相同，不必提交到服务器
+
+          // 此处foreach 是防止因为查询单篇文章更改 watch 导致重复触发网络请求
           if (
             element.content == that.notebookContent &&
             element.title == that.notebookTitle

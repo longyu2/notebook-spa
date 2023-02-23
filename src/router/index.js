@@ -2,7 +2,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import Login from "@/views/LoginView.vue";
 import NoteBookView from "@/views/NoteBookView.vue";
 import NoteBookPhoneView from "@/views/NoteBookPhoneView.vue";
-import ArticleContent from "@/components/phone/ArticleContent.vue"
+import ArticleContent from "@/components/phone/ArticleContent.vue";
+import ArticleList from "@/components/phone/ArticleList.vue";
 import App from "@/App.vue";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -26,10 +27,16 @@ const router = createRouter({
       path: "/notebook_phone",
       name: "phone",
       component: NoteBookPhoneView,
-      children: [{
-        path: "content",
-        component: ArticleContent
-      }]
+      redirect: "/notebook_phone/list",
+      children: [
+        {
+          path: 'list',
+          component: ArticleList
+        },
+        {
+          path: "content",
+          component: ArticleContent
+        }]
     },
   ],
 });
