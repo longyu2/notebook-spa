@@ -42,7 +42,7 @@ function getAllArticle() {
 function addNewNotebook() {
   axios
     // 在发起请求时，传给后端此时的folderid
-    .post(`${this.server_url}/articles`, {
+    .post(`${server_url}/articles`, {
       folderid: -1,
     })
     .then((result) => {

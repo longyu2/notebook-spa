@@ -68,7 +68,7 @@ function save() {
   </div>
 </template>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .article-content-contanier {
   margin: 0%;
   padding: 0%;

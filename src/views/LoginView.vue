@@ -1,17 +1,29 @@
 <template>
-  <div id="Log-box">
-    <h2 style="color: #ff6700">登录</h2>
-    <div class="middle">
-      <p class="text" style="text-align: left">用户名：</p>
-      <input type="text" v-model="username" class="input" />
+  <div class="login-contanier">
+    <div class="login-box">
+      <div class="login-content">
+        <h3>登录</h3>
+        <p>用户名：</p>
 
-      <p class="text">密码：</p>
+        <el-input
+          class="el-input"
+          v-model="username"
+          placeholder="Please input"
+        />
+        <p>密码：</p>
 
-      <input type="password" v-model="userpwd" id="TextBox2" class="input" />
-
-      <button id="BtnLogin" @click="login_click()">Login</button>
-
-      <span>忘记密码</span>
+        <el-input
+          class="el-input"
+          v-model="userpwd"
+          type="password"
+          placeholder="Please input password"
+          show-password
+        />
+        <el-button class="login-btn" type="success" @click="login_click()"
+          >登录</el-button
+        >
+        <a class="forget" href="">忘记密码? </a>
+      </div>
     </div>
   </div>
 </template>
@@ -47,73 +59,66 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 * {
   margin: 0%;
   padding: 0%;
 }
-.white {
+p,
+a,
+h3 {
   color: white;
 }
-
-.red {
-  color: red;
-}
-
-#Log-box {
-  width: 380px;
-  padding: 50px 30px;
-  border: 1px solid black;
-  margin: 100px auto;
-  background: white;
+.login-contanier {
+  height: 100vh;
+  background-image: url("@/assets/images/187.jpg");
+  background-size: cover;
+  justify-content: center;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 20px;
-  h1 {
-    margin: 0%;
+
+  .login-box {
+    position: relative;
+    z-index: 4;
+    width: 400px;
+    height: 500px;
+    margin-top: 200px;
+    margin-left: 600px;
+    .login-content {
+      padding: 20px 30px;
+      position: relative;
+      width: 400px;
+      height: 350px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: space-around;
+      z-index: 99;
+
+      .login-btn {
+        margin-top: 10px;
+        width: 70px;
+      }
+      .el-input {
+        color: fdfs;
+      }
+      .forget {
+        font-size: small;
+        font-weight: 400;
+      }
+    }
   }
-  .middle {
-    margin: 0%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-
-    align-items: flex-start;
-
-    .text {
-      margin-top: 30px;
-      font-size: medium;
-    }
-    .input {
-      margin-top: 10px;
-      width: 270px;
-      height: 45px;
-      border-radius: 15px;
-      border: 1px solid slateblue;
-      padding-left: 15px;
-    }
-
-    #BtnLogin {
-      margin-top: 60px;
-      color: white;
-      background: #ff6700;
-      font-size: 16px;
-      border: 0px;
-      width: 290px;
-      height: 45px;
-      border-radius: 15px;
-    }
-
-    #BtnLogin:hover {
-      background: orange;
-      color: whitesmoke;
-    }
-
-    span {
-      margin-top: 30px;
-    }
+  .login-box::after {
+    /* 必须要写的属性 content */
+    content: "";
+    padding: 20px 30px;
+    background-color: black;
+    opacity: 27%;
+    width: 400px;
+    height: 400px;
+    z-index: 3;
+    position: absolute;
+    top: 0px;
+    border-radius: 20px;
   }
 }
 </style>
