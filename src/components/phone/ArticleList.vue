@@ -74,7 +74,7 @@ function toArticleContent(checkArticleId) {
       @load="getAllArticle"
     >
       <van-cell
-        v-for="item in articleList"
+        v-for="item in [...articleList].reverse()"
         :key="item.title"
         @click="toArticleContent(item.Notebookid)"
         class="van-cell"

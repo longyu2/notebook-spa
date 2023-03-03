@@ -63,7 +63,6 @@ export default {
       this.$emit("someEvent");
     },
   },
-  created: function () {},
 };
 </script>
 

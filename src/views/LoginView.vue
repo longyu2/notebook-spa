@@ -1,3 +1,7 @@
+<script setup>
+import { server_url } from "@/assets/constants/index.js";
+</script>
+
 <template>
   <div class="login-contanier">
     <div class="login-box">
@@ -31,7 +35,6 @@
 <script>
 import axios from "axios";
 export default {
-  props: ["server_url"],
   data() {
     return {
       isloginShow: true,
@@ -42,7 +45,7 @@ export default {
   methods: {
     login_click() {
       axios
-        .post(`${this.server_url}/session`, {
+        .post(`${server_url}/session`, {
           username: this.username,
           passwd: this.userpwd,
         })

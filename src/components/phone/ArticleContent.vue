@@ -17,19 +17,21 @@ axios.interceptors.request.use(
 
 const router = useRouter();
 const props = defineProps(["checkArticleId"]); // 从父组件取得文章id
-let [title, content] = [ref(""), ref("")]; // 定义标题和内容
+let title,
+  content = null;
 
 // 根据id 查询 文章内容
 axios
   .post(server_url + "/byIdSelContent", { id: props.checkArticleId })
   .then((response) => {
-    content.value = response.data[0].content;
-    title.value = response.data[0].title;
+    content = ref(response.data[0].content);
+    title = ref(response.data[0].title);
   });
 
 // 多个来源组成的数组
 watch([title, content], ([newTitle, newContent]) => {
   console.log(`x is ${newTitle} and y is ${newContent}`);
+  alert("被触发了");
   save();
 });
 
