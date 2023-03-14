@@ -104,25 +104,7 @@ export default {
   //       }
   //     }
   //   },
-  //   // 将选中的内容删除
-  //   delete_content: function () {
-  //     let that = this;
-  //     //  checkBtnCheckedList 这个数组只根据NoteBookList的索引保存了布尔值数组，此处为了数据库转换方便，将其转换为notebookid的数组，
-  //     //  只保留值为true的id
-  //     let del_object = { del_sql_notebookid_list: this.check_id_list }; // 此数组中存放的id为数据库显示的id，比NoteBookList 的id +1
-
-  //     console.log(this.check_id_list);
-  //     axios.post(`${this.server_url}/delContent`, del_object).then((res) => {
-  //       if (res == null) {
-  //         console.error("res is null!");
-  //       }
-  //       // 清除选中
-  //       that.checkBtnCheckedList = [];
-  //       that.check_bool = false;
-  //       // 重新填充左边
-  //       that.getAllArticle();
-  //     });
-  //   },
+  
 
   //   // 查询列表中的第一篇文章
   //   QueryTopArticle: function () {

@@ -3,6 +3,7 @@
 </template>
 
 <script>
+import axios from "axios";
 export default {
   data() {
     return {
@@ -24,6 +25,16 @@ export default {
     } else {
       this.$router.replace("/notebook");
     }
+
+    // 页面加载时执行
+
+    // 测试token 是否有效
+    axios
+      .get(`${this.server_url}/testToken`)
+      .then((results) => {})
+      .catch((err) => {
+        this.$router.push("/login"); // 出现
+      });
   },
 };
 </script>

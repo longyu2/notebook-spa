@@ -22,17 +22,24 @@ axios
   .get(`${server_url}/QueryFolder`)
   .then((res) => (folders.value = res.data));
 
+let addFolderDialogForm = ref({
+  Visible: false, // 用于控制新增文件夹的对话框的显示与否
+  newFolderName: "", // 输入的新文件夹名
+});
+
 // 新建文件夹
 function createFolder() {
-  const name = prompt("请输入文件夹名");
-  axios
-    .post(`${server_url}/folders`, {
-      folder_name: name,
-    })
-    .then((res) => {
-      folders.value.push(res.data[0]);
-      console.log(this.folders);
-    });
+  // const name = prompt("请输入文件夹名");
+  addFolderDialogForm.value.Visible = true;
+
+  // axios
+  //   .post(`${server_url}/folders`, {
+  //     folder_name: name,
+  //   })
+  //   .then((res) => {
+  //     folders.value.push(res.data[0]);
+  //     console.log(this.folders);
+  //   });
 }
 // 文件夹更名
 function folderRename(folder_id, index) {
@@ -85,12 +92,13 @@ function confirmDelFolder() {
 <template>
   <div id="folder">
     <h2>
-      {{ folderChecked.folderName }}
+      {{
+        folderChecked.folderName.length > 9
+          ? folderChecked.folderName.substring(0, 8) + "..."
+          : folderChecked.folderName
+      }}
     </h2>
 
-    <el-button type="primary" size="large" @click="createFolder"
-      >新建文件夹</el-button
-    >
     <ul>
       <li
         @click="changeFolder(-2, '全部笔记')"
@@ -104,30 +112,43 @@ function confirmDelFolder() {
       >
         未分类
       </li>
-      <h3>我的文件夹</h3>
 
-      <el-dropdown
+      <div class="my-folder">
+        我的文件夹 <el-icon @click="createFolder"><Plus /></el-icon>
+      </div>
+
+      <li
+        class="folder-item"
         v-for="(item, index) in folders"
         :key="index"
-        split-button
-        type="primary"
         @click="changeFolder(item.folder_id, item.folder_name)"
         :class="{ buttonchecked: folderChecked.folderId === item.folder_id }"
       >
-        {{ item.folder_name }}
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item @click="deleteFolder(item.folder_id, index)"
-              >删除</el-dropdown-item
-            >
-            <el-dropdown-item @click="folderRename(item.folder_id, index)"
-              >重命名</el-dropdown-item
-            >
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+        {{
+          item.folder_name.length > 9
+            ? item.folder_name.substring(0, 8) + "..."
+            : item.folder_name
+        }}
+
+        <el-dropdown placement="bottom" trigger="click" class="dropdown">
+          <el-icon class="el-icon--right">
+            <arrow-down />
+          </el-icon>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item @click="deleteFolder(item.folder_id, index)"
+                >删除</el-dropdown-item
+              >
+              <el-dropdown-item @click="folderRename(item.folder_id, index)"
+                >重命名</el-dropdown-item
+              >
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </li>
     </ul>
 
+    <!-- 删除对话框 -->
     <el-dialog
       v-model="foldeDelDialogVisible"
       title="Tips"
@@ -144,6 +165,31 @@ function confirmDelFolder() {
         </span>
       </template>
     </el-dialog>
+
+    <!-- 新增对话框 -->
+    <el-dialog v-model="addFolderDialogForm.Visible" title="Shipping address">
+      <el-form>
+        <el-form-item label="Promotion name" :label-width="formLabelWidth">
+          <el-input
+            v-model="addFolderDialogForm.newFolderName"
+            autocomplete="off"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="addFolderDialogForm.Visible = false"
+            >Cancel</el-button
+          >
+          <el-button
+            type="primary"
+            @click="addFolderDialogForm.Visible = false"
+          >
+            Confirm
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 
   <ArticleList :folderId="folderChecked.folderId"> </ArticleList>
@@ -154,39 +200,70 @@ $black-border: 1px solid black;
 $radius: 10px;
 $box-height: 905px;
 $left-width: 300px;
+
 #folder {
   flex-shrink: 0;
-  width: 200px;
+  width: 230px;
   height: 865px;
   background-color: white;
   border-radius: $radius;
-  padding: 20px 20px;
+  padding: 20px 15px;
   display: flex;
   flex-flow: column nowrap;
   align-items: flex-start;
   .addFolderBtn:hover {
-    background-color: #55a6fb;
+    background-color: #a0cfff;
   }
   ul {
-    width: 100%;
+    width: inherit;
     list-style: none;
     display: flex;
     flex-flow: column nowrap;
 
+    .my-folder {
+      font-weight: 600;
+      width: 50%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .folder-item {
+      margin-left: 10px;
+    }
     li {
+      cursor: pointer;
+      font-size: medium;
+      border-radius: 8px;
+      padding: 0px 6px;
       border: 0px;
-      line-height: 40px;
-      width: 100%;
-
+      line-height: 36px;
+      height: 36px;
+      width: 90%;
+      display: flex;
+      justify-content: space-between;
       button {
         background: 0%;
         border: 0px;
+      }
+      .dropdown {
+        .el-icon--right {
+          border-radius: 50%;
+          float: right;
+          width: 36px;
+          height: 36px;
+          line-height: 30px;
+          display: flex;
+          justify-content: center;
+        }
+        .el-icon--right:hover {
+          background-color: #a0cfff;
+        }
       }
     }
   }
 }
 
 .buttonchecked {
-  background-color: #c0c0c0;
+  background-color: #c6e2ff;
 }
 </style>

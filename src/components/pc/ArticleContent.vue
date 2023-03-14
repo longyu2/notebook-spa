@@ -60,7 +60,14 @@ watch(
 <template>
   <div class="article-content-box">
     <div id="TopRight">
-      {{ props.articleId }}
+      你当前阅读的是第<span
+        style="
+           {
+            color: gray;
+          }
+        "
+        >{{ props.articleId }}</span
+      >篇文章
     </div>
     <div id="right">
       <input

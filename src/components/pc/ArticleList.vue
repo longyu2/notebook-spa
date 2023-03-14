@@ -39,6 +39,7 @@ let ArticleCheckId = ref(0);
 function getArticleByFoldeId(folderId) {
   axios.get(`${server_url}/articles?folderid=${folderId}`).then((result) => {
     articles.value = result.data.data; //  查询到的信息存储到article数组中
+
     //在信息获取完成后，为其添加控制checkbox 的属性
     articles.value.forEach((element) => {
       element.checked = false;
@@ -51,6 +52,30 @@ getArticleByFoldeId(props.folderId); // 初始时调用查询方法，并填充
 // 更改显示的文章
 function byIdSelContent(folderId) {
   ArticleCheckId.value = folderId;
+}
+
+// 删除选中的文章
+function delete_content() {
+  let del_object = { del_sql_notebookid_list: [] };
+
+  for (let i = 0; i < articles.value.length; i++) {
+    // 删除articles 数组中对应数据
+    if (articles.value[i].checked) {
+      del_object.del_sql_notebookid_list.push(articles.value[i].Notebookid);
+    }
+  }
+
+  // 调用后台的删除接口，将参数传递给后台进行删除
+  axios.post(`${server_url}/delContent`, del_object).then((res) => {
+    if (res == null) {
+      console.error("res is null!");
+    }
+  });
+
+  // 重新获取文章列表,由于不进行延迟的话，服务器返回太快，获取的数据是未删除的数据，所以延时0.1秒再去服务器获取数据
+  setTimeout(function () {
+    getArticleByFoldeId(props.folderId);
+  }, 100);
 }
 
 // closeMoveCallback 根据emit事件关闭 文件夹移动框
@@ -125,7 +150,6 @@ function contentUpdate(data) {
 
           <span class="move-btn" v-if="isButtonChecked">移动到..</span>
         </div>
-
         <img
           id="ImageButtonAdd"
           @click="addArticle()"

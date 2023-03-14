@@ -3,7 +3,7 @@ import { server_url } from "@/assets/constants/index.js";
 </script>
 
 <template>
-  <div class="login-contanier">
+  <div @touchmove.prevent class="login-contanier">
     <div class="login-box">
       <div class="login-content">
         <h3>登录</h3>
@@ -72,56 +72,113 @@ a,
 h3 {
   color: white;
 }
-.login-contanier {
-  height: 100vh;
-  background-image: url("@/assets/images/187.jpg");
-  background-size: cover;
-  justify-content: center;
-  display: flex;
 
-  .login-box {
-    position: relative;
-    z-index: 4;
-    width: 400px;
-    height: 500px;
-    margin-top: 200px;
-    margin-left: 600px;
-    .login-content {
-      padding: 20px 30px;
+@media screen and (min-width: 800px) {
+  .login-contanier {
+    height: 100vh;
+    background-image: url("@/assets/images/187.jpg");
+    background-size: cover;
+    justify-content: center;
+    display: flex;
+
+    .login-box {
       position: relative;
+      z-index: 4;
       width: 400px;
-      height: 350px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: space-around;
-      z-index: 99;
+      height: 500px;
+      margin-top: 200px;
+      margin-left: 600px;
+      .login-content {
+        padding: 20px 30px;
+        position: relative;
+        width: 400px;
+        height: 350px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-around;
+        z-index: 99;
 
-      .login-btn {
-        margin-top: 10px;
-        width: 70px;
-      }
-      .el-input {
-        color: fdfs;
-      }
-      .forget {
-        font-size: small;
-        font-weight: 400;
+        .login-btn {
+          margin-top: 10px;
+          width: 70px;
+        }
+        .el-input {
+          color: fdfs;
+        }
+        .forget {
+          font-size: small;
+          font-weight: 400;
+        }
       }
     }
+    .login-box::after {
+      /* 必须要写的属性 content */
+      content: "";
+      padding: 20px 30px;
+      background-color: black;
+      opacity: 27%;
+      width: 400px;
+      height: 400px;
+      z-index: 3;
+      position: absolute;
+      top: 0px;
+      border-radius: 20px;
+    }
   }
-  .login-box::after {
-    /* 必须要写的属性 content */
-    content: "";
-    padding: 20px 30px;
-    background-color: black;
-    opacity: 27%;
-    width: 400px;
-    height: 400px;
-    z-index: 3;
-    position: absolute;
-    top: 0px;
-    border-radius: 20px;
+}
+
+@media screen and (max-width: 400px) {
+  .login-contanier {
+    height: 100vh;
+    background-image: url("@/assets/images/187.jpg");
+    background-size: cover;
+    justify-content: center;
+    display: flex;
+    .login-box {
+      margin-top: 50px;
+      z-index: 4;
+      width: 80vw;
+      height: 90vw;
+      display: flex;
+      justify-content: center;
+      .login-content {
+        width: inherit;
+        height: inherit;
+        padding: 20px 30px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-around;
+        z-index: 99;
+
+        .login-btn {
+          margin-top: 10px;
+          width: 70px;
+        }
+        .el-input {
+          color: fdfs;
+        }
+        .forget {
+          font-size: small;
+          font-weight: 400;
+        }
+      }
+    }
+    .login-box::after {
+      /* 必须要写的属性 content */
+      content: "";
+      padding: 20px 30px;
+      background-color: black;
+      opacity: 27%;
+      width: 80vw;
+      height: 110vw;
+      z-index: 3;
+      position: absolute;
+      top: 5px;
+      border-radius: 20px;
+    }
   }
 }
 </style>
