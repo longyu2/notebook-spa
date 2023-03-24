@@ -29,18 +29,21 @@ let addFolderDialogForm = ref({
 
 // 新建文件夹
 function createFolder() {
-  // const name = prompt("请输入文件夹名");
   addFolderDialogForm.value.Visible = true;
-
-  // axios
-  //   .post(`${server_url}/folders`, {
-  //     folder_name: name,
-  //   })
-  //   .then((res) => {
-  //     folders.value.push(res.data[0]);
-  //     console.log(this.folders);
-  //   });
 }
+// 新建文件夹确认
+function confirmClick() {
+  addFolderDialogForm.value.Visible = false;
+  let name = addFolderDialogForm.value.newFolderName;
+  axios
+    .post(`${server_url}/folders`, {
+      folder_name: name,
+    })
+    .then((res) => {
+      folders.value.push(res.data[0]);
+    });
+}
+
 // 文件夹更名
 function folderRename(folder_id, index) {
   const newName = prompt("请输入新文件夹名");
@@ -75,6 +78,7 @@ function deleteFolder(folder_id, index) {
   delFolder = { folder_id, index };
   console.log(delFolder);
 }
+
 // 确认删除
 function confirmDelFolder() {
   foldeDelDialogVisible.value = false;
@@ -167,9 +171,9 @@ function confirmDelFolder() {
     </el-dialog>
 
     <!-- 新增对话框 -->
-    <el-dialog v-model="addFolderDialogForm.Visible" title="Shipping address">
+    <el-dialog v-model="addFolderDialogForm.Visible" title="新建文件夹">
       <el-form>
-        <el-form-item label="Promotion name" :label-width="formLabelWidth">
+        <el-form-item label="请输入文件夹名" :label-width="formLabelWidth">
           <el-input
             v-model="addFolderDialogForm.newFolderName"
             autocomplete="off"
@@ -179,14 +183,9 @@ function confirmDelFolder() {
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="addFolderDialogForm.Visible = false"
-            >Cancel</el-button
+            >取消</el-button
           >
-          <el-button
-            type="primary"
-            @click="addFolderDialogForm.Visible = false"
-          >
-            Confirm
-          </el-button>
+          <el-button type="primary" @click="confirmClick()"> 确认 </el-button>
         </span>
       </template>
     </el-dialog>
