@@ -60,14 +60,19 @@ watch(
 <template>
   <div class="article-content-box">
     <div id="TopRight">
-      你当前阅读的是第<span
-        style="
-           {
-            color: gray;
-          }
-        "
-        >{{ props.articleId }}</span
-      >篇文章
+      <span>
+        你当前阅读的是第
+        <b>
+          <span>{{ props.articleId }} </span>
+        </b>
+
+        篇文章
+      </span>
+
+      <span class="word-count">
+        共
+        <b><span v-text="content.length"></span></b>字</span
+      >
     </div>
     <div id="right">
       <input
@@ -97,13 +102,13 @@ $left-width: 300px;
 .article-content-box {
   min-width: 400px;
   height: $box-height;
-  margin-left: 22px;
+  margin-left: 12px;
   flex-grow: 4;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   #right {
-    height: 785px;
+    height: 795px;
     border-bottom: 0px;
     background-color: azure;
     background-color: white;
@@ -134,14 +139,21 @@ $left-width: 300px;
     }
   }
   #TopRight {
+    background-color: #fff;
     width: 100%;
     height: 100px;
-    background-color: azure;
     top: 0px;
     left: 265px;
     border-radius: $radius;
-
-    background-color: white;
+    display: flex;
+    justify-content: flex-start;
+    span {
+      margin: 5px;
+      font-size: large;
+    }
+    .word-count {
+      margin-left: 20px;
+    }
   }
 }
 </style>

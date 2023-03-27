@@ -114,16 +114,6 @@ export default {
   //     }
   //   },
   // },
-  // 页面加载时执行
-  created: function () {
-    // 测试token 是否有效
-    // axios
-    //   .get(`${this.server_url}/testToken`)
-    //   .then((results) => {})
-    //   .catch((err) => {
-    //     this.$router.push("/login"); // 出现
-    //   });
-  },
 };
 </script>
 
@@ -133,7 +123,7 @@ $radius: 10px;
 $box-height: 905px;
 $left-width: 300px;
 #notebook-box {
-  background-color: #125677;
+  background-color: #d0c0c0;
   height: 100vh;
   display: flex;
   flex-direction: row;

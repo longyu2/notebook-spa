@@ -39,7 +39,7 @@ let ArticleCheckId = ref(0);
 function getArticleByFoldeId(folderId) {
   axios.get(`${server_url}/articles?folderid=${folderId}`).then((result) => {
     articles.value = result.data.data; //  查询到的信息存储到article数组中
-
+    ArticleCheckId = ref(articles.value[0].Notebookid); // 选中列表中最新的文章
     //在信息获取完成后，为其添加控制checkbox 的属性
     articles.value.forEach((element) => {
       element.checked = false;
@@ -50,8 +50,8 @@ function getArticleByFoldeId(folderId) {
 getArticleByFoldeId(props.folderId); // 初始时调用查询方法，并填充
 
 // 更改显示的文章
-function byIdSelContent(folderId) {
-  ArticleCheckId.value = folderId;
+function byIdSelContent(Notebookid) {
+  ArticleCheckId.value = Notebookid;
 }
 
 // 删除选中的文章
@@ -83,8 +83,6 @@ function delete_content() {
 //   console.log("closer");
 //   IsShowMoveToFolder = false;
 // }
-
-// 设定存储多选按钮
 
 // 使用一个计算属性 ref来表示是否有check button 被选中，只要有一个以上被选中，该值为true
 const isButtonChecked = computed(() => {
@@ -118,9 +116,7 @@ function addArticle() {
       newArticle.checked = false;
       ArticleCheckId.value = newArticle.Notebookid;
       //返回的是只有一个元素的数组，还是需要用下标0取
-      articles.value.push(newArticle);
-      console.table(newArticle);
-      // 如果此时
+      articles.value.unshift(newArticle);
     });
 }
 
@@ -201,7 +197,7 @@ $box-height: 905px;
 $left-width: 300px;
 
 .article-list-box {
-  margin-left: 20px;
+  margin-left: 10px;
   width: auto;
   height: $box-height;
   border: $black-border;
@@ -297,7 +293,7 @@ $left-width: 300px;
 
   #left {
     padding: 0px;
-    height: 785px;
+    height: 795px;
     width: $left-width;
     overflow: auto;
     background-color: white;
@@ -352,5 +348,9 @@ $left-width: 300px;
   li:hover {
     background-color: #dddddd;
   }
+}
+
+.buttonchecked {
+  background-color: gainsboro;
 }
 </style>
