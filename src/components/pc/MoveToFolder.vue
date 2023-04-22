@@ -12,7 +12,7 @@
           class="head-li"
           @click="MoveToFolder({ folder_id: -1, folder_name: '未分类' })"
         >
-          <img src="@/assets/return.svg" alt="" />
+          <img src="@/assets/return.svg" alt="" @click="deleteFolder(item)" />
           <span>移出文件夹</span>
         </li></a
       >
@@ -27,41 +27,51 @@
 </template>
 
 <script>
+import { server_url } from "@/assets/constants/index.js";
 import axios from "axios";
 import { toRaw } from "vue";
+
 export default {
-  props: ["server_url", "folderList", "check_list"],
+  props: ["server_url", "check_list"],
   data() {
     return {
-      check_id_list: this.check_list,
+      folderList: [],
+      articleList: [],
     };
   },
 
   methods: {
     // 根据获取到的 目标文件夹id 和 已经选中的 文章的id。进行添加
-    MoveToFolder: function (item) {
-      console.log(this.server_url);
-      console.log(item.folder_id);
+    MoveToFolder: function (folder) {
+      const articleList = toRaw(this.check_list);
+      // 遍历所有选中的文章，有多少文章就发送多少次请求
+      articleList.forEach((element) => {
+        console.log("elem");
+        console.log(element);
 
-      console.log(toRaw(this.check_id_list));
+        let jsonObj = {
+          folder_id: folder.folder_id,
+          article_id: element.Notebookid,
+        };
 
-      let id_list = toRaw(this.check_id_list);
-
-      let jsonObj = {
-        folder_id: item.folder_id,
-        article_id: id_list[0],
-      };
-
-      axios
-        .put(`${this.server_url}/FolderAddArticle`, jsonObj)
-        .then((results) => {
-          console.log(results.data);
+        axios.put(`${server_url}/FolderAddArticle`, jsonObj).then((results) => {
+          console.log(results);
           this.close();
         });
+      });
     },
+    // 将选中的文章移入到未分类文件夹中
+    deleteFolder: function () {},
     close: function () {
       this.$emit("someEvent");
     },
+  },
+  created() {
+    let that = this;
+    //获得文件夹列表
+    axios.get(`${server_url}/QueryFolder`).then((res) => {
+      that.folderList = res.data;
+    });
   },
 };
 </script>

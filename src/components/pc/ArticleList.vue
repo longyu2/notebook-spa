@@ -32,6 +32,7 @@ watch(
   }
 );
 
+let IsShowMoveToFolder = ref(false);
 let articles = ref([]);
 let ArticleCheckId = ref(0);
 
@@ -78,11 +79,22 @@ function delete_content() {
   }, 100);
 }
 
+function move_article() {
+  let move_list = [];
+  for (let i = 0; i < articles.value.length; i++) {
+    // 删除articles 数组中对应数据
+    if (articles.value[i].checked) {
+      move_list.push(articles.value[i].Notebookid);
+    }
+  }
+  // 显示文件移动框
+  IsShowMoveToFolder.value = true;
+}
+
 // closeMoveCallback 根据emit事件关闭 文件夹移动框
-// function closeMoveCallback() {
-//   console.log("closer");
-//   IsShowMoveToFolder = false;
-// }
+function closeMoveCallback() {
+  IsShowMoveToFolder.value = false;
+}
 
 // 使用一个计算属性 ref来表示是否有check button 被选中，只要有一个以上被选中，该值为true
 const isButtonChecked = computed(() => {
@@ -98,6 +110,18 @@ const isButtonChecked = computed(() => {
   } else {
     return false;
   }
+});
+
+// 使用一个计算属性来表示所有被选中的文章
+const CheckedArticles = computed(() => {
+  let arr = [];
+  // 遍历所有的checked 属性值，只要有一项的checkd 值为true，则count > 0 ，计算属性返回true
+  articles.value.forEach((element) => {
+    if (element.checked) {
+      arr.push(element);
+    }
+  });
+  return arr;
 });
 
 // 添加新文章
@@ -128,7 +152,6 @@ function contentUpdate(data) {
       console.log(data.content);
       element.title = data.title;
       element.content = data.content;
-      console.log(element.content);
     }
   });
 }
@@ -144,7 +167,9 @@ function contentUpdate(data) {
             >删除</a
           >
 
-          <span class="move-btn" v-if="isButtonChecked">移动到..</span>
+          <span class="move-btn" v-if="isButtonChecked" @click="move_article()"
+            >移动到..</span
+          >
         </div>
         <img
           id="ImageButtonAdd"
@@ -182,7 +207,11 @@ function contentUpdate(data) {
     </div>
   </div>
 
-  <!-- <MoveToFolder></MoveToFolder> -->
+  <MoveToFolder
+    :check_list="CheckedArticles"
+    v-if="IsShowMoveToFolder"
+    @some-event="closeMoveCallback()"
+  ></MoveToFolder>
 
   <ArticleContent
     @content-update="contentUpdate"
