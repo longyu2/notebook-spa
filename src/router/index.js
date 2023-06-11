@@ -4,6 +4,7 @@ import NoteBookView from "@/views/NoteBookView.vue";
 import NoteBookPhoneView from "@/views/NoteBookPhoneView.vue";
 import ArticleContent from "@/components/phone/ArticleContent.vue";
 import ArticleList from "@/components/phone/ArticleList.vue";
+import Admin from "@/views/AdminView.vue";
 import App from "@/App.vue";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -12,6 +13,11 @@ const router = createRouter({
       path: "/",
       name: "app",
       component: App,
+    },
+    {
+      path: "/admin",
+      name: "admin",
+      component: Admin,
     },
     {
       path: "/login",
@@ -51,6 +57,7 @@ router.beforeEach((to, from) => {
       return { name: "login" };
     }
   }
+
   return true;
   // 返回 false 以取消导航
 });

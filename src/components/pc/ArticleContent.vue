@@ -73,6 +73,8 @@ watch(
         共
         <b><span v-text="content.length"></span></b>字</span
       >
+
+      <router-link to="admin">管理页面</router-link>
     </div>
     <div id="right">
       <input
@@ -147,10 +149,13 @@ $left-width: 300px;
     border-radius: $radius;
     display: flex;
     justify-content: flex-start;
-    span {
+    align-items: flex-start;
+    span,
+    a {
       margin: 5px;
       font-size: large;
     }
+
     .word-count {
       margin-left: 20px;
     }
