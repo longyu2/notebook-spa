@@ -77,43 +77,6 @@ export default {
       }
     },
   },
-  // methods: {
-
-  //   // all复选按钮改变事件
-  //   check_change: function () {
-  //     let that = this;
-  //     for (let i = 0; i < that.checkBtnCheckedList.length; i++) {
-  //       if (that.checkBtnCheckedList[i] == true) {
-  //         that.check_bool = true;
-  //       } else if (i == that.checkBtnCheckedList.length - 1) {
-  //         that.check_bool = false;
-  //       }
-  //     }
-
-  //     for (let i = 0; i < this.checkBtnCheckedList.length; i++) {
-  //       if (this.checkBtnCheckedList[i] == true) {
-  //         // 如果 该id 不存在于列表，则添加进去,因为每次change 会重复扫描
-  //         if (
-  //           this.check_id_list.indexOf(this.NoteBookList[i].Notebookid) == -1
-  //         ) {
-  //           this.check_id_list.push(this.NoteBookList[i].Notebookid); // 将id值添加到列表
-  //         }
-  //       } else {
-  //         // 如果该id不存在，不必管，如果存在，删去
-  //         this.check_id_list.splice(i, 1);
-  //       }
-  //     }
-  //   },
-
-  //   // 查询列表中的第一篇文章
-  //   QueryTopArticle: function () {
-  //     // 如果文章列表为空。停止查询
-  //     if (this.NoteBookList.length != 0) {
-  //       // 将第一篇文章内容查询
-  //       this.byIdSelContent(this.NoteBookList[0].Notebookid);
-  //     }
-  //   },
-  // },
 };
 </script>
 

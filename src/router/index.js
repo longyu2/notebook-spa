@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Login from "@/views/LoginView.vue";
+import Regist from "@/views/RegistView.vue";
 import NoteBookView from "@/views/NoteBookView.vue";
 import NoteBookPhoneView from "@/views/NoteBookPhoneView.vue";
 import ArticleContent from "@/components/phone/ArticleContent.vue";
@@ -25,6 +26,11 @@ const router = createRouter({
       component: Login,
     },
     {
+      path: "/regist",
+      name: "regist",
+      component: Regist,
+    },
+    {
       path: "/notebook",
       name: "notebook",
       component: NoteBookView,
@@ -48,18 +54,18 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, from) => {
-  if (to.path != "/login") {
-    if (localStorage.getItem("token") != null) {
-      console.log("有token");
-    } else {
-      console.log("无token，请登录");
-      return { name: "login" };
-    }
-  }
+// router.beforeEach((to, from) => {
+//   if (to.path != "/login") {
+//     if (localStorage.getItem("token") != null) {
+//       console.log("有token");
+//     } else {
+//       console.log("无token，请登录");
+//       return { name: "login" };
+//     }
+//   }
 
-  return true;
-  // 返回 false 以取消导航
-});
+//   return true;
+//   // 返回 false 以取消导航
+// });
 
 export default router;

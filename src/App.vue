@@ -6,10 +6,7 @@
 import axios from "axios";
 export default {
   data() {
-    return {
-      // server_url: "http://127.0.0.1:9999/v1",
-      server_url: "https://note.misaka-mikoto.cn:9999/v1",
-    };
+    return {};
   },
   methods: {
     _isMobile: function () {
@@ -20,21 +17,21 @@ export default {
     },
   },
   created() {
-    if (this._isMobile()) {
-      this.$router.replace("/notebook_phone");
-    } else {
-      this.$router.replace("/notebook");
-    }
-
+    // if (this.$route.path != "login" && this.$route.path != "regist") {
+    //   if (this._isMobile()) {
+    //     this.$router.replace("/notebook_phone");
+    //   } else {
+    //     this.$router.replace("/notebook");
+    //   }
+    // }
     // 页面加载时执行
-
     // 测试token 是否有效
-    axios
-      .get(`${this.server_url}/testToken`)
-      .then((results) => {})
-      .catch((err) => {
-        this.$router.push("/login"); // 出现
-      });
+    // axios
+    //   .get(`${this.server_url}/testToken`)
+    //   .then((results) => {})
+    //   .catch((err) => {
+    //     this.$router.push("/login"); // 出现
+    //   });
   },
 };
 </script>
