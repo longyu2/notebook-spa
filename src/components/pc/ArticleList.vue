@@ -188,20 +188,26 @@ function contentUpdate(data) {
           @click="byIdSelContent(item['Notebookid'])"
           :class="{ buttonchecked: item.Notebookid === ArticleCheckId }"
         >
-          <input
-            type="checkbox"
-            name=""
-            v-model="item.checked"
-            class="checkbox"
-            id=""
-          />
+          <el-card shadow="hover" class="el-articlelist-card">
+            <div style="display: flex; align-items: center">
+              <input
+                type="checkbox"
+                name=""
+                v-model="item.checked"
+                class="checkbox"
+                id=""
+              />
+              <span class="p_1" v-text="item.title.substring(0, 14)"></span>
+            </div>
 
-          <!-- substring做一个截取，因为左边列表宽度有限内容只能显示十几个字 -->
-          <div class="article-information-box">
-            <p class="p_1" v-text="item.title.substring(0, 14)"></p>
-            <p class="p_2" v-text="item.content.substring(0, 16)"></p>
-            <p class="p_3" v-text="item.createtime"></p>
-          </div>
+            <div>
+              <p class="p_2" v-text="item.content.substring(0, 14)"></p>
+            </div>
+
+            <div>
+              <p class="p_3" v-text="item.createtime"></p>
+            </div>
+          </el-card>
         </li>
       </ul>
     </div>
@@ -222,8 +228,8 @@ function contentUpdate(data) {
 <style lang="scss" scoped>
 $black-border: 1px solid black;
 $radius: 10px;
-$box-height: 905px;
-$left-width: 300px;
+$box-height: 95vh;
+$left-width: 15vw;
 
 .article-list-box {
   margin-left: 10px;
@@ -236,11 +242,11 @@ $left-width: 300px;
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: space-around;
 
   #TopLeft {
     width: $left-width;
-    height: 100px;
+    height: 10vh;
     border-radius: 0;
     background-color: white;
     border-radius: $radius;
@@ -249,18 +255,16 @@ $left-width: 300px;
     flex-direction: column;
     align-items: flex-start;
     .article-count {
-      margin-left: 15px;
+      position: relative;
+      top: 1vh;
       font-size: medium;
       color: #909090;
+      margin: 0px 10px;
     }
-    .folderName {
-      margin-left: 20px;
-      font-size: large;
-      color: green;
-    }
+
     .topleft-bottom {
       padding: 0%;
-      width: 300px;
+      width: 15vw;
       height: 55px;
       display: flex;
       justify-content: flex-end;
@@ -268,23 +272,21 @@ $left-width: 300px;
       .isChecked-area {
         padding: 0;
         width: 75%;
-        padding: 10px;
+        padding: 10%;
         display: flex;
         flex-direction: row;
         justify-content: center;
         align-items: center;
 
         .del-btn {
-          margin-left: 20px;
-          width: 50px;
-          height: 18px;
+          padding: 5px;
+          width: 40%;
+          height: 20%;
           color: white;
           background-color: cornflowerblue;
-          padding: 5px 10px;
-          font-size: medium;
           border: 0ch;
           border-radius: 5px;
-          line-height: 18px;
+          font-size: 1%;
         }
 
         .del-btn:hover {
@@ -293,13 +295,13 @@ $left-width: 300px;
         }
 
         .move-btn {
-          height: 18px;
-          width: 70px;
+          padding: 5px;
+          height: 50%;
+          width: 70%;
           margin-left: 20px;
           color: white;
           background-color: cornflowerblue;
-          padding: 5px 10px;
-          font-size: medium;
+          font-size: 0.1vw;
           border: 0ch;
           border-radius: 5px;
           line-height: 18px;
@@ -312,7 +314,7 @@ $left-width: 300px;
 
       #ImageButtonAdd {
         margin-right: 10px;
-        height: 44px;
+        height: 70%;
       }
       #ImageButtonAdd:hover {
         transform: scale(1.2);
@@ -322,55 +324,40 @@ $left-width: 300px;
 
   #left {
     padding: 0px;
-    height: 795px;
+    margin-top: 2vh;
+    height: 85vh;
     width: $left-width;
     overflow: auto;
     background-color: white;
     border-radius: $radius;
-    ul {
-      margin-top: 0%;
 
-      padding: 0px;
+    .el-articlelist-card {
+      padding: 0%;
+    }
+    .checkbox {
+      width: 12px;
+    }
+    .p_1 {
+      line-height: 20px;
+      margin-left: 5px;
+      font-size: x-small;
     }
 
-    li {
-      list-style: none;
-      border-bottom: 1px solid #909090;
-      width: inherit;
-      height: 70px;
-      padding: 10px 10px;
-      display: flex;
-      align-items: flex-start;
-      .checkbox {
-        margin-top: 5px;
-      }
-      .article-information-box {
-        margin-left: 10px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        p {
-          margin: 3px 0px;
-        }
-        .p_1 {
-          font-size: 15px;
-          font-weight: 600;
-        }
+    .p_2 {
+      line-height: 20px;
 
-        .p_2 {
-          font-size: 14px;
-        }
+      font-size: x-small;
+    }
 
-        .p_3 {
-          font-size: 13px;
-          color: gray;
-        }
-      }
+    .p_3 {
+      line-height: 20px;
+
+      font-size: xx-small;
+      color: gray;
     }
   }
 
   .checkbox {
-    margin: 5px 5px;
     z-index: 2;
   }
 

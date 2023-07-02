@@ -4,6 +4,8 @@
 
 <script>
 import axios from "axios";
+import { server_url } from "@/assets/constants/index.js";
+
 export default {
   data() {
     return {};
@@ -17,21 +19,21 @@ export default {
     },
   },
   created() {
-    // if (this.$route.path != "login" && this.$route.path != "regist") {
-    //   if (this._isMobile()) {
-    //     this.$router.replace("/notebook_phone");
-    //   } else {
-    //     this.$router.replace("/notebook");
-    //   }
-    // }
+    if (this.$route.path != "login" && this.$route.path != "regist") {
+      if (this._isMobile()) {
+        this.$router.replace("/notebook_phone");
+      } else {
+        this.$router.replace("/notebook");
+      }
+    }
     // 页面加载时执行
     // 测试token 是否有效
-    // axios
-    //   .get(`${this.server_url}/testToken`)
-    //   .then((results) => {})
-    //   .catch((err) => {
-    //     this.$router.push("/login"); // 出现
-    //   });
+    axios
+      .get(`${server_url}/testToken`)
+      .then((results) => {})
+      .catch((err) => {
+        this.$router.push("/login"); // 出现
+      });
   },
 };
 </script>

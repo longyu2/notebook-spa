@@ -95,30 +95,33 @@ function confirmDelFolder() {
 
 <template>
   <div id="folder">
-    <h2>
+    <h4>
       {{
         folderChecked.folderName.length > 9
           ? folderChecked.folderName.substring(0, 8) + "..."
           : folderChecked.folderName
       }}
-    </h2>
+    </h4>
 
     <ul>
       <li
         @click="changeFolder(-2, '全部笔记')"
         :class="{ buttonchecked: -2 === folderChecked.folderId }"
+        style="font-size: small"
       >
         全部笔记
       </li>
       <li
         @click="changeFolder(-1, '未分类')"
         :class="{ buttonchecked: -1 === folderChecked.folderId }"
+        style="font-size: small"
       >
         未分类
       </li>
 
       <div class="my-folder">
-        我的文件夹 <el-icon @click="createFolder"><Plus /></el-icon>
+        <span>我的文件夹</span>
+        <el-icon @click="createFolder"><Plus /></el-icon>
       </div>
 
       <li
@@ -202,8 +205,8 @@ $left-width: 300px;
 
 #folder {
   flex-shrink: 0;
-  width: 230px;
-  height: 865px;
+  width: 10vw;
+  height: 90vh;
   background-color: white;
   border-radius: $radius;
   padding: 20px 15px;
@@ -221,17 +224,20 @@ $left-width: 300px;
 
     .my-folder {
       font-weight: 600;
-      width: 50%;
+      width: 95%;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      span {
+        font-size: small;
+      }
     }
     .folder-item {
       margin-left: 10px;
     }
     li {
       cursor: pointer;
-      font-size: medium;
+      font-size: small;
       border-radius: 8px;
       padding: 0px 6px;
       border: 0px;

@@ -98,8 +98,7 @@ watch(
 <style lang="scss" scoped>
 $black-border: 1px solid black;
 $radius: 10px;
-$box-height: 905px;
-$left-width: 300px;
+$box-height: 95vh;
 
 .article-content-box {
   min-width: 400px;
@@ -109,10 +108,28 @@ $left-width: 300px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
+  #TopRight {
+    background-color: #fff;
+    height: 10vh;
+    border-radius: $radius;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    span,
+    a {
+      margin: 5px;
+      font-size: small;
+    }
+
+    .word-count {
+      margin-left: 20px;
+    }
+  }
   #right {
-    height: 795px;
+    margin-top: 2vh;
+    height: 85vh;
     border-bottom: 0px;
-    background-color: azure;
     background-color: white;
     border-radius: $radius;
     #TextBoxTitle {
@@ -120,7 +137,7 @@ $left-width: 300px;
       flex-grow: 4;
       height: 35px;
       font-weight: 400;
-      font-size: 24px;
+      font-size: medium;
       border-radius: 5px;
       outline: none;
       border: none;
@@ -132,32 +149,12 @@ $left-width: 300px;
       margin-top: 10px;
       margin-left: 1%;
       height: 90%;
-      font-size: 18px;
+      font-size: small;
       font-family: "微软雅黑";
       border: 1px solid gray;
       border-radius: 5px;
       outline: none;
       border: none;
-    }
-  }
-  #TopRight {
-    background-color: #fff;
-    width: 100%;
-    height: 100px;
-    top: 0px;
-    left: 265px;
-    border-radius: $radius;
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
-    span,
-    a {
-      margin: 5px;
-      font-size: large;
-    }
-
-    .word-count {
-      margin-left: 20px;
     }
   }
 }

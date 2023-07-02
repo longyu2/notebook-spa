@@ -54,18 +54,18 @@ const router = createRouter({
   ],
 });
 
-// router.beforeEach((to, from) => {
-//   if (to.path != "/login") {
-//     if (localStorage.getItem("token") != null) {
-//       console.log("有token");
-//     } else {
-//       console.log("无token，请登录");
-//       return { name: "login" };
-//     }
-//   }
+router.beforeEach((to, from) => {
+  if (to.path != "/login") {
+    if (localStorage.getItem("token") != null) {
+      console.log("有token");
+    } else {
+      console.log("无token，请登录");
+      return { name: "login" };
+    }
+  }
 
-//   return true;
-//   // 返回 false 以取消导航
-// });
+  return true;
+  // 返回 false 以取消导航
+});
 
 export default router;
