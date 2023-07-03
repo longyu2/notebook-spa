@@ -53,6 +53,10 @@ export default {
         .then((results) => {
           if (results.data.status == "成功") {
             localStorage.setItem("token", results.data.data.token); // 将token 存储
+            localStorage.setItem(
+              "user",
+              JSON.stringify(results.data.data.user)
+            );
             this.$router.push({ path: "/" });
           } else {
             alert("登录失败！");

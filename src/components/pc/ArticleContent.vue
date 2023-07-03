@@ -4,6 +4,8 @@ import axios from "axios";
 import { server_url } from "../../assets/constants/server_url";
 import { saveArticle } from "@/assets/js/ArticlesTools.js";
 
+let user = JSON.parse(localStorage.getItem("user"));
+
 let [title, content] = [ref(""), ref("")];
 axios.interceptors.request.use(
   (config) => {
@@ -60,6 +62,7 @@ watch(
 <template>
   <div class="article-content-box">
     <div id="TopRight">
+      <span>你好， {{ user.userName }}！</span>
       <span>
         你当前阅读的是第
         <b>

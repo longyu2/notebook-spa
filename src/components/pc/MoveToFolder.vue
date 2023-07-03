@@ -69,7 +69,7 @@ export default {
   created() {
     let that = this;
     //获得文件夹列表
-    axios.get(`${server_url}/QueryFolder`).then((res) => {
+    axios.get(`${server_url}/folders`).then((res) => {
       that.folderList = res.data;
     });
   },

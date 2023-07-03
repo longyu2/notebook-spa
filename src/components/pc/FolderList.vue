@@ -18,9 +18,10 @@ axios.interceptors.request.use(
 let folders = ref([]); // 定义响应式文件夹
 
 //初始化，填充文件夹
-axios
-  .get(`${server_url}/QueryFolder`)
-  .then((res) => (folders.value = res.data));
+axios.get(`${server_url}/folders`).then((res) => {
+  console.log(res.data);
+  folders.value = res.data;
+});
 
 let addFolderDialogForm = ref({
   Visible: false, // 用于控制新增文件夹的对话框的显示与否
@@ -131,12 +132,12 @@ function confirmDelFolder() {
         @click="changeFolder(item.folder_id, item.folder_name)"
         :class="{ buttonchecked: folderChecked.folderId === item.folder_id }"
       >
-        {{
+        <!-- {{
           item.folder_name.length > 9
             ? item.folder_name.substring(0, 8) + "..."
             : item.folder_name
-        }}
-
+        }} -->
+        {{ item.folder_name }}
         <el-dropdown placement="bottom" trigger="click" class="dropdown">
           <el-icon class="el-icon--right">
             <arrow-down />
@@ -206,6 +207,7 @@ $left-width: 300px;
 #folder {
   flex-shrink: 0;
   width: 10vw;
+  min-width: 160px;
   height: 90vh;
   background-color: white;
   border-radius: $radius;
@@ -221,7 +223,7 @@ $left-width: 300px;
     list-style: none;
     display: flex;
     flex-flow: column nowrap;
-
+    width: 100%;
     .my-folder {
       font-weight: 600;
       width: 95%;

@@ -3,6 +3,10 @@
     修改密码 输入新密码：
     <input type="text" v-model="passwdText" />
     <button @click="updatePasswd">修改</button>
+
+    <p>
+      <button @click="quit">退出登录</button>
+    </p>
   </div>
 </template>
 
@@ -10,6 +14,8 @@
 import { server_url } from "../assets/constants/server_url";
 import { ref } from "vue";
 import axios from "axios";
+import { useRouter } from "vue-router";
+const router = useRouter();
 // 请求拦截, 给axios 添加请求头，设置token
 axios.interceptors.request.use(
   (config) => {
@@ -33,6 +39,11 @@ function updatePasswd() {
       if (data.data.data == "修改成功") localStorage.setItem("token", "");
       console.log("成功");
     });
+}
+
+function quit() {
+  localStorage.setItem("token", "");
+  router.push("/login");
 }
 </script>
 
