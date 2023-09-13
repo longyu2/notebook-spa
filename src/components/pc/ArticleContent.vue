@@ -78,6 +78,7 @@ watch(
       >
 
       <router-link to="admin">管理页面</router-link>
+      <router-link to="random">随机推荐</router-link>
     </div>
     <div id="right">
       <input

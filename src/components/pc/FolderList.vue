@@ -132,12 +132,11 @@ function confirmDelFolder() {
         @click="changeFolder(item.folder_id, item.folder_name)"
         :class="{ buttonchecked: folderChecked.folderId === item.folder_id }"
       >
-        <!-- {{
+        {{
           item.folder_name.length > 9
             ? item.folder_name.substring(0, 8) + "..."
             : item.folder_name
-        }} -->
-        {{ item.folder_name }}
+        }}
         <el-dropdown placement="bottom" trigger="click" class="dropdown">
           <el-icon class="el-icon--right">
             <arrow-down />

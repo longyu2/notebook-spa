@@ -6,6 +6,7 @@ import NoteBookPhoneView from "@/views/NoteBookPhoneView.vue";
 import ArticleContent from "@/components/phone/ArticleContent.vue";
 import ArticleList from "@/components/phone/ArticleList.vue";
 import Admin from "@/views/AdminView.vue";
+import Random from "@/views/RandomArticleView.vue";
 import App from "@/App.vue";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,6 +21,12 @@ const router = createRouter({
       name: "admin",
       component: Admin,
     },
+    {
+      path: "/random",
+      name: "random",
+      component: Random,
+    },
+
     {
       path: "/login",
       name: "login",
