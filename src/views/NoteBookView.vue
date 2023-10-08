@@ -41,7 +41,6 @@ $radius: 10px;
 $box-height: 905px;
 $left-width: 300px;
 #notebook-box {
-  background-color: skyblue;
   height: 100vh;
   display: flex;
   flex-direction: row;

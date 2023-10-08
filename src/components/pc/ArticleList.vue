@@ -158,7 +158,7 @@ function contentUpdate(data) {
 </script>
 
 <template>
-  <div class="article-list-box">
+  <div class="article-list-box shadow">
     <div id="TopLeft">
       <span class="article-count"> 共{{ articles.length }}条笔记 </span>
       <div class="topleft-bottom">
@@ -232,7 +232,7 @@ $box-height: 95vh;
 $left-width: 15vw;
 
 .article-list-box {
-  margin-left: 10px;
+  margin-left: 20px;
   width: auto;
   height: $box-height;
   border: $black-border;
@@ -367,6 +367,8 @@ $left-width: 15vw;
 }
 
 .buttonchecked {
-  background-color: gainsboro;
+  color: red;
+  transform: translate(0px, -5px);
+  box-shadow: 0 1px 9px 3px #ccc;
 }
 </style>

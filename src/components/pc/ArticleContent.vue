@@ -60,7 +60,7 @@ watch(
 </script>
 
 <template>
-  <div class="article-content-box">
+  <div class="article-content-box shadow">
     <div id="TopRight">
       <span>你好， {{ user.userName }}！</span>
       <span>
@@ -87,7 +87,6 @@ watch(
         id="TextBoxTitle"
         v-model="title"
       />
-      <hr />
       <textarea
         name="reworkmes"
         placeholder="请输入内容"
@@ -107,13 +106,14 @@ $box-height: 95vh;
 .article-content-box {
   min-width: 400px;
   height: $box-height;
-  margin-left: 12px;
+  margin-left: 20px;
   flex-grow: 4;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 
   #TopRight {
+    padding: 10px;
     background-color: #fff;
     height: 10vh;
     border-radius: $radius;
@@ -124,8 +124,14 @@ $box-height: 95vh;
     a {
       margin: 5px;
       font-size: small;
+      color: black;
     }
-
+    a:hover {
+      margin: 5px;
+      font-size: small;
+      color: orange;
+      transform: translate(0px, -3px);
+    }
     .word-count {
       margin-left: 20px;
     }
@@ -135,9 +141,9 @@ $box-height: 95vh;
     height: 85vh;
     border-bottom: 0px;
     background-color: white;
-    border-radius: $radius;
     #TextBoxTitle {
-      width: 100%;
+      margin-left: 8px;
+      width: 80%;
       flex-grow: 4;
       height: 35px;
       font-weight: 400;

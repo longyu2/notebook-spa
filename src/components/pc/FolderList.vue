@@ -95,7 +95,7 @@ function confirmDelFolder() {
 </script>
 
 <template>
-  <div id="folder">
+  <div id="folder" class="shadow">
     <h4>
       {{
         folderChecked.folderName.length > 9
@@ -270,6 +270,6 @@ $left-width: 300px;
 }
 
 .buttonchecked {
-  background-color: #c6e2ff;
+  background-color: rgba(124, 190, 255, 0.3);
 }
 </style>
