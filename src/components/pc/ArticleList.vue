@@ -249,7 +249,6 @@ $left-width: 15vw;
     height: 10vh;
     border-radius: 0;
     background-color: white;
-    border-radius: $radius;
     display: flex;
     justify-content: center;
     flex-direction: column;
@@ -323,8 +322,8 @@ $left-width: 15vw;
   }
 
   #left {
-    padding: 0px;
-    margin-top: 2vh;
+    padding-top: 10px;
+    margin-top: 10px;
     height: 85vh;
     width: $left-width;
     overflow: auto;

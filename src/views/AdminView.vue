@@ -1,17 +1,6 @@
-<template>
-  <div>
-    修改密码 输入新密码：
-    <input type="text" v-model="passwdText" />
-    <button @click="updatePasswd">修改</button>
-
-    <p>
-      <button @click="quit">退出登录</button>
-    </p>
-  </div>
-</template>
-
 <script setup>
 import { server_url } from "../assets/constants/server_url";
+import headImg from "../assets/images/head.png";
 import { ref } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
@@ -47,4 +36,36 @@ function quit() {
 }
 </script>
 
-<style></style>
+<template>
+  <div class="main-box">
+    <el-avatar :size="50" :src="headImg" />
+
+    <div>
+      <p>修改密码</p>
+
+      输入新密码：
+
+      <p>
+        <el-input type="text" v-model="passwdText" />
+        <el-button @click="updatePasswd">修改</el-button>
+      </p>
+    </div>
+
+    <p>
+      <el-button @click="quit">退出登录</el-button>
+    </p>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+.main-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  width: 25vw;
+  height: 600px;
+  margin: 100px auto;
+  box-shadow: 0px 0px 15px 2px rgba(0, 0, 0, 0.2);
+}
+</style>
