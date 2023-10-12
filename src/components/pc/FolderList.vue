@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { server_url } from "@/assets/constants/index.js";
 import ArticleList from "@/components/pc/ArticleList.vue";
 import axios from "axios";
+import "@/assets/css/folder.scss";
 // 请求拦截, 给axios 添加请求头，设置token
 axios.interceptors.request.use(
   (config) => {
@@ -133,8 +134,8 @@ function confirmDelFolder() {
         :class="{ buttonchecked: folderChecked.folderId === item.folder_id }"
       >
         {{
-          item.folder_name.length > 9
-            ? item.folder_name.substring(0, 8) + "..."
+          item.folder_name.length > 7
+            ? item.folder_name.substring(0, 7) + ".."
             : item.folder_name
         }}
         <el-dropdown placement="bottom" trigger="click" class="dropdown">
@@ -196,80 +197,3 @@ function confirmDelFolder() {
 
   <ArticleList :folderId="folderChecked.folderId"> </ArticleList>
 </template>
-
-<style lang="scss" scoped>
-$black-border: 1px solid black;
-$radius: 10px;
-$box-height: 905px;
-$left-width: 300px;
-
-#folder {
-  flex-shrink: 0;
-  width: 10vw;
-  min-width: 160px;
-  height: 90vh;
-  background-color: white;
-  border-radius: $radius;
-  padding: 20px 15px;
-  display: flex;
-  flex-flow: column nowrap;
-  align-items: flex-start;
-  .addFolderBtn:hover {
-    background-color: #a0cfff;
-  }
-  ul {
-    width: inherit;
-    list-style: none;
-    display: flex;
-    flex-flow: column nowrap;
-    width: 100%;
-    .my-folder {
-      font-weight: 600;
-      width: 95%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      span {
-        font-size: small;
-      }
-    }
-    .folder-item {
-      margin-left: 10px;
-    }
-    li {
-      cursor: pointer;
-      font-size: small;
-      border-radius: 8px;
-      padding: 0px 6px;
-      border: 0px;
-      line-height: 36px;
-      height: 36px;
-      width: 90%;
-      display: flex;
-      justify-content: space-between;
-      button {
-        background: 0%;
-        border: 0px;
-      }
-      .dropdown {
-        .el-icon--right {
-          border-radius: 50%;
-          float: right;
-          width: 36px;
-          height: 36px;
-          line-height: 30px;
-          display: flex;
-          justify-content: center;
-        }
-        .el-icon--right:hover {
-          background-color: #a0cfff;
-        }
-      }
-    }
-  }
-}
-
-.buttonchecked {
-  background-color: rgba(124, 190, 255, 0.3);
-}
-</style>

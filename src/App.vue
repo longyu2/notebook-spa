@@ -21,7 +21,7 @@ export default {
   created() {
     if (this.$route.path != "login" && this.$route.path != "regist") {
       if (this._isMobile()) {
-        this.$router.replace("/notebook");
+        this.$router.replace("/notebook_phone");
       } else {
         this.$router.replace("/notebook");
       }

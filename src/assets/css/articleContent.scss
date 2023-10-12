@@ -1,0 +1,103 @@
+$black-border: 1px solid black;
+$radius: 10px;
+$box-height: 95vh;
+
+@media screen and (min-width: 500px) {
+  .article-content-box {
+    min-width: 400px;
+    height: $box-height;
+    margin-left: 20px;
+    flex-grow: 4;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    #TopRight {
+      padding: 10px;
+      background-color: #fff;
+      height: 13vh;
+      border-radius: $radius;
+      display: flex;
+      justify-content: flex-start;
+      align-items: flex-start;
+      span,
+      a {
+        margin: 5px;
+        font-size: small;
+        color: black;
+      }
+      a:hover {
+        margin: 5px;
+        font-size: small;
+        color: orange;
+        transform: translate(0px, -3px);
+      }
+      .word-count {
+        margin-left: 20px;
+      }
+    }
+    #right {
+      margin-top: 2vh;
+      height: 85vh;
+      border-bottom: 0px;
+      background-color: white;
+      #TextBoxTitle {
+        margin-left: 8px;
+        width: 80%;
+        flex-grow: 4;
+        height: 35px;
+        font-weight: 400;
+        font-size: medium;
+        border-radius: 5px;
+        outline: none;
+        border: none;
+      }
+
+      #txtContent {
+        flex-grow: 4;
+        width: 98%;
+        margin-top: 10px;
+        margin-left: 1%;
+        height: 90%;
+        font-size: small;
+        font-family: "微软雅黑";
+        border: 1px solid gray;
+        border-radius: 5px;
+        outline: none;
+        border: none;
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .article-content-box {
+    width: 100%;
+    height: 100vh;
+    position: absolute;
+    top: 0vh;
+    z-index: 3;
+    #TopRight {
+      background-color: #fff;
+      display: flex;
+      flex-direction: column;
+      width: inherit;
+      height: 15vh;
+      .return-icon {
+        width: 20px;
+      }
+    }
+    #right {
+      display: flex;
+      flex-direction: column;
+      #TextBoxTitle {
+        border: 0px;
+        height: 5vh;
+      }
+      #txtContent {
+        height: 70vh;
+      }
+      height: auto;
+    }
+  }
+}

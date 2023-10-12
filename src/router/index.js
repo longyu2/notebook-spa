@@ -3,8 +3,6 @@ import Login from "@/views/LoginView.vue";
 import Regist from "@/views/RegistView.vue";
 import NoteBookView from "@/views/NoteBookView.vue";
 import NoteBookPhoneView from "@/views/NoteBookPhoneView.vue";
-import ArticleContent from "@/components/phone/ArticleContent.vue";
-import ArticleList from "@/components/phone/ArticleList.vue";
 import Admin from "@/views/AdminView.vue";
 import Random from "@/views/RandomArticleView.vue";
 import App from "@/App.vue";
@@ -46,17 +44,7 @@ const router = createRouter({
       path: "/notebook_phone",
       name: "phone",
       component: NoteBookPhoneView,
-      redirect: "/notebook_phone/list",
-      children: [
-        {
-          path: "list",
-          component: ArticleList,
-        },
-        {
-          path: "content",
-          component: ArticleContent,
-        },
-      ],
+      // redirect: "/notebook_phone/list",
     },
   ],
 });
