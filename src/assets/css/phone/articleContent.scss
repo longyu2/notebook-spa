@@ -1,0 +1,38 @@
+$black-border: 1px solid black;
+$radius: 10px;
+$box-height: 95vh;
+
+@media screen and (max-width: 500px) {
+  .van-cell__value {
+    text-align: left;
+  }
+
+  .article-content-box {
+    box-sizing: border-box;
+    padding: 3vw;
+    background-color: #fff;
+    width: 100%;
+    height: 100vh;
+    position: absolute;
+    top: 0vh;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    .input-text-title {
+      font-size: 24px;
+      font-weight: 600;
+      border: 0px;
+      height: 5vh;
+    }
+    .input-text-content {
+      font-size: 16px;
+    }
+    .word-count {
+      padding: 1vw 4vw;
+      font-size: 14px;
+      font-weight: 400;
+      color: rgba($color: #000000, $alpha: 0.4);
+    }
+  }
+}

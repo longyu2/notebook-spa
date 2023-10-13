@@ -65,47 +65,31 @@ watch(
 </script>
 
 <template>
-  <div class="article-content-box shadow">
-    <div id="TopRight">
-      <van-icon
-        name="arrow-left"
-        size="5vw"
-        class="return-icon"
-        @click="hideContent"
-      />
+  <div class="article-content-box">
+    <van-icon
+      name="arrow-left"
+      size="7vw"
+      class="return-icon"
+      @click="hideContent"
+    />
 
-      <span>你好， {{ user.userName }}！</span>
-      <span>
-        你当前阅读的是第
-        <b>
-          <span>{{ props.articleId }} </span>
-        </b>
+    <van-field
+      v-model="title"
+      class="input-text-title"
+      label=""
+      placeholder="请输入标题"
+    />
+    <span class="word-count">{{ content.length }} 字</span>
 
-        篇文章
-      </span>
-
-      <span class="word-count">
-        共
-        <b><span v-text="content.length"></span></b>字</span
-      >
-
-      <router-link to="admin">管理页面</router-link>
-      <router-link to="random">随机推荐</router-link>
-    </div>
-    <div id="right">
-      <input
-        type="text"
-        placeholder="请输入标题"
-        id="TextBoxTitle"
-        v-model="title"
-      />
-      <textarea
-        name="reworkmes"
-        placeholder="请输入内容"
-        id="txtContent"
-        style="overflow: auto"
-        v-model="content"
-      ></textarea>
-    </div>
+    <van-field
+      class="input-text-content"
+      v-model="content"
+      rows="2"
+      :autosize="{ minHeight: 300 }"
+      label=""
+      type="textarea"
+      placeholder="请输入内容"
+      show-word-limit
+    />
   </div>
 </template>

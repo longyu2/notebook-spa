@@ -1,0 +1,38 @@
+$black-border: 1px solid black;
+$radius: 10px;
+$box-height: 95vh;
+$left-width: 15vw;
+
+@media screen and (max-width: 500px) {
+  .article-list-box {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    #TopLeft {
+      box-sizing: border-box;
+      padding: 3vw;
+      height: 10vh;
+      width: 100vw;
+      #ImageButtonAdd {
+        width: 10vw;
+        height: 10vw;
+      }
+    }
+    #left {
+      height: 83vh;
+      overflow: auto;
+      width: 100vw;
+      .ul-li-item {
+        text-align: left;
+        min-height: 8vh;
+      }
+
+      .img-add-btn {
+        width: 20vw;
+        position: fixed;
+        bottom: 10vw;
+        right: 10vw;
+      }
+    }
+  }
+}

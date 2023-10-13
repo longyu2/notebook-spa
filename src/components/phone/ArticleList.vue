@@ -178,39 +178,9 @@ function contentHide() {
 
 <template>
   <div class="article-list-box shadow">
-    <div id="TopLeft">
-      <span class="article-count"> 共{{ articles.length }}条笔记 </span>
-      <div class="topleft-bottom">
-        <div class="isChecked-area">
-          <el-button
-            size="large"
-            class="del-btn"
-            v-if="isButtonChecked"
-            @click="delete_content()"
-          >
-            删除
-          </el-button>
-
-          <el-button
-            class="del-btn"
-            size="large"
-            v-if="isButtonChecked"
-            @click="move_article()"
-            >移动到..</el-button
-          >
-        </div>
-        <img
-          id="ImageButtonAdd"
-          @click="addArticle()"
-          src="@/assets/addNewNoteBook.svg"
-          alt=""
-        />
-      </div>
-    </div>
-
     <div id="left">
-      <ul id="List-ul">
-        <li
+      <van-list id="List-ul">
+        <van-cell
           v-for="(item, index) in articles"
           :key="index"
           @click="byIdSelContent(item['Notebookid'])"
@@ -218,26 +188,31 @@ function contentHide() {
             'article-list-buttonchecked': item.Notebookid === ArticleCheckId,
           }"
         >
-          <el-card shadow="hover" class="el-articlelist-card">
-            <div class="ul-li-item">
-              <input
-                type="checkbox"
-                name=""
-                v-model="item.checked"
-                class="checkbox"
-                id=""
-              />
+          <div class="ul-li-item">
+            <input
+              type="checkbox"
+              name=""
+              v-model="item.checked"
+              class="checkbox"
+              id=""
+            />
 
-              <div class="ul-list-texts">
-                <span class="p_1" v-text="item.title.substring(0, 14)"></span>
+            <div class="ul-list-texts">
+              <span class="p_1" v-text="item.title.substring(0, 14)"></span>
 
-                <p class="p_2" v-text="item.content.substring(0, 14)"></p>
-                <p class="p_3" v-text="item.createtime"></p>
-              </div>
+              <p class="p_2" v-text="item.content.substring(0, 14)"></p>
+              <p class="p_3" v-text="item.createtime"></p>
             </div>
-          </el-card>
-        </li>
-      </ul>
+          </div>
+        </van-cell>
+      </van-list>
+
+      <img
+        class="img-add-btn"
+        @click="addArticle()"
+        src="@/assets/addNewNoteBook.svg"
+        alt=""
+      />
     </div>
   </div>
 

@@ -150,24 +150,3 @@ $left-width: 15vw;
     box-shadow: 0 1px 9px 3px #ccc;
   }
 }
-
-@media screen and (max-width: 500px) {
-  .article-list-box {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    #TopLeft {
-      height: 10vh;
-      width: 100vw;
-      #ImageButtonAdd {
-        width: 10vw;
-        height: 10vw;
-      }
-    }
-    #left {
-      height: 70vh;
-      overflow: auto;
-      width: 100vw;
-    }
-  }
-}

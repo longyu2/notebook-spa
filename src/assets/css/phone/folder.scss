@@ -1,0 +1,28 @@
+$black-border: 1px solid black;
+$radius: 10px;
+$box-height: 905px;
+$left-width: 300px;
+
+@mixin shadow-main {
+  box-shadow: 1px 1px 10px 1px rgba($color: #000000, $alpha: 0.2);
+}
+
+.buttonchecked {
+  @include shadow-main;
+}
+
+@media screen and (max-width: 500px) {
+  #folder {
+    height: 11vh;
+    overflow: auto;
+    display: flex;
+
+    button {
+      flex-shrink: 0;
+      margin: 10px;
+      width: 130px;
+      height: 40px;
+      border-radius: $radius;
+    }
+  }
+}

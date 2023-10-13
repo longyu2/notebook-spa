@@ -1,8 +1,9 @@
 <script setup>
 import { ref } from "vue";
 import { server_url } from "@/assets/constants/index.js";
-import ArticleList from "@/components/pc/ArticleList.vue";
+import ArticleList from "@/components/phone/ArticleList.vue";
 import axios from "axios";
+
 // 请求拦截, 给axios 添加请求头，设置token
 axios.interceptors.request.use(
   (config) => {
@@ -95,65 +96,54 @@ function confirmDelFolder() {
 </script>
 
 <template>
-  <div id="folder" class="shadow">
-    <h4>
+  <div id="folder">
+    <van-button
+      @click="changeFolder(-2, '全部笔记')"
+      :class="{ buttonchecked: -2 === folderChecked.folderId }"
+      >全部笔记</van-button
+    >
+
+    <van-button
+      @click="changeFolder(-1, '未分类')"
+      :class="{ buttonchecked: -1 === folderChecked.folderId }"
+      style="font-size: small"
+    >
+      未分类
+    </van-button>
+    <van-button>
+      <span>我的文件夹</span>
+    </van-button>
+
+    <el-icon @click="createFolder"><Plus /></el-icon>
+
+    <van-button
+      class="folder-item"
+      v-for="(item, index) in folders"
+      :key="index"
+      @click="changeFolder(item.folder_id, item.folder_name)"
+      :class="{ buttonchecked: folderChecked.folderId === item.folder_id }"
+    >
       {{
-        folderChecked.folderName.length > 9
-          ? folderChecked.folderName.substring(0, 8) + "..."
-          : folderChecked.folderName
+        item.folder_name.length > 7
+          ? item.folder_name.substring(0, 7) + ".."
+          : item.folder_name
       }}
-    </h4>
-
-    <ul>
-      <li
-        @click="changeFolder(-2, '全部笔记')"
-        :class="{ buttonchecked: -2 === folderChecked.folderId }"
-        style="font-size: small"
-      >
-        全部笔记
-      </li>
-      <li
-        @click="changeFolder(-1, '未分类')"
-        :class="{ buttonchecked: -1 === folderChecked.folderId }"
-        style="font-size: small"
-      >
-        未分类
-      </li>
-
-      <div class="my-folder">
-        <span>我的文件夹</span>
-        <el-icon @click="createFolder"><Plus /></el-icon>
-      </div>
-
-      <li
-        class="folder-item"
-        v-for="(item, index) in folders"
-        :key="index"
-        @click="changeFolder(item.folder_id, item.folder_name)"
-        :class="{ buttonchecked: folderChecked.folderId === item.folder_id }"
-      >
-        {{
-          item.folder_name.length > 7
-            ? item.folder_name.substring(0, 7) + ".."
-            : item.folder_name
-        }}
-        <el-dropdown placement="bottom" trigger="click" class="dropdown">
-          <el-icon class="el-icon--right">
-            <arrow-down />
-          </el-icon>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item @click="deleteFolder(item.folder_id, index)"
-                >删除</el-dropdown-item
-              >
-              <el-dropdown-item @click="folderRename(item.folder_id, index)"
-                >重命名</el-dropdown-item
-              >
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-      </li>
-    </ul>
+      <el-dropdown placement="bottom" trigger="click" class="dropdown">
+        <el-icon class="el-icon--right">
+          <arrow-down />
+        </el-icon>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item @click="deleteFolder(item.folder_id, index)"
+              >删除</el-dropdown-item
+            >
+            <el-dropdown-item @click="folderRename(item.folder_id, index)"
+              >重命名</el-dropdown-item
+            >
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </van-button>
 
     <!-- 删除对话框 -->
     <el-dialog
