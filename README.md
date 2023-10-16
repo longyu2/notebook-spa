@@ -1,35 +1,13 @@
-# notebook-vue
+# 在线云笔记
 
-This template should help get you started developing with Vue 3 in Vite.
+这是一个支持Markdown 语法的在线云笔记
 
-## Recommended IDE Setup
+地址： [在线笔记](https://note.misaka-mikoto.cn)
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
+#### 技术栈
 
-## Customize configuration
+前端部分采用了vue3 + vite 开发，后端部分使用Nodejs和Express，本项目为前端部分。
 
-See [Vite Configuration Reference](https://vitejs.dev/config/).
+#### 编辑器部分
 
-## Project Setup
-
-```sh
-pnpm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-pnpm dev
-```
-
-### Compile and Minify for Production
-
-```sh
-pnpm build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-pnpm lint
-```
+编辑器使用了开源项目[vditor](https://github.com/Vanessa219/vditor)，支持3种markdown编辑方式
