@@ -15,7 +15,7 @@ $box-height: 95vh;
     #TopRight {
       padding: 10px;
       background-color: #fff;
-      height: 13vh;
+      height: 5vh;
       border-radius: $radius;
       display: flex;
       justify-content: flex-start;
@@ -36,36 +36,17 @@ $box-height: 95vh;
         margin-left: 20px;
       }
     }
-    #right {
-      margin-top: 2vh;
-      height: 85vh;
-      border-bottom: 0px;
-      background-color: white;
-      #TextBoxTitle {
-        margin-left: 8px;
-        width: 80%;
-        flex-grow: 4;
-        height: 35px;
-        font-weight: 400;
-        font-size: medium;
-        border-radius: 5px;
-        outline: none;
-        border: none;
-      }
 
-      #txtContent {
-        flex-grow: 4;
-        width: 98%;
-        margin-top: 10px;
-        margin-left: 1%;
-        height: 90%;
-        font-size: small;
-        font-family: "微软雅黑";
-        border: 1px solid gray;
-        border-radius: 5px;
-        outline: none;
-        border: none;
-      }
+    #input-title {
+      height: 5vh;
+      margin-left: 8px;
+      width: 80%;
+
+      font-weight: 400;
+      font-size: 24px;
+      border: 0px solid red;
+      border-radius: 5px;
+      outline: none;
     }
   }
 }

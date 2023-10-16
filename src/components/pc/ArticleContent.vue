@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import axios from "axios";
 import { server_url } from "../../assets/constants/server_url";
 import { saveArticle } from "@/assets/js/ArticlesTools.js";
@@ -16,6 +16,35 @@ axios.interceptors.request.use(
     return Promise.error(error);
   }
 );
+
+import Vditor from "vditor";
+import "vditor/dist/index.css";
+
+const contentEditor = ref("");
+
+// 用于初始化编辑器的函数，传入参数
+function initEditor(initValue) {
+  contentEditor.value = new Vditor("vditor", {
+    height: 1060,
+    toolbarConfig: {
+      pin: true,
+    },
+    cache: {
+      enable: false,
+    },
+    after: () => {
+      contentEditor.value.setValue(initValue);
+    },
+    input: (md) => {
+      content.value = md; // 回调将编辑器输入
+      console.log(md);
+    },
+  });
+}
+
+onMounted(() => {
+  initEditor("");
+});
 
 const props = defineProps(["articleId"]);
 const emit = defineEmits(["contentUpdate"]);
@@ -58,6 +87,9 @@ watch(
           // 将查询到的文章信息赋给title 和 content 两个响应性变量
           title.value = results.data[0].title;
           content.value = results.data[0].content;
+
+          initEditor(results.data[0].content);
+          //
         });
     }
   }
@@ -92,20 +124,9 @@ watch(
       <router-link to="admin">管理页面</router-link>
       <router-link to="random">随机推荐</router-link>
     </div>
-    <div id="right">
-      <input
-        type="text"
-        placeholder="请输入标题"
-        id="TextBoxTitle"
-        v-model="title"
-      />
-      <textarea
-        name="reworkmes"
-        placeholder="请输入内容"
-        id="txtContent"
-        style="overflow: auto"
-        v-model="content"
-      ></textarea>
-    </div>
+
+    <input id="input-title" placeholder="请输入标题" v-model="title" />
+
+    <div id="vditor" class="vditor"></div>
   </div>
 </template>

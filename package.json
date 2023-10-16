@@ -15,7 +15,7 @@
     "element-plus": "^2.2.32",
     "sass": "^1.57.1",
     "vant": "^4.0.11",
-    "vditor": "^3.8.18",
+    "vditor": "^3.9.0",
     "vite-plugin-autodeploys": "^2.0.0",
     "vue": "^3.2.45",
     "vue-router": "^4.1.6"
