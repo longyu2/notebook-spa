@@ -1,5 +1,5 @@
-<script setup>
-import { server_url } from "@/assets/constants/index.js";
+<script setup lang="ts">
+import { server_url } from '@/assets/constants/index'
 </script>
 
 <template>
@@ -9,11 +9,7 @@ import { server_url } from "@/assets/constants/index.js";
         <h3>登录</h3>
         <p>用户名：</p>
 
-        <el-input
-          class="el-input"
-          v-model="username"
-          placeholder="Please input"
-        />
+        <el-input class="el-input" v-model="username" placeholder="Please input" />
         <p>密码：</p>
 
         <el-input
@@ -23,9 +19,7 @@ import { server_url } from "@/assets/constants/index.js";
           placeholder="Please input password"
           show-password
         />
-        <el-button class="login-btn" type="success" @click="login_click()"
-          >登录</el-button
-        >
+        <el-button class="login-btn" type="success" @click="login_click()">登录</el-button>
         <a class="forget" href="">忘记密码? </a>
         <router-link to="regist" class="forget">没有账号？去注册</router-link>
       </div>
@@ -33,38 +27,35 @@ import { server_url } from "@/assets/constants/index.js";
   </div>
 </template>
 
-<script>
-import axios from "axios";
+<script lang="ts">
+import axios from 'axios'
 export default {
   data() {
     return {
       isloginShow: true,
-      username: "",
-      userpwd: "",
-    };
+      username: '',
+      userpwd: ''
+    }
   },
   methods: {
     login_click() {
       axios
         .post(`${server_url}/session`, {
           username: this.username,
-          passwd: this.userpwd,
+          passwd: this.userpwd
         })
         .then((results) => {
-          if (results.data.status == "成功") {
-            localStorage.setItem("token", results.data.data.token); // 将token 存储
-            localStorage.setItem(
-              "user",
-              JSON.stringify(results.data.data.user)
-            );
-            this.$router.push({ path: "/" });
+          if (results.data.status == '成功') {
+            localStorage.setItem('token', results.data.data.token) // 将token 存储
+            localStorage.setItem('user', JSON.stringify(results.data.data.user))
+            this.$router.push({ path: '/' })
           } else {
-            alert("登录失败！");
+            alert('登录失败！')
           }
-        });
-    },
-  },
-};
+        })
+    }
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -81,7 +72,7 @@ h3 {
 @media screen and (min-width: 800px) {
   .login-contanier {
     height: 100vh;
-    background-image: url("@/assets/images/187.jpg");
+    background-image: url('@/assets/images/187.jpg');
     background-size: cover;
     justify-content: center;
     display: flex;
@@ -119,7 +110,7 @@ h3 {
     }
     .login-box::after {
       /* 必须要写的属性 content */
-      content: "";
+      content: '';
       padding: 20px 30px;
       background-color: black;
       opacity: 27%;
@@ -136,7 +127,7 @@ h3 {
 @media screen and (max-width: 400px) {
   .login-contanier {
     height: 100vh;
-    background-image: url("@/assets/images/187.jpg");
+    background-image: url('@/assets/images/187.jpg');
     background-size: cover;
     justify-content: center;
     display: flex;
@@ -173,7 +164,7 @@ h3 {
     }
     .login-box::after {
       /* 必须要写的属性 content */
-      content: "";
+      content: '';
       padding: 20px 30px;
       background-color: black;
       opacity: 27%;

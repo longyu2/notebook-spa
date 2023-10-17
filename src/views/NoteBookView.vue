@@ -1,38 +1,21 @@
-<script setup>
-import { ref } from "vue";
-import { server_url } from "@/assets/constants/index.js";
-import FolderList from "@/components/pc/FolderList.vue";
+<script setup lang="ts">
+import FolderList from '@/components/pc/FolderList.vue'
 </script>
 
 <template>
   <div id="notebook-box">
     <FolderList></FolderList>
   </div>
-
-  <MoveToFolder
-    v-if="IsShowMoveToFolder"
-    :folderList="folders"
-    :check_list="check_id_list"
-    :server_url="server_url"
-    @some-event="IsShowMoveToFolder = false"
-  >
-  </MoveToFolder>
 </template>
 
-<script>
-import MoveToFolder from "@/components/pc/MoveToFolder.vue";
-import axios from "axios";
+<script lang="ts">
+import axios from 'axios'
 // 请求拦截, 给axios 添加请求头，设置token
-axios.interceptors.request.use(
-  (config) => {
-    // 添加自定义token
-    config.headers.authorization = localStorage.getItem("token");
-    return config;
-  },
-  (error) => {
-    return Promise.error(error);
-  }
-);
+axios.interceptors.request.use((config) => {
+  // 添加自定义token
+  config.headers.authorization = localStorage.getItem('token')
+  return config
+})
 </script>
 
 <style lang="scss" scoped>

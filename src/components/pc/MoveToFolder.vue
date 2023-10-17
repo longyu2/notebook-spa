@@ -1,80 +1,64 @@
+<script setup lang="ts">
+import { server_url } from '@/assets/constants/index'
+import axios from 'axios'
+import { toRaw, ref, defineProps, onMounted } from 'vue'
+
+const props = defineProps(['check_list'])
+let folderList = ref([])
+// let articleList = ref([])
+
+const emit = defineEmits(['someEvent', 'submit'])
+
+// 根据获取到的 目标文件夹id 和 已经选中的 文章的id。进行添加
+function move(folder: any) {
+  const articleList = toRaw(props.check_list)
+  // 遍历所有选中的文章，有多少文章就发送多少次请求
+  articleList.forEach((element: any) => {
+    let jsonObj = {
+      folder_id: folder.folder_id,
+      article_id: element.Notebookid
+    }
+    axios.put(`${server_url}/FolderAddArticle`, jsonObj).then((results) => {
+      console.log(results)
+      emit('someEvent')
+    })
+  })
+}
+
+// 将选中的文章移入到未分类文件夹中
+function deleteFolder() {}
+
+onMounted(() => {
+  //获得文件夹列表
+  axios.get(`${server_url}/folders`).then((res) => {
+    folderList.value = res.data
+  })
+})
+</script>
 <template>
   <div class="MoveToFolder">
     <div class="header">
       <span>移动到文件夹</span>
-      <button class="close-btn" @click="close">×</button>
+      <button class="close-btn" @click="$emit('someEvent')">×</button>
     </div>
     <hr />
 
     <ul>
       <a href="#"
-        ><li
-          class="head-li"
-          @click="MoveToFolder({ folder_id: -1, folder_name: '未分类' })"
-        >
-          <img src="@/assets/return.svg" alt="" @click="deleteFolder(item)" />
+        ><li class="head-li" @click="move({ folder_id: -1, folder_name: '未分类' })">
+          <img src="@/assets/return.svg" alt="" @click="deleteFolder()" />
           <span>移出文件夹</span>
         </li></a
       >
       <a href="#"
-        ><li v-for="item in folderList" :key="item" @click="MoveToFolder(item)">
+        ><li v-for="item in folderList" :key="item" @click="move(item)">
           <img src="@/assets/folder.svg" alt="" />
-          <span> {{ item.folder_name }}</span>
+          <span> {{ item['folder_name'] }}</span>
         </li>
       </a>
     </ul>
   </div>
 </template>
-
-<script>
-import { server_url } from "@/assets/constants/index.js";
-import axios from "axios";
-import { toRaw } from "vue";
-
-export default {
-  props: ["server_url", "check_list"],
-  data() {
-    return {
-      folderList: [],
-      articleList: [],
-    };
-  },
-
-  methods: {
-    // 根据获取到的 目标文件夹id 和 已经选中的 文章的id。进行添加
-    MoveToFolder: function (folder) {
-      const articleList = toRaw(this.check_list);
-      // 遍历所有选中的文章，有多少文章就发送多少次请求
-      articleList.forEach((element) => {
-        console.log("elem");
-        console.log(element);
-
-        let jsonObj = {
-          folder_id: folder.folder_id,
-          article_id: element.Notebookid,
-        };
-
-        axios.put(`${server_url}/FolderAddArticle`, jsonObj).then((results) => {
-          console.log(results);
-          this.close();
-        });
-      });
-    },
-    // 将选中的文章移入到未分类文件夹中
-    deleteFolder: function () {},
-    close: function () {
-      this.$emit("someEvent");
-    },
-  },
-  created() {
-    let that = this;
-    //获得文件夹列表
-    axios.get(`${server_url}/folders`).then((res) => {
-      that.folderList = res.data;
-    });
-  },
-};
-</script>
 
 <style lang="scss" scoped>
 .MoveToFolder {

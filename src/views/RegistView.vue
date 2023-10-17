@@ -1,52 +1,52 @@
-<script setup>
-import { server_url } from "@/assets/constants/index.js";
+<script setup lang="ts">
+import { server_url } from '@/assets/constants/index'
 
-import { ref } from "vue";
-import { watch } from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
-import axios from "axios";
+import { ref } from 'vue'
+import { watch } from 'vue'
+import axios from 'axios'
 
-let username = ref("");
-let userpwd = ref("");
-let verify_passwd = ref("");
-let email = ref("");
-let IsPasswordVerify = true; // 表示两次输入密码是否一致
-let verify_code_input = ref("");
-let show_input_verify_code = ref(false);
+let username = ref('')
+let userpwd = ref('')
+let verify_passwd = ref('')
+let email = ref('')
+let IsPasswordVerify = true // 表示两次输入密码是否一致
+let verify_code_input = ref('')
+let show_input_verify_code = ref(false)
 
 watch(verify_passwd, (newValue, oldValue) => {
+  console.log(`触发watch:verify_passwdoldValue:${oldValue}`)
   if (newValue == userpwd.value) {
-    IsPasswordVerify = true;
+    IsPasswordVerify = true
   } else {
-    IsPasswordVerify = false;
+    IsPasswordVerify = false
   }
-});
+})
 
 function regist() {
   const obj = {
     username: username.value,
     userpwd: userpwd.value,
     email: email.value,
-    verify: "",
-  };
+    verify: ''
+  }
 
   axios.post(`${server_url}/user`, obj).then((data) => {
-    console.log(data);
-    show_input_verify_code.value = true;
-  });
+    console.log(data)
+    show_input_verify_code.value = true
+  })
 }
 function verify_regist() {
   const obj = {
     username: username.value,
     userpwd: userpwd.value,
     email: email.value,
-    verify: verify_code_input.value,
-  };
+    verify: verify_code_input.value
+  }
 
   axios.post(`${server_url}/user`, obj).then((data) => {
-    console.log(data);
-    alert("注册成功");
-  });
+    console.log(data)
+    alert('注册成功')
+  })
 }
 </script>
 
@@ -57,11 +57,7 @@ function verify_regist() {
         <h3>注册用户</h3>
         <p>用户名：</p>
 
-        <el-input
-          class="el-input"
-          v-model="username"
-          placeholder="Please input"
-        />
+        <el-input class="el-input" v-model="username" placeholder="Please input" />
         <p>密码：</p>
 
         <el-input
@@ -85,9 +81,7 @@ function verify_regist() {
         <p>请输入电子邮箱</p>
         <el-input class="el-input" v-model="email" placeholder="Please input" />
 
-        <el-button class="login-btn" type="success" @click="regist()"
-          >注册</el-button
-        >
+        <el-button class="login-btn" type="success" @click="regist()">注册</el-button>
 
         <div v-if="show_input_verify_code">
           请输入验证码
@@ -114,7 +108,7 @@ h3 {
 @media screen and (min-width: 600px) {
   .login-contanier {
     height: 100vh;
-    background-image: url("@/assets/images/187.jpg");
+    background-image: url('@/assets/images/187.jpg');
     background-size: cover;
     justify-content: center;
     display: flex;
@@ -152,7 +146,7 @@ h3 {
     }
     .login-box::after {
       /* 必须要写的属性 content */
-      content: "";
+      content: '';
       padding: 20px 30px;
       background-color: black;
       opacity: 27%;
@@ -169,7 +163,7 @@ h3 {
 @media screen and (max-width: 400px) {
   .login-contanier {
     height: 100vh;
-    background-image: url("@/assets/images/187.jpg");
+    background-image: url('@/assets/images/187.jpg');
     background-size: cover;
     justify-content: center;
     display: flex;
@@ -206,7 +200,7 @@ h3 {
     }
     .login-box::after {
       /* 必须要写的属性 content */
-      content: "";
+      content: '';
       padding: 20px 30px;
       background-color: black;
       opacity: 27%;
