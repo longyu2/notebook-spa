@@ -32,7 +32,6 @@ function initEditor(initValue: string) {
     },
     input: (md) => {
       content.value = md // 回调将编辑器输入
-      console.log(md)
     }
   })
 }

@@ -1,10 +1,30 @@
 <script setup lang="ts">
 import { server_url } from '@/assets/constants/index'
-
+import { useRouter, useRoute } from 'vue-router'
 import { ref } from 'vue'
 import { watch } from 'vue'
 import axios from 'axios'
 
+let second = ref('60s 后重发')
+
+// 发送验证码后倒计时才可发送第二次
+function Countdown() {
+  second.value = '60s 后重发' // 每点击一次重发按钮则开始计时
+  regstEnable.value = false
+
+  let interval = setInterval(() => {
+    second.value = (parseInt(second.value) - 1).toString() + 's 后重发'
+    console.log(second.value)
+    if (second.value == '55s 后重发') {
+      regstEnable.value = true
+      second.value = '重新发送'
+      clearInterval(interval)
+    }
+  }, 1000)
+}
+
+const router = useRouter()
+let regstEnable = ref(true)
 let username = ref('')
 let userpwd = ref('')
 let verify_passwd = ref('')
@@ -23,6 +43,8 @@ watch(verify_passwd, (newValue, oldValue) => {
 })
 
 function regist() {
+  console.log('regist方法被触发了')
+
   const obj = {
     username: username.value,
     userpwd: userpwd.value,
@@ -33,6 +55,7 @@ function regist() {
   axios.post(`${server_url}/user`, obj).then((data) => {
     console.log(data)
     show_input_verify_code.value = true
+    Countdown()
   })
 }
 function verify_regist() {
@@ -46,6 +69,7 @@ function verify_regist() {
   axios.post(`${server_url}/user`, obj).then((data) => {
     console.log(data)
     alert('注册成功')
+    router.push('/login')
   })
 }
 </script>
@@ -84,10 +108,10 @@ function verify_regist() {
         <el-button class="login-btn" type="success" @click="regist()">注册</el-button>
 
         <div v-if="show_input_verify_code">
-          请输入验证码
+          <span> 请输入验证码 </span>
           <el-input v-model="verify_code_input"></el-input>
           <el-button @click="verify_regist"> 确认 </el-button>
-          <el-button @click="regist"> 重新发送 </el-button>
+          <el-button @click="regist" :disabled="!regstEnable"> {{ second }} </el-button>
         </div>
       </div>
     </div>
@@ -101,7 +125,8 @@ function verify_regist() {
 }
 p,
 a,
-h3 {
+h3,
+span {
   color: white;
 }
 

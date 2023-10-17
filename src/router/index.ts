@@ -50,7 +50,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from) => {
-  if (to.path != '/login') {
+  if (to.path != '/login' && to.path != '/regist') {
     if (localStorage.getItem('token') != null) {
       console.log('有token')
     } else {
