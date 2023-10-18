@@ -102,14 +102,14 @@ function confirmDelFolder() {
     <ul>
       <li
         @click="changeFolder(-2, '全部笔记')"
-        :class="{ buttonchecked: -2 === folderChecked.folderId }"
+        :class="{ 'folers-button-checked': -2 === folderChecked.folderId }"
         style="font-size: small"
       >
         全部笔记
       </li>
       <li
         @click="changeFolder(-1, '未分类')"
-        :class="{ buttonchecked: -1 === folderChecked.folderId }"
+        :class="{ 'folers-button-checked': -1 === folderChecked.folderId }"
         style="font-size: small"
       >
         未分类
@@ -125,7 +125,7 @@ function confirmDelFolder() {
         v-for="(item, index) in folders"
         :key="index"
         @click="changeFolder(item.folder_id, item.folder_name)"
-        :class="{ buttonchecked: folderChecked.folderId === item.folder_id }"
+        :class="{ 'folers-button-checked': folderChecked.folderId === item.folder_id }"
       >
         {{
           item.folder_name.length > 7 ? item.folder_name.substring(0, 7) + '..' : item.folder_name
