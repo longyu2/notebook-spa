@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import { server_url } from '@/assets/constants/index'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { ref } from 'vue'
 import { watch } from 'vue'
 import axios from 'axios'
-
+import { ElMessage } from 'element-plus'
 let second = ref('60s 后重发')
 
 // 发送验证码后倒计时才可发送第二次
 function Countdown() {
+  console.log('countdown')
+
   second.value = '60s 后重发' // 每点击一次重发按钮则开始计时
   regstEnable.value = false
 
   let interval = setInterval(() => {
     second.value = (parseInt(second.value) - 1).toString() + 's 后重发'
-    console.log(second.value)
-    if (second.value == '55s 后重发') {
+    if (second.value == '0s 后重发') {
       regstEnable.value = true
       second.value = '重新发送'
       clearInterval(interval)
@@ -43,8 +44,6 @@ watch(verify_passwd, (newValue, oldValue) => {
 })
 
 function regist() {
-  console.log('regist方法被触发了')
-
   const obj = {
     username: username.value,
     userpwd: userpwd.value,
@@ -52,11 +51,34 @@ function regist() {
     verify: ''
   }
 
-  axios.post(`${server_url}/user`, obj).then((data) => {
-    console.log(data)
-    show_input_verify_code.value = true
-    Countdown()
+  if (username.value == '') {
+    ElMessage.error('用户名不能为空')
+    return
+  }
+
+  if (userpwd.value == '') {
+    ElMessage.error('密码不能为空')
+    return
+  }
+  if (verify_passwd.value == '') {
+    ElMessage.error('请确认密码')
+    return
+  }
+
+  if (email.value == '') {
+    ElMessage.error('邮箱不能为空')
+    return
+  }
+
+  // 显示输入验证码的框，开始倒计时
+  Countdown()
+  show_input_verify_code.value = true
+  ElMessage({
+    message: '验证码已发送，请前往邮箱查看',
+    type: 'success'
   })
+
+  axios.post(`${server_url}/user`, obj).then(() => {})
 }
 function verify_regist() {
   const obj = {
@@ -67,7 +89,6 @@ function verify_regist() {
   }
 
   axios.post(`${server_url}/user`, obj).then((data) => {
-    console.log(data)
     alert('注册成功')
     router.push('/login')
   })
