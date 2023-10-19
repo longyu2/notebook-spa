@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { server_url } from '@/assets/constants/index'
+import { ElMessage } from 'element-plus'
 </script>
 
 <template>
@@ -48,9 +49,14 @@ export default {
           if (results.data.status == '成功') {
             localStorage.setItem('token', results.data.data.token) // 将token 存储
             localStorage.setItem('user', JSON.stringify(results.data.data.user))
+
+            ElMessage({
+              message: '登录成功',
+              type: 'success'
+            })
             this.$router.push({ path: '/' })
           } else {
-            alert('登录失败！')
+            ElMessage.error('登录失败，用户名或密码错误！')
           }
         })
     }

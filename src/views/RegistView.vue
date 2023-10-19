@@ -89,7 +89,10 @@ function verify_regist() {
   }
 
   axios.post(`${server_url}/user`, obj).then((data) => {
-    alert('注册成功')
+    ElMessage({
+      message: '注册成功！',
+      type: 'success'
+    })
     router.push('/login')
   })
 }

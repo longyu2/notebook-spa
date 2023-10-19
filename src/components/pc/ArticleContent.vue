@@ -107,9 +107,13 @@ watch(
         共
         <b><span v-text="content.length"></span></b>字</span
       >
-
-      <router-link to="admin">管理页面</router-link>
       <router-link to="random">随机推荐</router-link>
+
+      <div class="space"></div>
+
+      <router-link to="admin" class="setting">
+        <el-icon size="25"><Setting /></el-icon>
+      </router-link>
     </div>
 
     <input id="input-title" placeholder="请输入标题" v-model="title" />
