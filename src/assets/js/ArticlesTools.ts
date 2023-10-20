@@ -11,7 +11,7 @@ axios.interceptors.request.use((config) => {
 export const saveArticle = function (articleId: string, title: string, content: string) {
   // 将内容保存到云
   axios
-    .post(server_url + '/updateContent', {
+    .put(server_url + '/article', {
       Notebookid: articleId,
       content: content,
       title: title

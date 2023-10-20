@@ -29,15 +29,12 @@ function showRandomArticle() {
   let rand = Math.floor(Math.random() * count)
 
   // 使用axios 获取文章信息
-  axios
-    .post(`${server_url}/byIdSelContent`, { id: NoteBookList[rand].Notebookid })
-    .then((results) => {
-      // 将查询到的文章信息赋给title 和 content 两个响应性变量
-      console.log(results.data[0])
-      title.value = results.data[0].title
-      content.value = results.data[0].content
-      createtime.value = results.data[0].createtime
-    })
+  axios.get(`${server_url}/article/${NoteBookList[rand].Notebookid}`).then((results) => {
+    // 将查询到的文章信息赋给title 和 content 两个响应性变量
+    title.value = results.data[0].title
+    content.value = results.data[0].content
+    createtime.value = results.data[0].createtime
+  })
 }
 </script>
 

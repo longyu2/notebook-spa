@@ -70,14 +70,15 @@ function delete_content() {
   let del_object: any = { del_sql_notebookid_list: [] }
 
   for (let i = 0; i < articles.value.length; i++) {
-    // 删除articles 数组中对应数据
     if (articles.value[i].checked) {
       del_object.del_sql_notebookid_list.push(articles.value[i].Notebookid)
     }
   }
 
+  console.log(del_object)
+
   // 调用后台的删除接口，将参数传递给后台进行删除
-  axios.post(`${server_url}/delContent`, del_object).then((res) => {
+  axios.delete(`${server_url}/articles`, { data: del_object }).then((res) => {
     if (res == null) {
       console.error('res is null!')
     }

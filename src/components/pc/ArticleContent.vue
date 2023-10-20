@@ -75,13 +75,11 @@ watch(
       console.error('错误，watch新旧值相等了！')
     } else {
       // 使用axios 获取文章信息
-      axios.post(`${server_url}/byIdSelContent`, { id: props.articleId }).then((results) => {
+      axios.get(`${server_url}/article/${props.articleId}`).then((results) => {
         // 将查询到的文章信息赋给title 和 content 两个响应性变量
         title.value = results.data[0].title
         content.value = results.data[0].content
-
         initEditor(results.data[0].content)
-        //
       })
     }
   }

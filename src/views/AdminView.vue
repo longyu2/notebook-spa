@@ -37,6 +37,8 @@ function quit() {
   localStorage.setItem('token', '')
   router.push('/login')
 }
+
+function output() {}
 </script>
 
 <template>
@@ -48,6 +50,10 @@ function quit() {
       <span> 输入新密码：</span>
       <el-input class="input" type="text" v-model="passwdText" />
       <el-button @click="updatePasswd">修改</el-button>
+    </p>
+
+    <p>
+      <el-button @click="output"> 批量导出 </el-button>
     </p>
 
     <div class="space"></div>

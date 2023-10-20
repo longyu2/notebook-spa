@@ -77,7 +77,7 @@ function delete_content() {
   }
 
   // 调用后台的删除接口，将参数传递给后台进行删除
-  axios.post(`${server_url}/delContent`, del_object).then((res) => {
+  axios.delete(`${server_url}/articles`, del_object).then((res) => {
     if (res == null) {
       console.error('res is null!')
     }
