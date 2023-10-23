@@ -39,14 +39,41 @@ function showRandomArticle() {
 </script>
 
 <template>
-  <el-button @click="showRandomArticle">随机推荐</el-button>
-  <el-card>
-    <p>{{ title }}</p>
+  <div class="random-box">
+    <nav>
+      <el-button size="large" @click="showRandomArticle">随机推荐</el-button>
+    </nav>
 
-    <br />
-    <p>{{ createtime }}</p>
-    <br />
+    <el-card class="random-text">
+      <p>{{ title }}</p>
 
-    <p>{{ content }}</p>
-  </el-card>
+      <br />
+      <p>{{ createtime }}</p>
+      <br />
+      <p>{{ content }}</p>
+    </el-card>
+  </div>
 </template>
+
+<style lang="scss" scoped>
+.random {
+  &-box {
+    margin: 100px auto;
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    nav {
+      margin: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+  &-text {
+    min-height: 200px;
+    width: 100%;
+  }
+}
+</style>
