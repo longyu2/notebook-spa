@@ -17,15 +17,11 @@ let createtime = ref('')
 let content = ref('')
 
 axios.get(`${server_url}/articles?folderid=-2`).then((result) => {
-  console.log(result.data.data) //  查询到的信息存储到article数组中
-
   count = result.data.data.length
   NoteBookList = result.data.data
-  console.log(NoteBookList)
 })
 
 function showRandomArticle() {
-  console.log(NoteBookList)
   let rand = Math.floor(Math.random() * count)
 
   // 使用axios 获取文章信息

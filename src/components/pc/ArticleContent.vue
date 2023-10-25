@@ -46,7 +46,6 @@ const emit = defineEmits(['contentUpdate', 'contentHide'])
 // 监听tite 和 content
 watch([title, content], ([newTitle, newContent]) => {
   saveArticle(props.articleId, title.value, content.value)
-  console.log(newTitle, newContent)
   // 将内容的变化通知父组件，使其修改列表中的显示
   contentUpdate(title, content)
 })

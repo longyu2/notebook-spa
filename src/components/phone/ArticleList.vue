@@ -143,7 +143,6 @@ function addArticle() {
     })
     .then((result) => {
       let newArticle = result.data.data.articleInfo
-      console.log('data:')
       console.table(newArticle)
 
       console.table(newArticle)
@@ -159,7 +158,6 @@ function contentUpdate(data: { articleId: any; content: any; title: any }) {
   // 对articles 进行遍历，找到Notebookid 与 子组件传来的articleId 相同的那一项，更改其内容
   articles.value.forEach((element: { Notebookid: any; title: any; content: any }) => {
     if (element.Notebookid == data.articleId) {
-      console.log(data.content)
       element.title = data.title
       element.content = data.content
     }

@@ -31,11 +31,6 @@ let IsShowMoveToFolder = ref(false)
 let articles: any = ref([])
 let ArticleCheckId = ref(0)
 
-let IsContentShow = ref(false)
-
-// 电脑端不隐藏
-IsContentShow.value = !_isMobile()
-
 // 判断是否移动端的函数
 function _isMobile() {
   let flag = navigator.userAgent.match(
@@ -49,6 +44,7 @@ function getArticleByFoldeId(folderId: string) {
   axios.get(`${server_url}/articles?folderid=${folderId}`).then((result) => {
     articles.value = result.data.data //  查询到的信息存储到article数组中
     ArticleCheckId = ref(articles.value[0].Notebookid) // 选中列表中最新的文章
+
     //在信息获取完成后，为其添加控制checkbox 的属性
     articles.value.forEach((element: any) => {
       element.checked = false
@@ -61,8 +57,6 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
 // 更改显示的文章
 function byIdSelContent(Notebookid: any) {
   ArticleCheckId.value = Notebookid
-
-  IsContentShow.value = true // 显示文章
 }
 
 // 删除选中的文章
@@ -74,8 +68,6 @@ function delete_content() {
       del_object.del_sql_notebookid_list.push(articles.value[i].Notebookid)
     }
   }
-
-  console.log(del_object)
 
   // 调用后台的删除接口，将参数传递给后台进行删除
   axios.delete(`${server_url}/articles`, { data: del_object }).then((res) => {
@@ -144,10 +136,6 @@ function addArticle() {
     })
     .then((result) => {
       let newArticle = result.data.data.articleInfo
-      console.log('data:')
-      console.table(newArticle)
-
-      console.table(newArticle)
       newArticle.checked = false
       ArticleCheckId.value = newArticle.Notebookid
       //返回的是只有一个元素的数组，还是需要用下标0取
@@ -160,15 +148,10 @@ function contentUpdate(data: { articleId: any; content: any; title: any }) {
   // 对articles 进行遍历，找到Notebookid 与 子组件传来的articleId 相同的那一项，更改其内容
   articles.value.forEach((element: { Notebookid: any; title: any; content: any }) => {
     if (element.Notebookid == data.articleId) {
-      console.log(data.content)
       element.title = data.title
       element.content = data.content
     }
   })
-}
-// 接受子组件传来的emit ，关闭content 框
-function contentHide() {
-  IsContentShow.value = false
 }
 </script>
 
@@ -223,10 +206,5 @@ function contentHide() {
     @some-event="closeMoveCallback()"
   ></MoveToFolder>
 
-  <ArticleContent
-    v-show="IsContentShow"
-    @content-hide="contentHide"
-    @content-update="contentUpdate"
-    :articleId="ArticleCheckId"
-  ></ArticleContent>
+  <ArticleContent @content-update="contentUpdate" :articleId="ArticleCheckId"></ArticleContent>
 </template>

@@ -9,8 +9,6 @@ let second = ref('60s 后重发')
 
 // 发送验证码后倒计时才可发送第二次
 function Countdown() {
-  console.log('countdown')
-
   second.value = '60s 后重发' // 每点击一次重发按钮则开始计时
   regstEnable.value = false
 
@@ -35,7 +33,6 @@ let verify_code_input = ref('')
 let show_input_verify_code = ref(false)
 
 watch(verify_passwd, (newValue, oldValue) => {
-  console.log(`触发watch:verify_passwdoldValue:${oldValue}`)
   if (newValue == userpwd.value) {
     IsPasswordVerify = true
   } else {

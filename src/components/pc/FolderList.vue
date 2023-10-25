@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { server_url } from '@/assets/constants/index'
 import ArticleList from '@/components/pc/ArticleList.vue'
 import axios from 'axios'
@@ -14,7 +14,6 @@ let folders: any = ref([]) // 定义响应式文件夹
 
 //初始化，填充文件夹
 axios.get(`${server_url}/folders`).then((res) => {
-  console.log(res.data)
   folders.value = res.data
 })
 
@@ -44,7 +43,6 @@ function confirmClick() {
 function folderRename(folder_id: any, index: any) {
   const newName = prompt('请输入新文件夹名')
   axios.put(`${server_url}/folders`, { folder_id, newName }).then((result) => {
-    console.log(result.data)
     folders.value[index].folder_name = newName
   })
 }
@@ -53,11 +51,25 @@ let foldeDelDialogVisible = ref(false) // 控制删除对话框的出现
 let delFolder: any = { id: 0, index: 0 } // 定义一个将要确认删除的文件夹的id 以及在数组中的索引
 let folderChecked = ref({ folderId: -2, folderName: '所有笔记' }) // 指示当前选中的folder
 
+// 读取localstorage ，查看是否有上次浏览记录
+if (localStorage.getItem('userWatch') != null) {
+  folderChecked.value = JSON.parse(localStorage.getItem('userWatch')!).folderCheck
+}
+
+// 监听folderChecked，一旦监听到选中的文件夹改变，就存储于localStorage
+watch(folderChecked, (newFolderChecked) => {
+  localStorage.setItem(
+    'userWatch',
+    JSON.stringify({
+      folderCheck: newFolderChecked
+    })
+  )
+})
+
 // 切换文件夹 ，根据输入的folderid 来进行视图的切换
 function changeFolder(folderId: any, folderName: any) {
   if (folderName == '全部笔记') {
     folderChecked.value = { folderId: -2, folderName: '全部笔记' }
-    // this.getAllArticle();
     return
   }
   if (folderName == '未分类') {
@@ -66,19 +78,16 @@ function changeFolder(folderId: any, folderName: any) {
   }
 
   folderChecked.value = { folderId: folderId, folderName: folderName }
-  console.log(folderChecked.value)
 }
 // 文件夹删除
 function deleteFolder(folder_id: any, index: any) {
   foldeDelDialogVisible.value = true
   delFolder = { folder_id, index }
-  console.log(delFolder)
 }
 
 // 确认删除
 function confirmDelFolder() {
   foldeDelDialogVisible.value = false
-  console.log(delFolder.id)
   // const folder_id = delFolder.id;
   axios
     .delete(`${server_url}/folders`, {

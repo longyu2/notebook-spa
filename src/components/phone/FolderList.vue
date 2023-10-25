@@ -15,7 +15,6 @@ let folders: any = ref([]) // 定义响应式文件夹
 
 //初始化，填充文件夹
 axios.get(`${server_url}/folders`).then((res) => {
-  console.log(res.data)
   folders.value = res.data
 })
 
@@ -45,7 +44,6 @@ function confirmClick() {
 function folderRename(folder_id: any, index: any) {
   const newName = prompt('请输入新文件夹名')
   axios.put(`${server_url}/folders`, { folder_id, newName }).then((result) => {
-    console.log(result.data)
     folders.value[index].folder_name = newName
   })
 }
@@ -67,19 +65,16 @@ function changeFolder(folderId: any, folderName: string) {
   }
 
   folderChecked.value = { folderId: folderId, folderName: folderName }
-  console.log(folderChecked.value)
 }
 // 文件夹删除
 function deleteFolder(folder_id: any, index: any) {
   foldeDelDialogVisible.value = true
   delFolder = { folder_id, index }
-  console.log(delFolder)
 }
 
 // 确认删除
 function confirmDelFolder() {
   foldeDelDialogVisible.value = false
-  console.log(delFolder.id)
   const folder_id = delFolder.id
   axios
     .delete(`${server_url}/folders`, {

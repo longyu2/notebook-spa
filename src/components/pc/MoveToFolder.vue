@@ -19,7 +19,6 @@ function move(folder: any) {
       article_id: element.Notebookid
     }
     axios.put(`${server_url}/FolderAddArticle`, jsonObj).then((results) => {
-      console.log(results)
       emit('someEvent')
     })
   })
