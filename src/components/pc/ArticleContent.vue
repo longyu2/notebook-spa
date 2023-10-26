@@ -88,7 +88,6 @@ watch(
 <template>
   <div class="article-content-box shadow">
     <div id="TopRight">
-      <van-icon name="arrow-left" size="5vw" class="return-icon" @click="hideContent" />
 
       <span>你好， {{ user.userName }}！</span>
       <span>
