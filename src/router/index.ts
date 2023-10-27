@@ -1,11 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Login from '@/views/LoginView.vue'
-import Regist from '@/views/RegistView.vue'
-import NoteBookView from '@/views/NoteBookView.vue'
-import NoteBookPhoneView from '@/views/NoteBookPhoneView.vue'
-import Admin from '@/views/AdminView.vue'
-import Random from '@/views/RandomArticleView.vue'
-import App from '@/App.vue'
+
+const Login = () => import('@/views/LoginView.vue')
+const Regist = () => import('@/views/RegistView.vue')
+const NoteBookView = () => import('@/views/NoteBookView.vue')
+
+const NoteBookPhoneView = () => import('@/views/NoteBookPhoneView.vue')
+
+const Admin = () => import('@/views/AdminView.vue')
+
+const Random = () => import('@/views/RandomArticleView.vue')
+const App = () => import('@/App.vue')
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [

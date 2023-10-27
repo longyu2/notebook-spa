@@ -4,6 +4,13 @@
 
 <script lang="ts">
 import axios from 'axios'
+
+axios.interceptors.request.use((config) => {
+  // 添加自定义token
+  config.headers.authorization = localStorage.getItem('token')
+  return config
+})
+
 import { server_url } from '@/assets/constants/index'
 
 export default {
