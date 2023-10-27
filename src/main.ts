@@ -20,7 +20,7 @@ import axios from 'axios'
 axios.interceptors.request.use(
   function (config) {
     // 在发送请求之前做些什么
-    config.headers.Authorization = localStorage.getItem('token2')
+    config.headers.Authorization = localStorage.getItem('token')
     return config
   },
   function (error) {

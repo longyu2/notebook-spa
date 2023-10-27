@@ -15,8 +15,34 @@ axios.get(`${server_url}/articles?folderid=-2`).then((result) => {
   NoteBookList = result.data.data
 })
 
+// 为确保体验，以前看过的不能重复出现
+let arr: number[] = []
+const lo = localStorage.getItem('randomArr')
+if (lo != null) {
+  arr = JSON.parse(lo)
+}
+
 function showRandomArticle() {
-  let rand = Math.floor(Math.random() * count)
+  let rand = 0
+  /* 循环进行随机数生成，若与数组中已有的数重复，则continue，
+  若不重复，break 跳出循环，若数组长度达到总数据量上限，也跳出循环*/
+  while (true) {
+    rand = Math.floor(Math.random() * count)
+    if (arr.length == count) {
+      alert('第一次循环已经完成')
+      localStorage.setItem('randomArr', JSON.stringify([]))
+      arr = []
+      break
+    }
+
+    if (arr.indexOf(rand) != -1) {
+      continue
+    } else {
+      arr.push(rand)
+      localStorage.setItem('randomArr', JSON.stringify(arr))
+      break
+    }
+  }
 
   // 使用axios 获取文章信息
   axios.get(`${server_url}/article/${NoteBookList[rand].Notebookid}`).then((results) => {
