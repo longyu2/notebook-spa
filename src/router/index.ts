@@ -56,9 +56,7 @@ const router = createRouter({
 
 router.beforeEach((to, from) => {
   if (to.path != '/login' && to.path != '/regist') {
-    if (localStorage.getItem('token') != null) {
-      console.error('无token')
-    } else {
+    if (localStorage.getItem('token') == null) {
       return { name: 'login' }
     }
   }

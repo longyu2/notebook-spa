@@ -5,12 +5,6 @@
 <script lang="ts">
 import axios from 'axios'
 
-axios.interceptors.request.use((config) => {
-  // 添加自定义token
-  config.headers.authorization = localStorage.getItem('token')
-  return config
-})
-
 import { server_url } from '@/assets/constants/index'
 
 export default {
@@ -39,7 +33,7 @@ export default {
       .get(`${server_url}/testToken`)
       .then((results) => {})
       .catch((err) => {
-        this.$router.push('/login') // 出现
+        this.$router.push('/login') // 若token 过期，或者无效则跳转到 login
       })
   }
 }

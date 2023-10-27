@@ -2,12 +2,6 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { server_url } from '@/assets/constants/server_url'
-// 请求拦截, 给axios 添加请求头，设置token
-axios.interceptors.request.use((config) => {
-  // 添加自定义token
-  config.headers.authorization = localStorage.getItem('token')
-  return config
-})
 
 let count = 0
 let NoteBookList: any = []

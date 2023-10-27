@@ -5,12 +5,6 @@ import { ref, watch } from 'vue'
 import ArticleContent from './ArticleContent.vue'
 import { computed } from 'vue'
 import MoveToFolder from '@/components/pc/MoveToFolder.vue'
-// 请求拦截, 给axios 添加请求头，设置token
-axios.interceptors.request.use((config) => {
-  // 添加自定义token
-  config.headers.authorization = localStorage.getItem('token')
-  return config
-})
 
 const props = defineProps(['folderId'])
 

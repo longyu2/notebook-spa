@@ -4,13 +4,6 @@ import { server_url } from '@/assets/constants/index'
 import ArticleList from '@/components/phone/ArticleList.vue'
 import axios from 'axios'
 
-// 请求拦截, 给axios 添加请求头，设置token
-axios.interceptors.request.use((config) => {
-  // 添加自定义token
-  config.headers.authorization = localStorage.getItem('token')
-  return config
-})
-
 let folders: any = ref([]) // 定义响应式文件夹
 
 //初始化，填充文件夹

@@ -7,12 +7,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
-// 请求拦截, 给axios 添加请求头，设置token
-axios.interceptors.request.use((config) => {
-  // 添加自定义token
-  config.headers.authorization = localStorage.getItem('token')
-  return config
-})
+
 let passwdText = ref('')
 
 function updatePasswd() {

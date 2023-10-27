@@ -6,11 +6,6 @@ import { saveArticle } from '@/assets/js/ArticlesTools'
 let user = JSON.parse(localStorage.getItem('user')!)
 
 let [title, content] = [ref(''), ref('')]
-axios.interceptors.request.use((config) => {
-  // 添加自定义token
-  config.headers.authorization = localStorage.getItem('token')
-  return config
-})
 
 import Vditor from 'vditor'
 import 'vditor/dist/index.css'
