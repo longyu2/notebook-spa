@@ -10,6 +10,12 @@ let [title, content] = [ref(''), ref('')]
 import Vditor from 'vditor'
 import 'vditor/dist/index.css'
 
+/**
+ *  用来锁住内容，保证只是因切换文章产生的content 和 title 变化不会被
+ *  watch 监听到，从而覆盖 产生变化，导致修改时间发生惨痛的变化
+ */
+let contentUpdateLock = false
+
 const vditor = ref<Vditor | null>(null)
 
 // 用于初始化编辑器的函数，传入参数
@@ -40,7 +46,13 @@ const emit = defineEmits(['contentUpdate', 'contentHide'])
 
 // 监听tite 和 content
 watch([title, content], ([newTitle, newContent]) => {
-  saveArticle(props.articleId, title.value, content.value)
+  // 如果被锁住，不可以触发储存方法
+  if (!contentUpdateLock) {
+    saveArticle(props.articleId, title.value, content.value)
+  } else {
+    contentUpdateLock = false // 触发后解锁，则不会影响正常使用
+  }
+
   // 将内容的变化通知父组件，使其修改列表中的显示
   contentUpdate(title, content)
 })
@@ -64,13 +76,13 @@ const contentUpdate = (title: any, content: any) => {
 watch(
   () => props.articleId,
   (articleId, prevArticleId) => {
-    /* ... */
     if (articleId == prevArticleId) {
       console.error('错误，watch新旧值相等了！')
     } else {
       // 使用axios 获取文章信息
       axios.get(`${server_url}/article/${props.articleId}`).then((results) => {
         // 将查询到的文章信息赋给title 和 content 两个响应性变量
+        contentUpdateLock = true // 由articleId变化而产生的刷新，锁住
         title.value = results.data[0].title
         content.value = results.data[0].content
         initEditor(results.data[0].content)
@@ -107,7 +119,6 @@ watch(
     </div>
 
     <input id="input-title" placeholder="请输入标题" v-model="title" />
-
     <div id="vditor" class="vditor"></div>
   </div>
 </template>
