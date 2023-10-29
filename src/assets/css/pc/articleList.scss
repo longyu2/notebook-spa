@@ -27,38 +27,31 @@ $left-width: 15vw;
     justify-content: space-around;
 
     #TopLeft {
-      width: $left-width;
-      height: 10vh;
-      border-radius: 0;
-      background-color: white;
-      display: flex;
-      justify-content: center;
-      flex-direction: column;
-      align-items: flex-start;
-      .article-count {
-        position: relative;
-        top: 1vh;
-        font-size: medium;
-        color: #909090;
-        margin: 0px 10px;
+      .topleft-top {
+        box-sizing: border-box;
+        padding: 1vh;
+        width: $left-width;
+        height: 3.5vh;
+        .article-count {
+          position: relative;
+          font-size: medium;
+          color: #909090;
+          margin: 0px 10px;
+        }
       }
-
-      .topleft-bottom {
-        padding: 0%;
-        width: 15vw;
-        height: 55px;
+      .topleft-middle {
         display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        .isChecked-area {
+        height: 4vh;
+        .movebtn-and-delbtn {
+          height: inherit;
           padding: 0;
-          width: 75%;
+          width: 80%;
           display: flex;
           flex-direction: row;
-          justify-content: center;
+          justify-content: flex-start;
           align-items: center;
-
           .del-btn {
+            margin-left: 2vh;
             height: 25px;
             padding: 10px;
             color: white;
@@ -66,11 +59,10 @@ $left-width: 15vw;
             border: 0ch;
             border-radius: 5px;
             font-size: 1%;
-          }
-
-          .del-btn:hover {
-            background-color: crimson;
-            transform: scale(1.2);
+            &:hover {
+              background-color: crimson;
+              transform: scale(1.2);
+            }
           }
 
           .move-btn {
@@ -82,19 +74,32 @@ $left-width: 15vw;
             border: 0ch;
             border-radius: 5px;
             line-height: 18px;
+            &:hover {
+              background-color: orange;
+              transform: scale(1.2);
+            }
           }
-          .move-btn:hover {
-            background-color: orange;
+        }
+        #ImageButtonAdd {
+          height: 100%;
+          &:hover {
             transform: scale(1.2);
           }
         }
-
-        #ImageButtonAdd {
-          margin-right: 10px;
-          height: 70%;
+      }
+      .topleft-bottom {
+        height: 3vh;
+        span {
+          line-height: 3vh;
+          text-align: center;
+          display: flex;
+          align-items: center;
+          font-size: small;
         }
-        #ImageButtonAdd:hover {
-          transform: scale(1.2);
+        .checkbox-all {
+          margin-right: 0.5vh;
+          min-height: 20px;
+          margin-left: 20px;
         }
       }
     }

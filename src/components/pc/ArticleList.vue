@@ -7,6 +7,10 @@ import { computed } from 'vue'
 import MoveToFolder from '@/components/pc/MoveToFolder.vue'
 
 const props = defineProps(['folderId'])
+let isCheckedAll = ref(false) // 定义全选按钮状态的变量
+let IsShowMoveToFolder = ref(false)
+let articles: any = ref([])
+let ArticleCheckId = ref(0)
 
 // 监视folderId,如有变化，重新渲染文章列表
 watch(
@@ -21,17 +25,16 @@ watch(
   }
 )
 
-let IsShowMoveToFolder = ref(false)
-let articles: any = ref([])
-let ArticleCheckId = ref(0)
-
-// 判断是否移动端的函数
-function _isMobile() {
-  let flag = navigator.userAgent.match(
-    /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i
-  )
-  return flag
-}
+// 监听全选按钮，全选按钮如有变化，改变所有选中
+// 单个 ref
+watch(isCheckedAll, (newIsCheckedAll) => {
+  /**
+   * 触发以后，就为所有的列表取消或设置选中
+   */
+  articles.value.forEach((element: { checked: boolean }) => {
+    element.checked = newIsCheckedAll
+  })
+})
 
 // 根据folderId 获取文章信息并渲染
 function getArticleByFoldeId(folderId: string) {
@@ -56,20 +59,17 @@ function byIdSelContent(Notebookid: any) {
 // 删除选中的文章
 function delete_content() {
   let del_object: any = { del_sql_notebookid_list: [] }
-
   for (let i = 0; i < articles.value.length; i++) {
     if (articles.value[i].checked) {
       del_object.del_sql_notebookid_list.push(articles.value[i].Notebookid)
     }
   }
-
   // 调用后台的删除接口，将参数传递给后台进行删除
   axios.delete(`${server_url}/articles`, { data: del_object }).then((res) => {
     if (res == null) {
       console.error('res is null!')
     }
   })
-
   // 重新获取文章列表,由于不进行延迟的话，服务器返回太快，获取的数据是未删除的数据，所以延时0.1秒再去服务器获取数据
   setTimeout(function () {
     getArticleByFoldeId(props.folderId)
@@ -93,7 +93,11 @@ function closeMoveCallback() {
   IsShowMoveToFolder.value = false
 }
 
-// 使用一个计算属性 ref来表示是否有check button 被选中，只要有一个以上被选中，该值为true
+/*
+  使用一个计算属性 ref来表示是否有check button 被选中，
+  只要有一个以上被选中，该值为true,目的是为了只有当有文章
+  被选中时才显示出操作的按钮
+*/
 const isButtonChecked = computed(() => {
   let count = 0
   // 遍历所有的checked 属性值，只要有一项的checkd 值为true，则count > 0 ，计算属性返回true
@@ -152,9 +156,12 @@ function contentUpdate(data: { articleId: any; content: any; title: any }) {
 <template>
   <div class="article-list-box shadow">
     <div id="TopLeft">
-      <span class="article-count"> 共{{ articles.length }}条笔记 </span>
-      <div class="topleft-bottom">
-        <div class="isChecked-area">
+      <nav class="topleft-top">
+        <span class="article-count"> 共{{ articles.length }}条笔记 </span>
+      </nav>
+
+      <nav class="topleft-middle">
+        <div class="movebtn-and-delbtn">
           <el-button size="large" class="del-btn" v-if="isButtonChecked" @click="delete_content()">
             删除
           </el-button>
@@ -164,7 +171,20 @@ function contentUpdate(data: { articleId: any; content: any; title: any }) {
           >
         </div>
         <img id="ImageButtonAdd" @click="addArticle()" src="@/assets/addNewNoteBook.svg" alt="" />
-      </div>
+      </nav>
+
+      <nav class="topleft-bottom">
+        <span v-if="isButtonChecked">
+          <input
+            type="checkbox"
+            name=""
+            v-model="isCheckedAll"
+            class="checkbox checkbox-all"
+            id=""
+          />
+          全选
+        </span>
+      </nav>
     </div>
 
     <div id="left">
