@@ -11,6 +11,7 @@ let isCheckedAll = ref(false) // 定义全选按钮状态的变量
 let IsShowMoveToFolder = ref(false)
 let articles: any = ref([])
 let ArticleCheckId = ref(0)
+let articleCheckedIndex = ref(1)
 
 // 监视folderId,如有变化，重新渲染文章列表
 watch(
@@ -41,7 +42,7 @@ function getArticleByFoldeId(folderId: string) {
   axios.get(`${server_url}/articles?folderid=${folderId}`).then((result) => {
     articles.value = result.data.data //  查询到的信息存储到article数组中
     ArticleCheckId = ref(articles.value[0].Notebookid) // 选中列表中最新的文章
-
+    updateCheckIndex()
     //在信息获取完成后，为其添加控制checkbox 的属性
     articles.value.forEach((element: any) => {
       element.checked = false
@@ -54,6 +55,16 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
 // 更改显示的文章
 function byIdSelContent(Notebookid: any) {
   ArticleCheckId.value = Notebookid
+  updateCheckIndex()
+}
+
+// 修改id的index，方便展示当前选中的是第几篇文章
+function updateCheckIndex() {
+  for (let i = 0; i < articles.value.length; i++) {
+    if (ArticleCheckId.value == articles.value[i].Notebookid) {
+      articleCheckedIndex.value = i + 1
+    }
+  }
 }
 
 // 删除选中的文章
@@ -136,6 +147,7 @@ function addArticle() {
       let newArticle = result.data.data.articleInfo
       newArticle.checked = false
       ArticleCheckId.value = newArticle.Notebookid
+      updateCheckIndex()
       //返回的是只有一个元素的数组，还是需要用下标0取
       articles.value.unshift(newArticle)
     })
@@ -220,5 +232,9 @@ function contentUpdate(data: { articleId: any; content: any; title: any }) {
     @some-event="closeMoveCallback()"
   ></MoveToFolder>
 
-  <ArticleContent @content-update="contentUpdate" :articleId="ArticleCheckId"></ArticleContent>
+  <ArticleContent
+    @content-update="contentUpdate"
+    :articleCheckedIndex="articleCheckedIndex"
+    :articleId="ArticleCheckId"
+  ></ArticleContent>
 </template>

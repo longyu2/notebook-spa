@@ -130,15 +130,16 @@ h3 {
   }
 }
 
-@media screen and (max-width: 400px) {
+@media screen and (max-width: 800px) {
   .login-contanier {
     height: 100vh;
     background-image: url('@/assets/images/187.jpg');
     background-size: cover;
     justify-content: center;
     display: flex;
+
     .login-box {
-      margin-top: 50px;
+      margin-top: 150px;
       z-index: 4;
       width: 80vw;
       height: 90vw;
@@ -175,10 +176,10 @@ h3 {
       background-color: black;
       opacity: 27%;
       width: 80vw;
-      height: 110vw;
+      height: 50vh;
       z-index: 3;
       position: absolute;
-      top: 5px;
+      top: 10vh;
       border-radius: 20px;
     }
   }

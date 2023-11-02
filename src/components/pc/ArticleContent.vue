@@ -41,7 +41,7 @@ onMounted(() => {
   initEditor('')
 })
 
-const props = defineProps(['articleId'])
+const props = defineProps(['articleId', 'articleCheckedIndex'])
 const emit = defineEmits(['contentUpdate', 'contentHide'])
 
 // 监听tite 和 content
@@ -99,7 +99,7 @@ watch(
       <span>
         你当前阅读的是第
         <b>
-          <span>{{ props.articleId }} </span>
+          <span>{{ props.articleCheckedIndex }} </span>
         </b>
 
         篇文章

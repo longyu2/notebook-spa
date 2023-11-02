@@ -206,7 +206,7 @@ span {
   }
 }
 
-@media screen and (max-width: 400px) {
+@media screen and (max-width: 600px) {
   .login-contanier {
     height: 100vh;
     background-image: url('@/assets/images/187.jpg');
@@ -220,6 +220,19 @@ span {
       height: 110vw;
       display: flex;
       justify-content: center;
+      &::after {
+        /* 必须要写的属性 content */
+        content: '';
+        padding: 20px 30px;
+        background-color: black;
+        opacity: 27%;
+        width: 80vw;
+        height: 70vh;
+        z-index: 3;
+        position: absolute;
+        top: 5vh;
+        border-radius: 20px;
+      }
       .login-content {
         width: inherit;
         height: inherit;
@@ -243,19 +256,6 @@ span {
           font-weight: 400;
         }
       }
-    }
-    .login-box::after {
-      /* 必须要写的属性 content */
-      content: '';
-      padding: 20px 30px;
-      background-color: black;
-      opacity: 27%;
-      width: 80vw;
-      height: 110vw;
-      z-index: 3;
-      position: absolute;
-      top: 5px;
-      border-radius: 20px;
     }
   }
 }
