@@ -1,6 +1,41 @@
 <script setup lang="ts">
 import { server_url } from '@/assets/constants/index'
 import { ElMessage } from 'element-plus'
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+
+const router = useRouter()
+let isloginShow = ref(true)
+let username = ref('')
+let userpwd = ref('')
+
+// 回车自动提交
+const keyUpEnter = () => {
+  login_click()
+}
+
+const login_click = () => {
+  axios
+    .post(`${server_url}/session`, {
+      username: username.value,
+      passwd: userpwd.value
+    })
+    .then((results) => {
+      if (results.data.status == '成功') {
+        localStorage.setItem('token', results.data.data.token) // 将token 存储
+        localStorage.setItem('user', JSON.stringify(results.data.data.user))
+
+        ElMessage({
+          message: '登录成功',
+          type: 'success'
+        })
+        router.push({ path: '/' })
+      } else {
+        ElMessage.error('登录失败，用户名或密码错误！')
+      }
+    })
+}
 </script>
 
 <template>
@@ -19,6 +54,7 @@ import { ElMessage } from 'element-plus'
           type="password"
           placeholder="Please input password"
           show-password
+          v-on:keyup.enter="keyUpEnter"
         />
         <el-button class="login-btn" type="success" @click="login_click()">登录</el-button>
         <a class="forget" href="">忘记密码? </a>
@@ -27,42 +63,6 @@ import { ElMessage } from 'element-plus'
     </div>
   </div>
 </template>
-
-<script lang="ts">
-import axios from 'axios'
-export default {
-  data() {
-    return {
-      isloginShow: true,
-      username: '',
-      userpwd: ''
-    }
-  },
-  methods: {
-    login_click() {
-      axios
-        .post(`${server_url}/session`, {
-          username: this.username,
-          passwd: this.userpwd
-        })
-        .then((results) => {
-          if (results.data.status == '成功') {
-            localStorage.setItem('token', results.data.data.token) // 将token 存储
-            localStorage.setItem('user', JSON.stringify(results.data.data.user))
-
-            ElMessage({
-              message: '登录成功',
-              type: 'success'
-            })
-            this.$router.push({ path: '/' })
-          } else {
-            ElMessage.error('登录失败，用户名或密码错误！')
-          }
-        })
-    }
-  }
-}
-</script>
 
 <style lang="scss" scoped>
 * {
