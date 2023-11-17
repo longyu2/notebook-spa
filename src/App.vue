@@ -33,7 +33,6 @@ export default {
       .get(`${server_url}/testToken`)
       .then((results) => {})
       .catch((err) => {
-        alert('toke验证失败l')
         this.$router.push('/login') // 若token 过期，或者无效则跳转到 login
       })
   }
