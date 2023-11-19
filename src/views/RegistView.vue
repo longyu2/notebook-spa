@@ -126,7 +126,9 @@ function verify_regist() {
         <p>请输入电子邮箱</p>
         <el-input class="el-input" v-model="email" placeholder="Please input" />
 
-        <el-button class="login-btn" type="success" :disabled="!regstEnable" @click="regist()">注册</el-button>
+        <el-button class="login-btn" type="success" :disabled="!regstEnable" @click="regist()"
+          >注册</el-button
+        >
 
         <div v-if="show_input_verify_code">
           <span> 请输入验证码 </span>

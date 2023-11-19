@@ -4,9 +4,10 @@ import axios from 'axios'
 import { server_url } from '../../assets/constants/server_url'
 import { saveArticle } from '@/assets/js/ArticlesTools'
 let user = JSON.parse(localStorage.getItem('user')!)
-
 let [title, content] = [ref(''), ref('')]
+import type { UploadProps, UploadUserFile } from 'element-plus'
 
+const fileList = ref<UploadUserFile[]>([])
 import Vditor from 'vditor'
 import 'vditor/dist/index.css'
 
@@ -90,6 +91,19 @@ watch(
     }
   }
 )
+
+// 文件上传
+
+const token = localStorage.getItem('token')
+
+const uploadHeaders = { Authorization: token }
+
+const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
+  const newImageUrl = `https://note.misaka-mikoto.cn:9999/${response.url}`
+  vditor.value!.setValue(content.value + `![](${newImageUrl})`)
+  content.value = content.value + `![](${newImageUrl})`
+  fileList.value = [] // 清空文件列表
+}
 </script>
 
 <template>
@@ -109,7 +123,18 @@ watch(
         共
         <b><span v-text="content.length"></span></b>字</span
       >
+
       <router-link to="random">随机推荐</router-link>
+
+      <el-upload
+        v-model:file-list="fileList"
+        class="upload-demo"
+        :action="`${server_url}/upload`"
+        :on-success="handleSuccess"
+        :headers="uploadHeaders"
+      >
+        <el-button text size="large">上传图片</el-button>
+      </el-upload>
 
       <div class="space"></div>
 

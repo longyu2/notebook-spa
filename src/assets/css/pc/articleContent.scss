@@ -13,13 +13,13 @@ $box-height: 95vh;
     justify-content: space-between;
 
     #TopRight {
-      padding: 10px;
+      padding: 5px;
       background-color: #fff;
       height: 5vh;
       border-radius: $radius;
       display: flex;
       justify-content: space-around;
-      align-items: flex-start;
+      align-items: center;
 
       .space {
         flex: 1 1 auto; //可放大 可缩小
@@ -42,6 +42,14 @@ $box-height: 95vh;
       }
       .word-count {
         margin-left: 20px;
+      }
+      .upload-demo {
+        display: flex;
+        min-width: 300px;
+        min-height: 50px;
+        button {
+          margin-top: 2px;
+        }
       }
     }
 
