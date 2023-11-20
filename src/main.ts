@@ -11,7 +11,7 @@ import '@/assets/css/phone.scss'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 import Vant from 'vant'
-import 'vant/lib/index.css'
+
 
 import '@/assets/css/main.css'
 

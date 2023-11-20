@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { server_url } from '@/assets/constants/index'
 import ArticleList from '@/components/phone/ArticleList.vue'
 import axios from 'axios'
-
+import 'vant/lib/index.css'
 let folders: any = ref([]) // 定义响应式文件夹
 
 //初始化，填充文件夹
