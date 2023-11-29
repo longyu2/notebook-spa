@@ -5,7 +5,7 @@ import { ref, watch } from 'vue'
 import ArticleContent from './ArticleContent.vue'
 import { computed } from 'vue'
 import MoveToFolder from '@/components/pc/MoveToFolder.vue'
-
+import { ElMessage } from 'element-plus'
 const props = defineProps(['folderId'])
 let isCheckedAll = ref(false) // 定义全选按钮状态的变量
 let IsShowMoveToFolder = ref(false)
@@ -56,6 +56,23 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
 function byIdSelContent(Notebookid: any) {
   ArticleCheckId.value = Notebookid
   updateCheckIndex()
+}
+
+// 修改时间
+const editCreatetime = (notebookId: string) => {
+  const createtime = prompt('请输入时间，默认按 xxxx-xx-xx xx:xx:xx输入')
+  axios
+    .put(`${server_url}/createtime`, {
+      notebookId: notebookId,
+      newCreatetime: createtime
+    })
+    .then((result) => {
+      ElMessage({
+        showClose: true,
+        message: result.data.data,
+        type: 'success'
+      })
+    })
 }
 
 // 修改id的index，方便展示当前选中的是第几篇文章
@@ -214,10 +231,15 @@ function contentUpdate(data: { articleId: any; content: any; title: any }) {
               <input type="checkbox" name="" v-model="item.checked" class="checkbox" id="" />
 
               <div class="ul-list-texts">
-                <span class="p_1" v-text="item.title.substring(0, 14)"></span>
-
+                <p
+                  class="p_1"
+                  v-text="`${item.title != '' ? item.title.substring(0, 14) : '无标题'}`"
+                ></p>
                 <p class="p_2" v-text="item.content.substring(0, 14)"></p>
-                <p class="p_3" v-text="item.createtime"></p>
+                <p class="p_3">
+                  {{ item.createtime }}
+                  <el-icon><Edit @click="editCreatetime(item.Notebookid)" /></el-icon>
+                </p>
               </div>
             </div>
           </el-card>

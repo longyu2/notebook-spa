@@ -123,18 +123,24 @@ $left-width: 15vw;
           }
           .ul-list-texts {
             .p_1 {
+              min-height: 20px;
               font-size: x-small;
             }
 
             .p_2 {
+              min-height: 20px;
               line-height: 20px;
               font-size: x-small;
             }
 
             .p_3 {
-              line-height: 20px;
-              font-size: xx-small;
+              width: 100%;
+              line-height: 25px;
+              font-size: small;
               color: gray;
+              display: flex;
+              justify-content: space-around;
+              align-items: center;
             }
           }
         }
