@@ -12,7 +12,6 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 import Vant from 'vant'
 
-
 import '@/assets/css/main.css'
 
 // 这个拦截器会暴露到子组件中去，即子组件引入的axios依然能拥有token请求头

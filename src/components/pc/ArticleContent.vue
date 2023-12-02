@@ -91,9 +91,25 @@ watch(
     }
   }
 )
+import { ElMessage } from 'element-plus'
+
+// 外部链接
+const pubArticle = () => {
+  axios.put(`${server_url}/pubarticle/${props.articleId}`).then((data) => {
+    if (data.data.status == '200') {
+      navigator.clipboard.writeText(`${server_url.replace('/v1', '')}/${data.data.url}`)
+      ElMessage({
+        showClose: true,
+        message: '外部访问链接已成功复制至剪贴板',
+        type: 'success'
+      })
+    } else {
+      alert('意外错误')
+    }
+  })
+}
 
 // 文件上传
-
 const token = localStorage.getItem('token')
 
 const uploadHeaders = { Authorization: token }
@@ -135,6 +151,7 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
       >
         <el-button text size="large">上传图片</el-button>
       </el-upload>
+      <el-button text size="large" @click="pubArticle">复制外部链接</el-button>
 
       <div class="space"></div>
 
