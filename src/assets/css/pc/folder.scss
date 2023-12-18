@@ -18,7 +18,7 @@ $left-width: 300px;
     .addFolderBtn:hover {
       background-color: #a0cfff;
     }
-    ul {
+    .folders-box {
       width: inherit;
       list-style: none;
       display: flex;
@@ -31,7 +31,7 @@ $left-width: 300px;
         justify-content: space-between;
         align-items: center;
         span {
-          font-size: small;
+          font-size: medium;
         }
       }
       .folder-item {
@@ -39,7 +39,7 @@ $left-width: 300px;
       }
       li {
         cursor: pointer;
-        font-size: small;
+        font-size: medium;
         border-radius: 8px;
         padding: 0px 6px;
         border: 0px;

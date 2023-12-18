@@ -102,26 +102,24 @@ function confirmDelFolder() {
       }}
     </h4>
 
-    <ul>
+    <ul class="folders-box">
       <li
         @click="changeFolder(-2, '全部笔记')"
         :class="{ 'folers-button-checked': -2 === folderChecked.folderId }"
-        style="font-size: small"
       >
         全部笔记
       </li>
       <li
         @click="changeFolder(-1, '未分类')"
         :class="{ 'folers-button-checked': -1 === folderChecked.folderId }"
-        style="font-size: small"
       >
         未分类
       </li>
 
-      <div class="my-folder">
+      <li class="my-folder">
         <span>我的文件夹</span>
         <el-icon @click="createFolder"><Plus /></el-icon>
-      </div>
+      </li>
 
       <li
         class="folder-item"
@@ -131,7 +129,7 @@ function confirmDelFolder() {
         :class="{ 'folers-button-checked': folderChecked.folderId === item.folder_id }"
       >
         {{
-          item.folder_name.length > 7 ? item.folder_name.substring(0, 7) + '..' : item.folder_name
+          item.folder_name.length > 6 ? item.folder_name.substring(0, 5) + '..' : item.folder_name
         }}
         <el-dropdown placement="bottom" trigger="click" class="dropdown">
           <el-icon class="el-icon--right">

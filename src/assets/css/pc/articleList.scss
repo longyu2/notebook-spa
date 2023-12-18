@@ -1,7 +1,8 @@
 $black-border: 1px solid black;
 $radius: 10px;
 $box-height: 95vh;
-$left-width: 15vw;
+$left-width: 16vw;
+$article-list-size: 15px;
 
 @media screen and (min-width: 500px) {
   // 隐藏电脑端中的返回按钮，这是pc端和移动端唯一不同
@@ -108,7 +109,9 @@ $left-width: 15vw;
       padding-top: 10px;
       margin-top: 10px;
       height: 85vh;
-      width: $left-width;
+      min-width: $left-width;
+      min-width: 300px;
+
       overflow: auto;
       background-color: white;
       border-radius: $radius;
@@ -124,19 +127,19 @@ $left-width: 15vw;
           .ul-list-texts {
             .p_1 {
               min-height: 20px;
-              font-size: x-small;
+              font-size: $article-list-size;
             }
 
             .p_2 {
-              min-height: 20px;
+              min-height: 23px;
               line-height: 20px;
-              font-size: x-small;
+              font-size: $article-list-size;
             }
 
             .p_3 {
               width: 100%;
               line-height: 25px;
-              font-size: small;
+              font-size: $article-list-size;
               color: gray;
               display: flex;
               justify-content: space-around;

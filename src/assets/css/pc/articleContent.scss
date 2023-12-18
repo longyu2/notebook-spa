@@ -1,5 +1,6 @@
 $black-border: 1px solid black;
 $radius: 10px;
+
 $box-height: 95vh;
 
 @media screen and (min-width: 500px) {
@@ -23,9 +24,6 @@ $box-height: 95vh;
 
       .space {
         flex: 1 1 auto; //可放大 可缩小
-      }
-
-      .setting {
       }
 
       span,
