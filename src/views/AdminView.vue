@@ -10,6 +10,10 @@ const router = useRouter()
 
 let passwdText = ref('')
 
+const back = () => {
+  history.back() // 返回按钮，返回前一个页面
+}
+
 function updatePasswd() {
   axios
     .post(`${server_url}/passwd`, {
@@ -38,15 +42,19 @@ function output() {}
 
 <template>
   <div class="main-box">
+    <div class="return" @click="back">
+      <el-icon size="25"><ArrowLeft /></el-icon>
+    </div>
     <el-avatar :size="50" :src="headImg" />
 
     <h3>修改密码</h3>
-    <p>
+    <div class="reset-passwd-box">
       <span> 输入新密码：</span>
-      <el-input class="input" type="text" v-model="passwdText" />
+      <el-input class="el-input" type="text" v-model="passwdText" />
       <el-button @click="updatePasswd">修改</el-button>
-    </p>
+    </div>
 
+    <br />
     <p>
       <el-button @click="output"> 批量导出 </el-button>
     </p>
@@ -59,26 +67,44 @@ function output() {}
 <style lang="scss" scoped>
 .main-box {
   box-sizing: border-box;
-  padding: 40px;
+  padding: 23px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  width: 25vw;
+  min-width: 300px;
+  max-width: 400px;
   height: 600px;
   margin: 100px auto;
   box-shadow: 0px 0px 15px 2px rgba(0, 0, 0, 0.2);
 
+  .reset-passwd-box {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    .el-input {
+      width: 48%;
+      height: 28px;
+    }
+  }
+  .return {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    &:hover {
+      cursor: hand;
+    }
+  }
+
   p,
   h3 {
+    width: 100%;
     color: rgb(72, 65, 94);
-    margin-top: 20px;
+    margin-top: 15px;
   }
   .space {
     flex: 1 1 auto; //可放大 可缩小
-  }
-  .input {
-    width: 50%;
   }
 }
 </style>
