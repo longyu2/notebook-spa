@@ -40,6 +40,18 @@ $article-list-size: 15px;
           margin: 0px 10px;
         }
       }
+      .search-box {
+        box-sizing: border-box;
+        margin: 16px;
+        width: 88%;
+        height: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .search-icon {
+        }
+      }
+
       .topleft-middle {
         display: flex;
         height: 4vh;
@@ -128,12 +140,18 @@ $article-list-size: 15px;
             .p_1 {
               min-height: 20px;
               font-size: $article-list-size;
+              b {
+                color: orange;
+              }
             }
 
             .p_2 {
               min-height: 23px;
               line-height: 20px;
               font-size: $article-list-size;
+              b {
+                color: orange;
+              }
             }
 
             .p_3 {

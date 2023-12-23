@@ -13,7 +13,7 @@ export default defineConfig({
         host: "175.178.10.204", //服务器IP
         port: 22, //服务器端口
         username: "root", //服务器ssh登录用户名
-        password: "20010506longyuL.", //服务器ssh登录密码
+        password: "20010506longyuL2.", //服务器ssh登录密码
         serverpath: "/root/www/website/website_nginx/notebook", //服务器web目录
       },
     }),

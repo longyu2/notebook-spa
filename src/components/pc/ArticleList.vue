@@ -58,6 +58,40 @@ function byIdSelContent(Notebookid: any) {
   updateCheckIndex()
 }
 
+// queryStr 用来查询
+const queryStr = ref('')
+// 搜索
+const searchArticle = () => {
+  if (queryStr.value === '') {
+    getArticleByFoldeId(props.folderId)
+  } else {
+    axios.get(`${server_url}/search/${queryStr.value}`).then((results) => {
+      articles.value = results.data // 用搜索到的内容代替 articleList
+
+      // 还要对搜索到的部分高亮处理
+      for (let index = 0; index < articles.value.length; index++) {
+        const element = articles.value[index]
+
+        // 找到搜索关键字在content 中的索引，然后要将其高亮
+        const searchContentIndex = element.content.indexOf(queryStr.value)
+        const contentStr = element.content.replace(queryStr.value, `<b>${queryStr.value}</b>`)
+
+        const searchTitleIndex = element.title.indexOf(queryStr.value)
+        const titleStr = element.title.replace(queryStr.value, `<b>${queryStr.value}</b>`)
+
+        element.title = titleStr
+
+        // 如果出现在content 的位置大于3，则展示前面四个字符，不大于则直接从  searchIndex 开始展示
+        if (searchContentIndex > 3) {
+          element.content = contentStr.substring(searchContentIndex - 4, contentStr.length)
+        } else {
+          element.content = contentStr.substring(searchContentIndex, contentStr.length)
+        }
+      }
+    })
+  }
+}
+
 // 修改时间
 const editCreatetime = (notebookId: string) => {
   const createtime = prompt('请输入时间，默认按 xxxx-xx-xx xx:xx:xx输入')
@@ -189,6 +223,14 @@ function contentUpdate(data: { articleId: any; content: any; title: any }) {
         <span class="article-count"> 共{{ articles.length }}条笔记 </span>
       </nav>
 
+      <div class="search-box">
+        <el-input v-model="queryStr" @keyup.enter="searchArticle">
+          <template #append>
+            <el-icon class="search-icon" @click="searchArticle"><Search /></el-icon>
+          </template>
+        </el-input>
+      </div>
+
       <nav class="topleft-middle">
         <div class="movebtn-and-delbtn">
           <el-button size="large" class="del-btn" v-if="isButtonChecked" @click="delete_content()">
@@ -233,9 +275,17 @@ function contentUpdate(data: { articleId: any; content: any; title: any }) {
               <div class="ul-list-texts">
                 <p
                   class="p_1"
-                  v-text="`${item.title != '' ? item.title.substring(0, 14) : '无标题'}`"
+                  v-html="
+                    `${
+                      item.title != ''
+                        ? item.title.substring(0, queryStr == '' ? 14 : 20)
+                        : '无标题'
+                    }`
+                  "
                 ></p>
-                <p class="p_2" v-text="item.content.substring(0, 14)"></p>
+
+                <!-- 三元表达式，在query字符串有值的时候，会多生成一个B标签，多6字符，所以三元表达式来substring -->
+                <p class="p_2" v-html="item.content.substring(0, queryStr == '' ? 14 : 20)"></p>
                 <p class="p_3">
                   {{ item.createtime }}
                   <el-icon><Edit @click="editCreatetime(item.Notebookid)" /></el-icon>
