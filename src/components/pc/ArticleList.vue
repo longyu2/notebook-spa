@@ -60,6 +60,11 @@ function byIdSelContent(Notebookid: any) {
 
 // queryStr 用来查询
 const queryStr = ref('')
+const allWordCount = ref(0)
+
+// 获取总字数
+axios.get(`${server_url}/wordCount`).then((results) => (allWordCount.value = results.data.data))
+
 // 搜索
 const searchArticle = () => {
   if (queryStr.value === '') {
@@ -221,6 +226,7 @@ function contentUpdate(data: { articleId: any; content: any; title: any }) {
     <div id="TopLeft">
       <nav class="topleft-top">
         <span class="article-count"> 共{{ articles.length }}条笔记 </span>
+        <span class="article-count">累计字数：{{ allWordCount }}</span>
       </nav>
 
       <div class="search-box">
