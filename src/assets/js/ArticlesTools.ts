@@ -4,7 +4,6 @@ import axios from 'axios'
 
 // 导出saveArticle 函数
 export const saveArticle = function (articleId: string, title: string, content: string) {
-  alert('save')
   // 将内容保存到云
   axios
     .put(server_url + '/article', {
