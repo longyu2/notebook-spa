@@ -47,17 +47,13 @@ function output() {}
     </div>
     <el-avatar :size="50" :src="headImg" />
 
-    <h3>修改密码</h3>
     <div class="reset-passwd-box">
       <span> 输入新密码：</span>
       <el-input class="el-input" type="text" v-model="passwdText" />
-      <el-button @click="updatePasswd">修改</el-button>
+      <el-button @click="updatePasswd">修改密码</el-button>
     </div>
 
     <br />
-    <p>
-      <el-button @click="output"> 批量导出 </el-button>
-    </p>
 
     <div class="space"></div>
     <el-button @click="quit">退出登录</el-button>
@@ -73,13 +69,14 @@ function output() {}
   align-items: center;
   justify-content: space-between;
   min-width: 300px;
-  max-width: 400px;
+  max-width: 450px;
   height: 600px;
   margin: 100px auto;
   box-shadow: 0px 0px 15px 2px rgba(0, 0, 0, 0.2);
 
   .reset-passwd-box {
     width: 100%;
+    margin-top: 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
