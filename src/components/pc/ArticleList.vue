@@ -50,7 +50,7 @@ function getArticleByFoldeId(folderId: string) {
   })
 }
 
-getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
+
 
 // 更改显示的文章
 function byIdSelContent(Notebookid: any) {
@@ -158,6 +158,7 @@ function move_article() {
 // closeMoveCallback 根据emit事件关闭 文件夹移动框
 function closeMoveCallback() {
   IsShowMoveToFolder.value = false
+  getArticleByFoldeId(props.folderId) // 完成以后刷新文章列表
 }
 
 /*
@@ -219,6 +220,10 @@ function contentUpdate(data: { articleId: any; content: any; title: any }) {
     }
   })
 }
+
+
+
+getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
 </script>
 
 <template>

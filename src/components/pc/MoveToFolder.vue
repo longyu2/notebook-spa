@@ -20,12 +20,12 @@ function move(folder: any) {
     }
     axios.put(`${server_url}/FolderAddArticle`, jsonObj).then((results) => {
       emit('someEvent')
+     
     })
   })
 }
 
-// 将选中的文章移入到未分类文件夹中
-function deleteFolder() {}
+
 
 onMounted(() => {
   //获得文件夹列表
@@ -45,7 +45,7 @@ onMounted(() => {
     <ul>
       <a href="#"
         ><li class="head-li" @click="move({ folder_id: -1, folder_name: '未分类' })">
-          <img src="@/assets/return.svg" alt="" @click="deleteFolder()" />
+          <img src="@/assets/return.svg" alt="" />
           <span>移出文件夹</span>
         </li></a
       >
