@@ -129,7 +129,7 @@ function confirmDelFolder() {
         :class="{ 'folers-button-checked': folderChecked.folderId === item.folder_id }"
       >
         {{
-          item.folder_name.length > 6 ? item.folder_name.substring(0, 5) + '..' : item.folder_name
+          item.folder_name.length > 6 ? item.folder_name.substring(0, 6) + '..' : item.folder_name
         }}
         <el-dropdown placement="bottom" trigger="click" class="dropdown">
           <el-icon class="el-icon--right">
@@ -149,7 +149,7 @@ function confirmDelFolder() {
 
     <!-- 删除对话框 -->
     <el-dialog v-model="foldeDelDialogVisible" title="Tips" width="30%">
-      <span> 你确定要删除这个文件夹吗？ </span>
+      <span> 你确定要删除这个文件夹吗？删除后文件夹内文章将变成未分类状态 </span>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="foldeDelDialogVisible = false">取消</el-button>

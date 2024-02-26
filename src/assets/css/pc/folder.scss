@@ -15,6 +15,7 @@ $left-width: 300px;
     display: flex;
     flex-flow: column nowrap;
     align-items: flex-start;
+    overflow-y: auto;
     .addFolderBtn:hover {
       background-color: #a0cfff;
     }
