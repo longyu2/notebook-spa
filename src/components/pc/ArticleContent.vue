@@ -51,7 +51,7 @@ watch([title, content], ([newTitle, newContent]) => {
   if (!contentUpdateLock) {
     // 如果queryStr不空且content包含querystr，则去色
     if (props.queryStr != '' && content.value.indexOf(`***${props.queryStr}***`) != -1) {
-      content.value.replace(`***${props.queryStr}***`, props.queryStr)
+      content.value = content.value.replace(`***${props.queryStr}***`, props.queryStr)
     }
     saveArticle(props.articleId, title.value, content.value)
   } else {
@@ -85,7 +85,7 @@ watch(
       console.error('错误，watch新旧值相等了！')
     } else {
       // 使用axios 获取文章信息
-      axios.get(`${server_url}/article/${props.articleId}`).then((results) => {
+      axios.get(`${server_url}/article/${props.articleId}`).then(async (results) => {
         // 将查询到的文章信息赋给title 和 content 两个响应性变量
         contentUpdateLock = true // 由articleId变化而产生的刷新，锁住
         title.value = results.data[0].title
@@ -93,17 +93,13 @@ watch(
 
         if (props.queryStr != '') {
           // 如果queryStr 不为空，则高亮queryStr
-          if (content.value.indexOf(props.queryStr) != -1) {
-            console.log(content.value.indexOf(props.queryStr))
-
-            content.value = content.value.replace(props.queryStr, `***${props.queryStr}***`)
-
-            console.log(content.value)
-            // alert(1)
-          }
+          content.value = content.value.replace(props.queryStr, `***${props.queryStr}***`)
+          await initEditor(content.value)
+          vditor.value?.disabled()
+        } else {
+          await initEditor(content.value)
+          vditor.value?.enable()
         }
-
-        initEditor(content.value)
       })
     }
   }
