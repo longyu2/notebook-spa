@@ -50,7 +50,7 @@ watch([title, content], ([newTitle, newContent]) => {
   // 如果被锁住，不可以触发储存方法
   if (!contentUpdateLock) {
     // 如果queryStr不空且content包含querystr，则去色
-    if (props.queryStr != '' && content.value.indexOf(`***${props.queryStr}***`) != -1) {
+    if (props.queryStr != '' && content.value.indexOf(`***~~${props.queryStr}~~***`) != -1) {
       content.value = content.value.replace(`***${props.queryStr}***`, props.queryStr)
     }
     saveArticle(props.articleId, title.value, content.value)
@@ -93,7 +93,7 @@ watch(
 
         if (props.queryStr != '') {
           // 如果queryStr 不为空，则高亮queryStr
-          content.value = content.value.replace(props.queryStr, `***${props.queryStr}***`)
+          content.value = content.value.replace(props.queryStr, `***~~${props.queryStr}~~***`)
           await initEditor(content.value)
           vditor.value?.disabled()
         } else {
