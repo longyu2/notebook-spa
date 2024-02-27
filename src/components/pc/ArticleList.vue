@@ -10,8 +10,12 @@ const props = defineProps(['folderId'])
 let isCheckedAll = ref(false) // 定义全选按钮状态的变量
 let IsShowMoveToFolder = ref(false)
 let articles: any = ref([])
-let ArticleCheckId = ref(0)
-let articleCheckedIndex = ref(1)
+
+let articleChecked = ref({
+  // 定义当前选中的是什么文章
+  id: 0,
+  index: 1
+})
 
 // 监视folderId,如有变化，重新渲染文章列表
 watch(
@@ -38,10 +42,10 @@ watch(isCheckedAll, (newIsCheckedAll) => {
 })
 
 // 根据folderId 获取文章信息并渲染
-function getArticleByFoldeId(folderId: string) {
+const getArticleByFoldeId = (folderId: string) => {
   axios.get(`${server_url}/articles?folderid=${folderId}`).then((result) => {
     articles.value = result.data.data //  查询到的信息存储到article数组中
-    ArticleCheckId = ref(articles.value[0].Notebookid) // 选中列表中最新的文章
+    articleChecked.value.id = articles.value[0].Notebookid // 选中列表中最新的文章
     updateCheckIndex()
     //在信息获取完成后，为其添加控制checkbox 的属性
     articles.value.forEach((element: any) => {
@@ -50,16 +54,15 @@ function getArticleByFoldeId(folderId: string) {
   })
 }
 
+// 文章列表点击事件， 更改显示的文章
+const byIdSelContent = (Notebookid: any) => {
+  // queryStr
 
-
-// 更改显示的文章
-function byIdSelContent(Notebookid: any) {
-  ArticleCheckId.value = Notebookid
+  articleChecked.value.id = Notebookid // 更改需要展示的文章
   updateCheckIndex()
 }
 
-// queryStr 用来查询
-const queryStr = ref('')
+const queryStr = ref('') // queryStr 用来查询
 const allWordCount = ref(0)
 
 // 获取总字数
@@ -114,17 +117,17 @@ const editCreatetime = (notebookId: string) => {
     })
 }
 
-// 修改id的index，方便展示当前选中的是第几篇文章
-function updateCheckIndex() {
+// 修改当前选中文章的变量articleChecked的index，方便展示当前选中的是第几篇文章
+const updateCheckIndex = () => {
   for (let i = 0; i < articles.value.length; i++) {
-    if (ArticleCheckId.value == articles.value[i].Notebookid) {
-      articleCheckedIndex.value = i + 1
+    if (articleChecked.value.id == articles.value[i].Notebookid) {
+      articleChecked.value.index = i + 1
     }
   }
 }
 
 // 删除选中的文章
-function delete_content() {
+const delete_content = () => {
   let del_object: any = { del_sql_notebookid_list: [] }
   for (let i = 0; i < articles.value.length; i++) {
     if (articles.value[i].checked) {
@@ -143,7 +146,8 @@ function delete_content() {
   }, 100)
 }
 
-function move_article() {
+// 将文章移动到不同文件夹
+const move_article = () => {
   let move_list = []
   for (let i = 0; i < articles.value.length; i++) {
     // 删除articles 数组中对应数据
@@ -156,7 +160,7 @@ function move_article() {
 }
 
 // closeMoveCallback 根据emit事件关闭 文件夹移动框
-function closeMoveCallback() {
+const closeMoveCallback = () => {
   IsShowMoveToFolder.value = false
   getArticleByFoldeId(props.folderId) // 完成以后刷新文章列表
 }
@@ -194,7 +198,7 @@ const CheckedArticles = computed(() => {
 })
 
 // 添加新文章
-function addArticle() {
+const addArticle = () => {
   axios
     // 在发起请求时，传给后端此时的folderid
     .post(`${server_url}/articles`, {
@@ -203,7 +207,7 @@ function addArticle() {
     .then((result) => {
       let newArticle = result.data.data.articleInfo
       newArticle.checked = false
-      ArticleCheckId.value = newArticle.Notebookid
+      articleChecked.value.id = newArticle.Notebookid
       updateCheckIndex()
       //返回的是只有一个元素的数组，还是需要用下标0取
       articles.value.unshift(newArticle)
@@ -211,17 +215,15 @@ function addArticle() {
 }
 
 // 接收子组件传来的值
-function contentUpdate(data: { articleId: any; content: any; title: any }) {
+const contentUpdate = (data: { articleId: any; content: any; title: any }) => {
   // 对articles 进行遍历，找到Notebookid 与 子组件传来的articleId 相同的那一项，更改其内容
   articles.value.forEach((element: { Notebookid: any; title: any; content: any }) => {
-    if (element.Notebookid == data.articleId) {
+    if (element.Notebookid == data.articleId && queryStr.value === '') {
       element.title = data.title
       element.content = data.content
     }
   })
 }
-
-
 
 getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
 </script>
@@ -276,7 +278,7 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
           :key="index"
           @click="byIdSelContent(item['Notebookid'])"
           :class="{
-            'article-list-buttonchecked': item.Notebookid === ArticleCheckId
+            'article-list-buttonchecked': item.Notebookid === articleChecked.id
           }"
         >
           <el-card shadow="hover" class="el-articlelist-card">
@@ -317,7 +319,8 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
 
   <ArticleContent
     @content-update="contentUpdate"
-    :articleCheckedIndex="articleCheckedIndex"
-    :articleId="ArticleCheckId"
+    :articleCheckedIndex="articleChecked.index"
+    :articleId="articleChecked.id"
+    :queryStr="queryStr"
   ></ArticleContent>
 </template>

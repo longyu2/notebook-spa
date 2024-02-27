@@ -20,12 +20,9 @@ function move(folder: any) {
     }
     axios.put(`${server_url}/FolderAddArticle`, jsonObj).then((results) => {
       emit('someEvent')
-     
     })
   })
 }
-
-
 
 onMounted(() => {
   //获得文件夹列表

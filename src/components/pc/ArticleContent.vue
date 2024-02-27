@@ -42,13 +42,17 @@ onMounted(() => {
   initEditor('')
 })
 
-const props = defineProps(['articleId', 'articleCheckedIndex'])
+const props = defineProps(['articleId', 'articleCheckedIndex', 'queryStr'])
 const emit = defineEmits(['contentUpdate', 'contentHide'])
 
 // 监听tite 和 content
 watch([title, content], ([newTitle, newContent]) => {
   // 如果被锁住，不可以触发储存方法
   if (!contentUpdateLock) {
+    // 如果queryStr不空且content包含querystr，则去色
+    if (props.queryStr != '' && content.value.indexOf(`***${props.queryStr}***`) != -1) {
+      content.value.replace(`***${props.queryStr}***`, props.queryStr)
+    }
     saveArticle(props.articleId, title.value, content.value)
   } else {
     contentUpdateLock = false // 触发后解锁，则不会影响正常使用
@@ -60,7 +64,6 @@ watch([title, content], ([newTitle, newContent]) => {
 })
 
 // 返回按钮关闭文章内容
-
 function hideContent() {
   emit('contentHide')
 }
@@ -87,11 +90,25 @@ watch(
         contentUpdateLock = true // 由articleId变化而产生的刷新，锁住
         title.value = results.data[0].title
         content.value = results.data[0].content
-        initEditor(results.data[0].content)
+
+        if (props.queryStr != '') {
+          // 如果queryStr 不为空，则高亮queryStr
+          if (content.value.indexOf(props.queryStr) != -1) {
+            console.log(content.value.indexOf(props.queryStr))
+
+            content.value = content.value.replace(props.queryStr, `***${props.queryStr}***`)
+
+            console.log(content.value)
+            // alert(1)
+          }
+        }
+
+        initEditor(content.value)
       })
     }
   }
 )
+
 import { ElMessage } from 'element-plus'
 
 // 外部链接
