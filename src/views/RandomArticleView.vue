@@ -13,6 +13,8 @@ let content = ref('')
 axios.get(`${server_url}/articles?folderid=-2`).then((result) => {
   count = result.data.data.length
   NoteBookList = result.data.data
+
+  showRandomArticle()
 })
 
 // 为确保体验，以前看过的不能重复出现
@@ -22,7 +24,7 @@ if (lo != null) {
   arr = JSON.parse(lo)
 }
 
-function showRandomArticle() {
+const showRandomArticle = () => {
   let rand = 0
   /* 循环进行随机数生成，若与数组中已有的数重复，则continue，
   若不重复，break 跳出循环，若数组长度达到总数据量上限，也跳出循环*/
