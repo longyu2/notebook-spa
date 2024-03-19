@@ -34,14 +34,17 @@ const isAllButtonShow = ref(false) // 控制全选按钮显示
 
 // 监听全选按钮，全选按钮如有变化，改变所有选中
 // 单个 ref
-watch(isCheckedAll, (newIsCheckedAll) => {
-  /**
-   * 触发以后，就为所有的列表取消或设置选中
-   */
+
+// 为所有的列表取消或设置选中
+const CheckedBoxAllChagne =()=>{
   articles.value.forEach((element: { checked: boolean }) => {
-    element.checked = newIsCheckedAll
+    element.checked = isCheckedAll.value
   })
-})
+}
+
+
+
+
 
 // 根据folderId 获取文章信息并渲染
 const getArticleByFoldeId = (folderId: string) => {
@@ -57,8 +60,8 @@ const getArticleByFoldeId = (folderId: string) => {
 }
 
 // 切换显示的文章
-const byIdSelContent = (event, Notebookid: any) => {
-  if (event.target.tagName === 'INPUT') {
+const byIdSelContent = (event: any, Notebookid: any) => {
+  if (event.target.tagName === 'SPAN') {
     return // 如果事件对象是子元素，直接停止执行，防止穿透
   }
 
@@ -187,7 +190,7 @@ const buttonCheckedCount = computed(() => {
 
 // 监听被选中文章数量的计算属性，用来控制全选按钮显示
 watch(buttonCheckedCount, (newButtonCheckedCount, oldButtonCheckedCount) => {
-  // 只有当 被选中文章数量从1变成0时，才取消全选按钮显示
+  // 只有当 被选中文章数量从1变成0时，才隐藏全选按钮
   if (newButtonCheckedCount === 1 && oldButtonCheckedCount === 0) {
     isAllButtonShow.value = true
   }
@@ -195,6 +198,12 @@ watch(buttonCheckedCount, (newButtonCheckedCount, oldButtonCheckedCount) => {
   if (oldButtonCheckedCount === 1 && newButtonCheckedCount === 0) {
     isAllButtonShow.value = false
   }
+
+
+  isCheckedAll.value =  newButtonCheckedCount === articles.value.length  // 当选中文章数量等于 articles 数量，将全选按钮选中,不等于于则取消选中
+
+  
+
 })
 
 // 使用一个计算属性来表示所有被选中的文章
@@ -280,12 +289,12 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
 
       <nav class="topleft-bottom">
         <span v-if="isAllButtonShow">
-          <input
-            type="checkbox"
-            name=""
+          <el-checkbox
             v-model="isCheckedAll"
+            @change="CheckedBoxAllChagne"
             class="checkbox checkbox-all"
-            id=""
+            size="large"
+
           />
           全选
         </span>
@@ -304,14 +313,7 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
         >
           <el-card shadow="hover" class="el-articlelist-card">
             <div class="ul-li-item">
-              <input
-                type="checkbox"
-                name=""
-                v-model="item.checked"
-                @change.stop="oneArticleCheckedChange"
-                class="checkbox"
-                id=""
-              />
+              <el-checkbox v-model="item.checked" class="checkbox" size="large" />
 
               <div class="ul-list-texts">
                 <p

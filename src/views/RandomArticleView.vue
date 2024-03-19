@@ -28,6 +28,7 @@ const showRandomArticle = () => {
   let rand = 0
   /* 循环进行随机数生成，若与数组中已有的数重复，则continue，
   若不重复，break 跳出循环，若数组长度达到总数据量上限，也跳出循环*/
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     rand = Math.floor(Math.random() * count)
     if (arr.length == count) {
