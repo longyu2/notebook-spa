@@ -95,8 +95,9 @@ $article-list-size: 15px;
         }
         #ImageButtonAdd {
           height: 100%;
+          transition: 0.24s all ease-in-out;
           &:hover {
-            transform: scale(1.2);
+            transform: scale(1.3);
           }
         }
       }

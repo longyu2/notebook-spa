@@ -36,15 +36,11 @@ const isAllButtonShow = ref(false) // 控制全选按钮显示
 // 单个 ref
 
 // 为所有的列表取消或设置选中
-const CheckedBoxAllChagne =()=>{
+const CheckedBoxAllChagne = () => {
   articles.value.forEach((element: { checked: boolean }) => {
     element.checked = isCheckedAll.value
   })
 }
-
-
-
-
 
 // 根据folderId 获取文章信息并渲染
 const getArticleByFoldeId = (folderId: string) => {
@@ -199,11 +195,7 @@ watch(buttonCheckedCount, (newButtonCheckedCount, oldButtonCheckedCount) => {
     isAllButtonShow.value = false
   }
 
-
-  isCheckedAll.value =  newButtonCheckedCount === articles.value.length  // 当选中文章数量等于 articles 数量，将全选按钮选中,不等于于则取消选中
-
-  
-
+  isCheckedAll.value = newButtonCheckedCount === articles.value.length // 当选中文章数量等于 articles 数量，将全选按钮选中,不等于于则取消选中
 })
 
 // 使用一个计算属性来表示所有被选中的文章
@@ -294,7 +286,6 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
             @change="CheckedBoxAllChagne"
             class="checkbox checkbox-all"
             size="large"
-
           />
           全选
         </span>
