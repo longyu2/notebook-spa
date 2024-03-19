@@ -30,6 +30,8 @@ watch(
   }
 )
 
+const isAllButtonShow = ref(false) // 控制全选按钮显示
+
 // 监听全选按钮，全选按钮如有变化，改变所有选中
 // 单个 ref
 watch(isCheckedAll, (newIsCheckedAll) => {
@@ -54,9 +56,11 @@ const getArticleByFoldeId = (folderId: string) => {
   })
 }
 
-// 文章列表点击事件， 更改显示的文章
-const byIdSelContent = (Notebookid: any) => {
-  // queryStr
+// 切换显示的文章
+const byIdSelContent = (event, Notebookid: any) => {
+  if (event.target.tagName === 'INPUT') {
+    return // 如果事件对象是子元素，直接停止执行，防止穿透
+  }
 
   articleChecked.value.id = Notebookid // 更改需要展示的文章
   updateCheckIndex()
@@ -170,7 +174,7 @@ const closeMoveCallback = () => {
   只要有一个以上被选中，该值为true,目的是为了只有当有文章
   被选中时才显示出操作的按钮
 */
-const isButtonChecked = computed(() => {
+const buttonCheckedCount = computed(() => {
   let count = 0
   // 遍历所有的checked 属性值，只要有一项的checkd 值为true，则count > 0 ，计算属性返回true
   articles.value.forEach((element: any) => {
@@ -178,10 +182,18 @@ const isButtonChecked = computed(() => {
       count++
     }
   })
-  if (count > 0) {
-    return true
-  } else {
-    return false
+  return count
+})
+
+// 监听被选中文章数量的计算属性，用来控制全选按钮显示
+watch(buttonCheckedCount, (newButtonCheckedCount, oldButtonCheckedCount) => {
+  // 只有当 被选中文章数量从1变成0时，才取消全选按钮显示
+  if (newButtonCheckedCount === 1 && oldButtonCheckedCount === 0) {
+    isAllButtonShow.value = true
+  }
+
+  if (oldButtonCheckedCount === 1 && newButtonCheckedCount === 0) {
+    isAllButtonShow.value = false
   }
 })
 
@@ -246,11 +258,20 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
 
       <nav class="topleft-middle">
         <div class="movebtn-and-delbtn">
-          <el-button size="large" class="del-btn" v-if="isButtonChecked" @click="delete_content()">
+          <el-button
+            size="large"
+            class="del-btn"
+            v-if="buttonCheckedCount > 0"
+            @click="delete_content()"
+          >
             删除
           </el-button>
 
-          <el-button class="del-btn" size="large" v-if="isButtonChecked" @click="move_article()"
+          <el-button
+            class="del-btn"
+            size="large"
+            v-if="buttonCheckedCount > 0"
+            @click="move_article()"
             >移动到..</el-button
           >
         </div>
@@ -258,7 +279,7 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
       </nav>
 
       <nav class="topleft-bottom">
-        <span v-if="isButtonChecked">
+        <span v-if="isAllButtonShow">
           <input
             type="checkbox"
             name=""
@@ -276,14 +297,21 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
         <li
           v-for="(item, index) in articles"
           :key="index"
-          @click="byIdSelContent(item['Notebookid'])"
+          @click="byIdSelContent($event, item['Notebookid'])"
           :class="{
             'article-list-buttonchecked': item.Notebookid === articleChecked.id
           }"
         >
           <el-card shadow="hover" class="el-articlelist-card">
             <div class="ul-li-item">
-              <input type="checkbox" name="" v-model="item.checked" class="checkbox" id="" />
+              <input
+                type="checkbox"
+                name=""
+                v-model="item.checked"
+                @change.stop="oneArticleCheckedChange"
+                class="checkbox"
+                id=""
+              />
 
               <div class="ul-list-texts">
                 <p
