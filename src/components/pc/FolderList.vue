@@ -35,7 +35,10 @@ function confirmClick() {
 
 // 文件夹更名
 function folderRename(folder_id: any, index: any) {
-  const newName = prompt('请输入新文件夹名')
+  let newName = prompt('请输入新文件夹名')
+  if (newName === null || newName === undefined) {
+    newName = ''
+  }
   axios.put(`${server_url}/folders`, { folder_id, newName }).then((result) => {
     folders.value[index].folder_name = newName
   })
