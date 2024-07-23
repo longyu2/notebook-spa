@@ -137,9 +137,6 @@ function addArticle() {
     })
     .then((result) => {
       let newArticle = result.data.data.articleInfo
-      console.table(newArticle)
-
-      console.table(newArticle)
       newArticle.checked = false
       ArticleCheckId.value = newArticle.Notebookid
       //返回的是只有一个元素的数组，还是需要用下标0取

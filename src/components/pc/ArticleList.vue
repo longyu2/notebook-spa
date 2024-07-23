@@ -146,6 +146,11 @@ const delete_content = () => {
   // 重新获取文章列表,由于不进行延迟的话，服务器返回太快，获取的数据是未删除的数据，所以延时0.1秒再去服务器获取数据
   setTimeout(function () {
     getArticleByFoldeId(props.folderId)
+
+    // 如果列表最后一篇文章被删除，必须禁用右边的文本编辑器
+    if (articles.value.length === 1) {
+      articleChecked.value.id = -9999 // -9999 代表列表已经没有文章
+    }
   }, 100)
 }
 

@@ -15,7 +15,8 @@ import 'vditor/dist/index.css'
  *  用来锁住内容，保证只是因切换文章产生的content 和 title 变化不会被
  *  watch 监听到，从而覆盖 产生变化，导致修改时间发生惨痛的变化
  */
-let contentUpdateLock = false
+let [contentUpdateLock, titleUpdateLock] = [false, ref(false)]
+let titlePlaceholder = ref('请输入标题')
 
 const vditor = ref<Vditor | null>(null)
 
@@ -27,7 +28,7 @@ function initEditor(initValue: string) {
       pin: true
     },
     cache: {
-      enable: false
+      enable: true
     },
     after: () => {
       vditor.value!.setValue(initValue)
@@ -53,6 +54,7 @@ watch([title, content], ([newTitle, newContent]) => {
     if (props.queryStr != '' && content.value.indexOf(`***~~${props.queryStr}~~***`) != -1) {
       content.value = content.value.replace(`***${props.queryStr}***`, props.queryStr)
     }
+
     saveArticle(props.articleId, title.value, content.value)
   } else {
     contentUpdateLock = false // 触发后解锁，则不会影响正常使用
@@ -62,6 +64,24 @@ watch([title, content], ([newTitle, newContent]) => {
 
   contentUpdate(title, content)
 })
+
+// 监控props中的articleId，若其等于-9999，禁用编辑器
+watch(
+  () => props.articleId,
+  (newProps) => {
+    if (newProps === -9999) {
+      title.value = ''
+      titleUpdateLock.value = true
+      vditor.value!.setValue('') // 清空编辑器
+      vditor.value?.disabled() // 禁用编辑器
+      titlePlaceholder.value = ''
+    } else {
+      titlePlaceholder.value = '请输入标题'
+      titleUpdateLock.value = false
+      vditor.value?.enable() // 启用编辑器
+    }
+  }
+)
 
 // 返回按钮关闭文章内容
 function hideContent() {
@@ -174,7 +194,12 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
       </router-link>
     </div>
 
-    <input id="input-title" placeholder="请输入标题" v-model="title" />
+    <input
+      id="input-title"
+      :placeholder="titlePlaceholder"
+      :disabled="titleUpdateLock"
+      v-model="title"
+    />
     <div id="vditor" class="vditor"></div>
   </div>
 </template>
