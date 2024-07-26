@@ -149,10 +149,15 @@ const token = localStorage.getItem('token')
 const uploadHeaders = { Authorization: token }
 
 const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
-  const newImageUrl = `https://note.misaka-mikoto.cn:9999/${response.url}`
-  vditor.value!.setValue(content.value + `![](${newImageUrl})`)
-  content.value = content.value + `![](${newImageUrl})`
-  fileList.value = [] // 清空文件列表
+  const newImageUrl = `${server_url.replace('/v1', '')}/${response.url}`
+
+  vditor.value!.setValue(content.value + `![](${newImageUrl})\n`)
+  content.value = content.value + `![](${newImageUrl})\n` // 为编辑区加上图片
+
+  // 当列表里每一项的状态都是success以后才清空文件列表
+  if (fileList.value.every((item) => item.status === 'success')) {
+    fileList.value = [] // 清空文件列表
+  }
 }
 </script>
 
@@ -182,6 +187,8 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
         :action="`${server_url}/upload`"
         :on-success="handleSuccess"
         :headers="uploadHeaders"
+        multiple="true"
+        limit="100"
       >
         <el-button text size="large">上传图片</el-button>
       </el-upload>
