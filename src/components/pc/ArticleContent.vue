@@ -154,6 +154,12 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
   vditor.value!.setValue(content.value + `![](${newImageUrl})\n`)
   content.value = content.value + `![](${newImageUrl})\n` // 为编辑区加上图片
 
+  // 这里再次调用一个接口，将图片信息保存到服务器
+  axios.post(`${server_url}/image`, {
+    imagePath: response.url,
+    Notebookid: props.articleId
+  })
+
   // 当列表里每一项的状态都是success以后才清空文件列表
   if (fileList.value.every((item) => item.status === 'success')) {
     fileList.value = [] // 清空文件列表
