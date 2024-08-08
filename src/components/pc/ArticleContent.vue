@@ -23,10 +23,16 @@ const vditor = ref<Vditor | null>(null)
 // 用于初始化编辑器的函数，传入参数
 function initEditor(initValue: string) {
   vditor.value = new Vditor('vditor', {
+    width: '800',
     height: 2000,
     toolbarConfig: {
       pin: true
     },
+
+    preview: {
+      maxWidth: 800
+    },
+
     cache: {
       enable: true
     },
