@@ -1,8 +1,8 @@
 $black-border: 1px solid black;
-$radius: 10px;
+$radius: 0px;
 $box-height: 905px;
 $left-width: 300px;
-
+$checked-color: rgba(124, 190, 255, 0.75);
 @media screen and (min-width: 500px) {
   #folder {
     flex-shrink: 0;
@@ -15,7 +15,8 @@ $left-width: 300px;
     display: flex;
     flex-flow: column nowrap;
     align-items: flex-start;
-    overflow-y: auto;
+    overflow-x: visible;
+
     .addFolderBtn:hover {
       background-color: #a0cfff;
     }
@@ -27,7 +28,7 @@ $left-width: 300px;
       width: 100%;
       .my-folder {
         font-weight: 600;
-        width: 95%;
+        width: 96%;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -40,16 +41,23 @@ $left-width: 300px;
         margin-left: 10px;
       }
       li {
+        margin-top: 3px;
+        clip-path: polygon(0 1%, 100% 0%, 96% 100%, 0% 100%);
+
         cursor: pointer;
         font-size: medium;
-        border-radius: 8px;
+        border-radius: $radius;
         padding: 0px 6px;
         border: 0px;
         line-height: 36px;
         height: 36px;
-        width: 90%;
+        width: 94%;
         display: flex;
         justify-content: space-between;
+        &:hover {
+          color: #fff;
+          background-color: $checked-color;
+        }
         button {
           background: 0%;
           border: 0px;
@@ -72,7 +80,25 @@ $left-width: 300px;
     }
   }
 
+  @keyframes toRight {
+    from {
+      margin-left: 0px;
+    }
+
+    75% {
+      margin-left: 35px;
+    }
+    to {
+      margin-left: 26px;
+    }
+  }
+
   .folers-button-checked {
-    background-color: rgba(124, 190, 255, 0.3);
+    color: #fff;
+    background-color: $checked-color;
+    animation-name: toRight;
+    animation-duration: 0.3s;
+    animation-fill-mode: forwards;
+    z-index: 10;
   }
 }
