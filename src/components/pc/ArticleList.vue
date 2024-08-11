@@ -307,7 +307,7 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
             'article-list-buttonchecked': item.Notebookid === articleChecked.id
           }"
         >
-          <el-card shadow="hover" class="el-articlelist-card">
+          <el-card id="el-card" shadow="hover" class="el-articlelist-card">
             <div class="ul-li-item">
               <el-checkbox v-model="item.checked" class="checkbox" size="large" />
 
@@ -325,7 +325,7 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
 
                 <!-- 三元表达式，在query字符串有值的时候，会多生成一个B标签，多6字符，所以三元表达式来substring -->
                 <p class="p_2" v-html="item.content.substring(0, queryStr == '' ? 14 : 20)"></p>
-                <p class="p_3">
+                <p class="p_3" id="p_3">
                   {{ item.createtime }}
                   <el-icon><Edit @click="editCreatetime(item.Notebookid)" /></el-icon>
                 </p>

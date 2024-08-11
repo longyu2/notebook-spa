@@ -2,7 +2,8 @@ $black-border: 1px solid black;
 $radius: 0px;
 $box-height: 905px;
 $left-width: 300px;
-$checked-color: rgba(124, 190, 255, 0.75);
+$checked-color: rgb(85, 144, 226);
+
 @media screen and (min-width: 500px) {
   #folder {
     flex-shrink: 0;

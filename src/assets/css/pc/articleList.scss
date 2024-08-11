@@ -3,6 +3,7 @@ $radius: 10px;
 $box-height: 99vh;
 $left-width: 16vw;
 $article-list-size: 15px;
+$checked-color: rgb(85, 144, 226);
 
 @media screen and (min-width: 500px) {
   // 隐藏电脑端中的返回按钮，这是pc端和移动端唯一不同
@@ -82,7 +83,7 @@ $article-list-size: 15px;
             height: 25px;
             padding: 10px;
             color: white;
-            background-color: cornflowerblue;
+            background-color: $checked-color;
             font-size: 0.1vw;
             border: 0ch;
             border-radius: 5px;
@@ -175,11 +176,33 @@ $article-list-size: 15px;
     }
 
     li:hover {
-      background-color: #dddddd;
+      #el-card {
+        background-color: $checked-color;
+        color: #fff;
+        #p_3 {
+          color: #fff;
+        }
+      }
+    }
+    li:active {
+      #el-card {
+        background-color: rgb(13, 57, 118);
+      }
+    }
+
+    li:visited {
+      #el-card {
+        background-color: $checked-color;
+      }
     }
   }
   .article-list-buttonchecked {
-    transform: translate(0px, -5px);
-    box-shadow: 0 1px 9px 3px #ccc;
+    #el-card {
+      background-color: $checked-color;
+      color: #fff;
+      #p_3 {
+        color: #fff;
+      }
+    }
   }
 }
