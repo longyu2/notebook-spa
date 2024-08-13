@@ -1,7 +1,7 @@
 $black-border: 1px solid black;
 $radius: 10px;
 $box-height: 99vh;
-$left-width: 16vw;
+$left-width: 315px;
 $article-list-size: 15px;
 $checked-color: rgb(85, 144, 226);
 
@@ -124,21 +124,24 @@ $checked-color: rgb(85, 144, 226);
       margin-top: 10px;
       height: 85vh;
       min-width: $left-width;
-      min-width: 300px;
 
       overflow: auto;
       background-color: white;
       border-radius: $radius;
 
       .el-articlelist-card {
+        .el-card__body {
+        }
         .ul-li-item {
           display: flex;
           align-items: flex-start;
+          justify-content: space-between;
           .checkbox {
             margin-top: -10px;
             margin-right: 10px;
           }
           .ul-list-texts {
+            width: 210px;
             .p_1 {
               min-height: 20px;
               font-size: $article-list-size;
@@ -155,15 +158,30 @@ $checked-color: rgb(85, 144, 226);
                 color: orange;
               }
             }
-
             .p_3 {
               width: 100%;
               line-height: 25px;
               font-size: $article-list-size;
               color: gray;
               display: flex;
-              justify-content: space-around;
+              justify-content: flex-start;
               align-items: center;
+            }
+          }
+          .del-icon-box {
+            width: 30px;
+            height: 65px;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+            .article-del-icon {
+              width: inherit;
+
+              &:hover {
+                transition: 0.2s all ease-in-out;
+                cursor: pointer;
+                scale: 1.3;
+              }
             }
           }
         }

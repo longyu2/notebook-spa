@@ -48,7 +48,7 @@ let foldeDelDialogVisible = ref(false) // 控制删除对话框的出现
 let delFolder: any = { id: 0, index: 0 } // 定义一个将要确认删除的文件夹的id 以及在数组中的索引
 let folderChecked = ref({ folderId: -2, folderName: '所有笔记' }) // 指示当前选中的folder
 
-// 读取localstorage ，查看是否有上次浏览记录
+// 读取localstorage ，查看上次选中的文件夹
 if (localStorage.getItem('userWatch') != null) {
   folderChecked.value = JSON.parse(localStorage.getItem('userWatch')!).folderCheck
 }

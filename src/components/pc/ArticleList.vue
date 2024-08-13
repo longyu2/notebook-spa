@@ -6,13 +6,14 @@ import ArticleContent from './ArticleContent.vue'
 import { computed } from 'vue'
 import MoveToFolder from '@/components/pc/MoveToFolder.vue'
 import { ElMessage } from 'element-plus'
+import { log } from 'console'
 const props = defineProps(['folderId'])
 let isCheckedAll = ref(false) // 定义全选按钮状态的变量
 let IsShowMoveToFolder = ref(false)
-let articles: any = ref([])
+let articleList: any = ref([]) // 定义整个文章列表
 
 let articleChecked = ref({
-  // 定义当前选中的是什么文章
+  // 表示当前选中的文章
   id: 0,
   index: 1
 })
@@ -37,7 +38,7 @@ const isAllButtonShow = ref(false) // 控制全选按钮显示
 
 // 为所有的列表取消或设置选中
 const CheckedBoxAllChagne = () => {
-  articles.value.forEach((element: { checked: boolean }) => {
+  articleList.value.forEach((element: { checked: boolean }) => {
     element.checked = isCheckedAll.value
   })
 }
@@ -45,12 +46,14 @@ const CheckedBoxAllChagne = () => {
 // 根据folderId 获取文章信息并渲染
 const getArticleByFoldeId = (folderId: string) => {
   axios.get(`${server_url}/articles?folderid=${folderId}`).then((result) => {
-    articles.value = result.data.data //  查询到的信息存储到article数组中
-    articleChecked.value.id = articles.value[0].Notebookid // 选中列表中最新的文章
+    articleList.value = result.data.data //  查询到的信息存储到article数组中
+    articleChecked.value.id = articleList.value[0].Notebookid // 选中列表中最新的文章
     updateCheckIndex()
-    //在信息获取完成后，为其添加控制checkbox 的属性
-    articles.value.forEach((element: any) => {
+
+    //在信息获取完成后，为其添加控制checkbox 的属性,和hover 属性，用来控制，这几项服务器端没有，只有客户端有
+    articleList.value.forEach((element: any) => {
       element.checked = false
+      element.hovered = false
     })
   })
 }
@@ -77,11 +80,11 @@ const searchArticle = () => {
     getArticleByFoldeId(props.folderId)
   } else {
     axios.get(`${server_url}/search/${queryStr.value}`).then((results) => {
-      articles.value = results.data // 用搜索到的内容代替 articleList
+      articleList.value = results.data // 用搜索到的内容代替 articleList
 
       // 还要对搜索到的部分高亮处理
-      for (let index = 0; index < articles.value.length; index++) {
-        const element = articles.value[index]
+      for (let index = 0; index < articleList.value.length; index++) {
+        const element = articleList.value[index]
 
         // 找到搜索关键字在content 中的索引，然后要将其高亮
         const searchContentIndex = element.content.indexOf(queryStr.value)
@@ -104,26 +107,26 @@ const searchArticle = () => {
 }
 
 // 修改时间
-const editCreatetime = (notebookId: string) => {
+const editCreatetime = async (notebookId: string) => {
   const createtime = prompt('请输入时间，默认按 xxxx-xx-xx xx:xx:xx输入')
-  axios
-    .put(`${server_url}/createtime`, {
+  if (createtime !== '' && createtime !== undefined && createtime != null) {
+    const result = await axios.put(`${server_url}/createtime`, {
       notebookId: notebookId,
       newCreatetime: createtime
     })
-    .then((result) => {
-      ElMessage({
-        showClose: true,
-        message: result.data.data,
-        type: 'success'
-      })
+
+    ElMessage({
+      showClose: true,
+      message: result.data.data,
+      type: 'success'
     })
+  }
 }
 
 // 修改当前选中文章的变量articleChecked的index，方便展示当前选中的是第几篇文章
 const updateCheckIndex = () => {
-  for (let i = 0; i < articles.value.length; i++) {
-    if (articleChecked.value.id == articles.value[i].Notebookid) {
+  for (let i = 0; i < articleList.value.length; i++) {
+    if (articleChecked.value.id == articleList.value[i].Notebookid) {
       articleChecked.value.index = i + 1
     }
   }
@@ -132,9 +135,9 @@ const updateCheckIndex = () => {
 // 删除选中的文章
 const delete_content = () => {
   let del_object: any = { del_sql_notebookid_list: [] }
-  for (let i = 0; i < articles.value.length; i++) {
-    if (articles.value[i].checked) {
-      del_object.del_sql_notebookid_list.push(articles.value[i].Notebookid)
+  for (let i = 0; i < articleList.value.length; i++) {
+    if (articleList.value[i].checked) {
+      del_object.del_sql_notebookid_list.push(articleList.value[i].Notebookid)
     }
   }
   // 调用后台的删除接口，将参数传递给后台进行删除
@@ -148,19 +151,36 @@ const delete_content = () => {
     getArticleByFoldeId(props.folderId)
 
     // 如果列表最后一篇文章被删除，必须禁用右边的文本编辑器
-    if (articles.value.length === 1) {
+    if (articleList.value.length === 1) {
       articleChecked.value.id = -9999 // -9999 代表列表已经没有文章
     }
   }, 100)
 }
 
+/** 删除单篇文章 */
+const deleteArticle = async (articleId: number) => {
+  // 调用后台的删除接口，将参数传递给后台进行删除
+  let result = await axios.delete(`${server_url}/articles`, {
+    data: { del_sql_notebookid_list: [articleId] }
+  })
+  console.log(result)
+
+  getArticleByFoldeId(props.folderId)
+  console.log(2)
+
+  // 如果列表最后一篇文章被删除，必须禁用右边的文本编辑器
+  if (articleList.value.length === 1) {
+    articleChecked.value.id = -9999 // -9999 代表列表已经没有文章
+  }
+}
+
 // 将文章移动到不同文件夹
 const move_article = () => {
   let move_list = []
-  for (let i = 0; i < articles.value.length; i++) {
-    // 删除articles 数组中对应数据
-    if (articles.value[i].checked) {
-      move_list.push(articles.value[i].Notebookid)
+  for (let i = 0; i < articleList.value.length; i++) {
+    // 删除articleList 数组中对应数据
+    if (articleList.value[i].checked) {
+      move_list.push(articleList.value[i].Notebookid)
     }
   }
   // 显示文件移动框
@@ -181,7 +201,7 @@ const closeMoveCallback = () => {
 const buttonCheckedCount = computed(() => {
   let count = 0
   // 遍历所有的checked 属性值，只要有一项的checkd 值为true，则count > 0 ，计算属性返回true
-  articles.value.forEach((element: any) => {
+  articleList.value.forEach((element: any) => {
     if (element.checked) {
       count++
     }
@@ -200,20 +220,25 @@ watch(buttonCheckedCount, (newButtonCheckedCount, oldButtonCheckedCount) => {
     isAllButtonShow.value = false
   }
 
-  isCheckedAll.value = newButtonCheckedCount === articles.value.length // 当选中文章数量等于 articles 数量，将全选按钮选中,不等于于则取消选中
+  isCheckedAll.value = newButtonCheckedCount === articleList.value.length // 当选中文章数量等于 articleList 数量，将全选按钮选中,不等于于则取消选中
 })
 
 // 使用一个计算属性来表示所有被选中的文章
-const CheckedArticles = computed(() => {
+const CheckedarticleList = computed(() => {
   let arr: any[] = []
   // 遍历所有的checked 属性值，只要有一项的checkd 值为true，则count > 0 ，计算属性返回true
-  articles.value.forEach((element: { checked: any }) => {
+  articleList.value.forEach((element: { checked: any }) => {
     if (element.checked) {
       arr.push(element)
     }
   })
   return arr
 })
+
+/** 鼠标移动事件 */
+const articleListMouseMove = (id: number) => {
+  console.log(id)
+}
 
 // 添加新文章
 const addArticle = () => {
@@ -228,14 +253,14 @@ const addArticle = () => {
       articleChecked.value.id = newArticle.Notebookid
       updateCheckIndex()
       //返回的是只有一个元素的数组，还是需要用下标0取
-      articles.value.unshift(newArticle)
+      articleList.value.unshift(newArticle)
     })
 }
 
 // 接收子组件传来的值
 const contentUpdate = (data: { articleId: any; content: any; title: any }) => {
-  // 对articles 进行遍历，找到Notebookid 与 子组件传来的articleId 相同的那一项，更改其内容
-  articles.value.forEach((element: { Notebookid: any; title: any; content: any }) => {
+  // 对articleList 进行遍历，找到Notebookid 与 子组件传来的articleId 相同的那一项，更改其内容
+  articleList.value.forEach((element: { Notebookid: any; title: any; content: any }) => {
     if (element.Notebookid == data.articleId && queryStr.value === '') {
       element.title = data.title
       element.content = data.content
@@ -250,7 +275,7 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
   <div class="article-list-box shadow">
     <div id="TopLeft">
       <nav class="topleft-top">
-        <span class="article-count"> 共{{ articles.length }}条笔记 </span>
+        <span class="article-count"> 共{{ articleList.length }}条笔记 </span>
         <span class="article-count">累计字数：{{ allWordCount }}</span>
       </nav>
 
@@ -300,17 +325,22 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
     <div id="left">
       <ul id="List-ul">
         <li
-          v-for="(item, index) in articles"
+          v-for="(item, index) in articleList"
           :key="index"
           @click="byIdSelContent($event, item['Notebookid'])"
           :class="{
             'article-list-buttonchecked': item.Notebookid === articleChecked.id
           }"
         >
-          <el-card id="el-card" shadow="hover" class="el-articlelist-card">
+          <el-card
+            id="el-card"
+            @mousemove="articleList[index].hovered = true"
+            @mouseleave="articleList[index].hovered = false"
+            shadow="hover"
+            class="el-articlelist-card"
+          >
             <div class="ul-li-item">
               <el-checkbox v-model="item.checked" class="checkbox" size="large" />
-
               <div class="ul-list-texts">
                 <p
                   class="p_1"
@@ -322,13 +352,26 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
                     }`
                   "
                 ></p>
-
                 <!-- 三元表达式，在query字符串有值的时候，会多生成一个B标签，多6字符，所以三元表达式来substring -->
-                <p class="p_2" v-html="item.content.substring(0, queryStr == '' ? 14 : 20)"></p>
+                <p class="p_2">
+                  {{ item.content.substring(0, queryStr == '' ? 14 : 20) }}
+                </p>
                 <p class="p_3" id="p_3">
                   {{ item.createtime }}
-                  <el-icon><Edit @click="editCreatetime(item.Notebookid)" /></el-icon>
+                  <el-icon style="margin-left: 5px"
+                    ><Edit @click="editCreatetime(item.Notebookid)"
+                  /></el-icon>
                 </p>
+              </div>
+
+              <div class="del-icon-box">
+                <el-icon
+                  class="article-del-icon"
+                  @click="deleteArticle(item.Notebookid)"
+                  v-show="item.hovered"
+                  size="large"
+                  ><Delete
+                /></el-icon>
               </div>
             </div>
           </el-card>
@@ -338,7 +381,7 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
   </div>
 
   <MoveToFolder
-    :check_list="CheckedArticles"
+    :check_list="CheckedarticleList"
     v-if="IsShowMoveToFolder"
     @some-event="closeMoveCallback()"
   ></MoveToFolder>
