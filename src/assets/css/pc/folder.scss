@@ -71,6 +71,8 @@ $checked-color: rgb(85, 144, 226);
             height: 36px;
             line-height: 30px;
             display: flex;
+            font-weight: bold;
+            font-size: medium;
             justify-content: center;
           }
           .el-icon--right:hover {
@@ -101,5 +103,10 @@ $checked-color: rgb(85, 144, 226);
     animation-duration: 0.3s;
     animation-fill-mode: forwards;
     z-index: 10;
+
+    .el-icon--right {
+      color: #fff;
+      font-weight: bold;
+    }
   }
 }
