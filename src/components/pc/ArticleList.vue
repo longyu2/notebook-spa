@@ -28,6 +28,7 @@ watch(
     }
 
     getArticleByFoldeId(folderId)
+    getWordCount()
   }
 )
 
@@ -70,9 +71,13 @@ const byIdSelContent = (event: any, Notebookid: any) => {
 
 const queryStr = ref('') // queryStr 用来查询
 const allWordCount = ref(0)
+const getWordCount = () =>
+  axios
+    .get(`${server_url}/wordCount/${props.folderId}`)
+    .then((results) => (allWordCount.value = results.data.data))
 
 // 获取总字数
-axios.get(`${server_url}/wordCount`).then((results) => (allWordCount.value = results.data.data))
+getWordCount()
 
 // 搜索
 const searchArticle = () => {
@@ -266,6 +271,9 @@ const contentUpdate = (data: { articleId: any; content: any; title: any }) => {
       element.content = data.content
     }
   })
+
+  // 同时修改累计字数显示
+  getWordCount()
 }
 
 getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充

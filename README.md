@@ -2,7 +2,7 @@
 
 这是一个支持Markdown 语法的在线云笔记
 
-地址： [在线笔记](https://note.misaka-mikoto.cn)
+地址： [在线笔记](https://misaka-mikoto.cn)
 
 #### 技术栈
 

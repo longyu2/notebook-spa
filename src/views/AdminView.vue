@@ -63,7 +63,7 @@ function output() {}
     <div style="display: flex; line-height: 20px; width: 100%">
       服务器地址：
       <el-select v-model="server_url_storage" @change="updateServerUrl">
-        <el-option value="https://note.misaka-mikoto.cn:9999/v1">腾讯云9999端口(https)</el-option>
+        <el-option value="https://misaka-mikoto.cn:9999/v1">腾讯云9999端口(https)</el-option>
         <el-option value="http://localhost:9999/v1">本地9999端口(http)</el-option>
       </el-select>
     </div>
