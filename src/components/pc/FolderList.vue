@@ -30,6 +30,8 @@ function confirmClick() {
     })
     .then((res) => {
       folders.value.push(res.data[0])
+      // 新建文件夹成功后清除name，以免出现连续新建文件夹时会出现上一个文件夹名
+      addFolderDialogForm.value.newFolderName = ''
     })
 }
 
