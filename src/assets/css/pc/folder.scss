@@ -55,6 +55,9 @@ $checked-color: rgb(85, 144, 226);
         width: 94%;
         display: flex;
         justify-content: space-between;
+        transition:
+          background-color 0.35s,
+          color 0.35s;
         &:hover {
           color: #fff;
           background-color: $checked-color;
