@@ -141,6 +141,8 @@ function addArticle() {
       ArticleCheckId.value = newArticle.Notebookid
       //返回的是只有一个元素的数组，还是需要用下标0取
       articles.value.unshift(newArticle)
+      // 新建文章后跳转此文章的编辑页面
+      byIdSelContent(newArticle.Notebookid)
     })
 }
 
@@ -165,7 +167,28 @@ function contentHide() {
     <div id="left">
       <van-list id="List-ul">
         <van-cell
-          v-for="(item, index) in articles"
+          v-for="(item, index) in articles.filter((item: any, index: any) => index % 2 == 0)"
+          :key="index"
+          @click="byIdSelContent(item['Notebookid'])"
+          :class="{
+            'article-list-buttonchecked': item.Notebookid === ArticleCheckId
+          }"
+        >
+          <div class="ul-li-item">
+            <input type="checkbox" name="" v-model="item.checked" class="checkbox" id="" />
+
+            <div class="ul-list-texts">
+              <span class="p_1" v-text="item.title.substring(0, 14)"></span>
+
+              <p class="p_2" v-text="item.content.substring(0, 14)"></p>
+              <p class="p_3" v-text="item.createtime"></p>
+            </div>
+          </div>
+        </van-cell>
+      </van-list>
+      <van-list id="List-ul-2">
+        <van-cell
+          v-for="(item, index) in articles.filter((item: any, index: any) => index % 2 != 0)"
           :key="index"
           @click="byIdSelContent(item['Notebookid'])"
           :class="{

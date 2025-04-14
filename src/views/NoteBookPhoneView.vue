@@ -4,9 +4,6 @@ import FolderList from '../components/phone/FolderList.vue'
 
 <template>
   <div class="phone-box">
-    <div class="config-icon">
-      <van-icon name="setting-o" size="30" />
-    </div>
     <FolderList></FolderList>
   </div>
 </template>

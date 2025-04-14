@@ -13,16 +13,23 @@ $left-width: 300px;
 
 @media screen and (max-width: 500px) {
   #folder {
-    height: 11vh;
+    height: 8vh;
     overflow: auto;
     display: flex;
-
+    justify-content: flex-start;
+    align-items: center;
+    .create-folder {
+      font-size: x-large;
+      width: 10vw;
+      height: 10vw;
+    }
     button {
+      padding: 0%;
       flex-shrink: 0;
-      margin: 10px;
-      width: 130px;
-      height: 40px;
-      border-radius: $radius;
+      margin: 1px;
+      width: 15vw;
+      height: 7vh;
+      font-size: x-small;
     }
   }
 }

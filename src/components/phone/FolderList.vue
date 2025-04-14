@@ -97,7 +97,7 @@ function confirmDelFolder() {
       <span>我的文件夹</span>
     </van-button>
 
-    <el-icon @click="createFolder"><Plus /></el-icon>
+    <el-icon class="create-folder" @click="createFolder"><Plus /></el-icon>
 
     <van-button
       class="folder-item"

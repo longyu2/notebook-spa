@@ -19,12 +19,25 @@ $left-width: 15vw;
       }
     }
     #left {
-      height: 83vh;
+      height: 92vh;
       overflow: auto;
       width: 100vw;
+      display: flex;
+      #List-ul {
+        width: 50vw;
+      }
+      #List-ul-2 {
+        width: 50vw;
+      }
+
       .ul-li-item {
+        box-sizing: border-box;
+        padding: 5px;
+        margin: 0%;
         text-align: left;
-        min-height: 8vh;
+        min-height: 10vh;
+        border: 0.5px solid rgb(151, 129, 129);
+        border-radius: 10px;
       }
 
       .img-add-btn {
