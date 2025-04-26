@@ -20,7 +20,7 @@ export default {
     }
   },
   created() {
-    if (this.$route.path != 'login' && this.$route.path != 'regist') {
+    if (this.$route.path != 'login' && this.$route.path != 'regist' && this.$route.path != 'show') {
       if (this._isMobile()) {
         this.$router.replace('/notebook_phone')
       } else {

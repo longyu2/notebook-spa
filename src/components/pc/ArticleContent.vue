@@ -191,6 +191,8 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
         <b><span v-text="content.length"></span></b>字</span
       >
 
+      <router-link to="show">展示模式</router-link>
+
       <router-link to="random">随机推荐</router-link>
 
       <el-upload

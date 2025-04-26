@@ -10,7 +10,9 @@ import { log } from 'console'
 const props = defineProps(['folderId'])
 let isCheckedAll = ref(false) // 定义全选按钮状态的变量
 let IsShowMoveToFolder = ref(false)
-let articleList: any = ref([]) // 定义整个文章列表
+let articleList: any = ref([]) // 定义显示的整个文章列表
+let articleLength = ref(0)
+let articles: any = []
 
 let articleChecked = ref({
   // 表示当前选中的文章
@@ -42,21 +44,39 @@ const CheckedBoxAllChagne = () => {
   articleList.value.forEach((element: { checked: boolean }) => {
     element.checked = isCheckedAll.value
   })
+  articles.forEach((element: { checked: boolean }) => {
+    element.checked = isCheckedAll.value
+  })
 }
 
 // 根据folderId 获取文章信息并渲染
 const getArticleByFoldeId = (folderId: string) => {
   axios.get(`${server_url}/articles?folderid=${folderId}`).then((result) => {
-    articleList.value = result.data.data //  查询到的信息存储到article数组中
-    articleChecked.value.id = articleList.value[0].Notebookid // 选中列表中最新的文章
-    updateCheckIndex()
+    articles = result.data.data
+    articleLength.value = articles.length
 
     //在信息获取完成后，为其添加控制checkbox 的属性,和hover 属性，用来控制，这几项服务器端没有，只有客户端有
-    articleList.value.forEach((element: any) => {
+    articles.forEach((element: any) => {
       element.checked = false
       element.hovered = false
     })
+
+    articleList.value = articles.splice(0, 100) //  查询到的信息存储到article数组中
+
+    articleChecked.value.id = articleList.value[0].Notebookid // 选中列表中最新的文章
+    updateCheckIndex()
   })
+}
+// 动态加载
+const scrollChange = (event: any) => {
+  let progress = Math.floor(
+    (event.target!.scrollTop * 100) / document.querySelector('#List-ul')!.clientHeight
+  ) // 求得滚动条进度
+
+  if (progress > 70 && articles.length > 0) {
+    // 每当progress > 70 ,就从articles 取100个值添加
+    articleList.value = articleList.value.concat(articles.splice(0, 100))
+  }
 }
 
 // 切换显示的文章
@@ -145,21 +165,24 @@ const delete_content = () => {
       del_object.del_sql_notebookid_list.push(articleList.value[i].Notebookid)
     }
   }
+  // 为了动态加载引入的articles必须重复进行一次删除操作
+  for (let i = 0; i < articles.length; i++) {
+    if (articles[i].checked) {
+      del_object.del_sql_notebookid_list.push(articles[i].Notebookid)
+    }
+  }
+
   // 调用后台的删除接口，将参数传递给后台进行删除
   axios.delete(`${server_url}/articles`, { data: del_object }).then((res) => {
-    if (res == null) {
-      console.error('res is null!')
-    }
-  })
-  // 重新获取文章列表,由于不进行延迟的话，服务器返回太快，获取的数据是未删除的数据，所以延时0.1秒再去服务器获取数据
-  setTimeout(function () {
+    //  重新获取文章列表,由于不进行延迟的话，服务器返回太快，获取的数据是未删除的数据，所以延时0.1秒再去服务器获取数据
+
     getArticleByFoldeId(props.folderId)
 
     // 如果列表最后一篇文章被删除，必须禁用右边的文本编辑器
-    if (articleList.value.length === 1) {
+    if (articleList.value.length === 0) {
       articleChecked.value.id = -9999 // -9999 代表列表已经没有文章
     }
-  }, 100)
+  })
 }
 
 /** 删除单篇文章 */
@@ -168,10 +191,8 @@ const deleteArticle = async (articleId: number) => {
   let result = await axios.delete(`${server_url}/articles`, {
     data: { del_sql_notebookid_list: [articleId] }
   })
-  console.log(result)
 
   getArticleByFoldeId(props.folderId)
-  console.log(2)
 
   // 如果列表最后一篇文章被删除，必须禁用右边的文本编辑器
   if (articleList.value.length === 1) {
@@ -240,11 +261,6 @@ const CheckedarticleList = computed(() => {
   return arr
 })
 
-/** 鼠标移动事件 */
-const articleListMouseMove = (id: number) => {
-  console.log(id)
-}
-
 // 添加新文章
 const addArticle = () => {
   axios
@@ -283,7 +299,7 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
   <div class="article-list-box shadow">
     <div id="TopLeft">
       <nav class="topleft-top">
-        <span class="article-count"> 共{{ articleList.length }}条笔记 </span>
+        <span class="article-count"> 共{{ articleLength }}条笔记 </span>
         <span class="article-count">累计字数：{{ allWordCount }}</span>
       </nav>
 
@@ -330,7 +346,7 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
       </nav>
     </div>
 
-    <div id="left">
+    <div id="left" @scroll="scrollChange">
       <ul id="List-ul">
         <li
           v-for="(item, index) in articleList"
