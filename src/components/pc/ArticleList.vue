@@ -275,6 +275,7 @@ const addArticle = () => {
       updateCheckIndex()
       //返回的是只有一个元素的数组，还是需要用下标0取
       articleList.value.unshift(newArticle)
+      articleLength.value++
     })
 }
 
