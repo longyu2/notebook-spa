@@ -179,7 +179,7 @@ const delete_content = () => {
     getArticleByFoldeId(props.folderId)
 
     // 如果列表最后一篇文章被删除，必须禁用右边的文本编辑器
-    if (articleList.value.length === 0) {
+    if (articleList.value.length === 1) {
       articleChecked.value.id = -9999 // -9999 代表列表已经没有文章
     }
   })
@@ -286,11 +286,13 @@ const contentUpdate = (data: { articleId: any; content: any; title: any }) => {
     if (element.Notebookid == data.articleId && queryStr.value === '') {
       element.title = data.title
       element.content = data.content
+      
     }
   })
-
   // 同时修改累计字数显示
-  getWordCount()
+  setTimeout (()=>{
+    getWordCount()
+  },100)
 }
 
 getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
