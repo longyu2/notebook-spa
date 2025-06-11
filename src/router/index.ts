@@ -3,7 +3,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 const Login = () => import('@/views/LoginView.vue')
 const Regist = () => import('@/views/RegistView.vue')
 const NoteBookView = () => import('@/views/NoteBookView.vue')
-const ShowView = () => import('@/views/ShowArticleView.vue')
 
 const NoteBookPhoneView = () => import('@/views/NoteBookPhoneView.vue')
 
@@ -51,11 +50,6 @@ const router = createRouter({
       name: 'phone',
       component: NoteBookPhoneView
       // redirect: "/notebook_phone/list",
-    },
-    {
-      path: '/show',
-      name: 'show',
-      component: ShowView
     }
   ]
 })

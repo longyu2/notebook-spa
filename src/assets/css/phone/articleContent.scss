@@ -19,6 +19,7 @@ $box-height: 95vh;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+
     .input-text-title {
       font-size: 24px;
       font-weight: 600;
@@ -27,6 +28,9 @@ $box-height: 95vh;
     }
     .input-text-content {
       font-size: 16px;
+      width: 95vw;
+      height: 90vh;
+      border: 0px;
     }
     .word-count {
       padding: 1vw 4vw;

@@ -286,13 +286,12 @@ const contentUpdate = (data: { articleId: any; content: any; title: any }) => {
     if (element.Notebookid == data.articleId && queryStr.value === '') {
       element.title = data.title
       element.content = data.content
-      
     }
   })
   // 同时修改累计字数显示
-  setTimeout (()=>{
+  setTimeout(() => {
     getWordCount()
-  },100)
+  }, 100)
 }
 
 getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充

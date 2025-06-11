@@ -69,15 +69,6 @@ watch(
     <van-field v-model="title" class="input-text-title" label="" placeholder="请输入标题" />
     <span class="word-count">{{ content.length }} 字</span>
 
-    <van-field
-      class="input-text-content"
-      v-model="content"
-      rows="2"
-      :autosize="{ minHeight: 300 }"
-      label=""
-      type="textarea"
-      placeholder="请输入内容"
-      show-word-limit
-    />
+    <textarea class="input-text-content" v-model="content" placeholder="请输入内容"> </textarea>
   </div>
 </template>
