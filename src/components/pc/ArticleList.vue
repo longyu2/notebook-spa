@@ -379,9 +379,7 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
                   "
                 ></p>
                 <!-- 三元表达式，在query字符串有值的时候，会多生成一个B标签，多6字符，所以三元表达式来substring -->
-                <p class="p_2">
-                  {{ item.content.substring(0, queryStr == '' ? 14 : 20) }}
-                </p>
+                <p class="p_2" v-html="item.content.substring(0, queryStr == '' ? 14 : 20)"></p>
                 <p class="p_3" id="p_3">
                   {{ item.createtime }}
                   <el-icon style="margin-left: 5px"
