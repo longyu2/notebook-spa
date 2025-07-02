@@ -3,17 +3,17 @@ import { server_url } from '@/assets/constants/index'
 import axios from 'axios'
 
 // 导出saveArticle 函数
-export const saveArticle = function (articleId: string, title: string, content: string) {
+const saveArticle = async (articleId: string, title: string, content: string) => {
   // 将内容保存到云
-  axios
-    .put(server_url + '/article', {
-      Notebookid: articleId,
-      content: content,
-      title: title
-    })
-    .then(function (response) {
-      if (response.data == null) {
-        console.error('error')
-      }
-    })
+  const res = await axios.put(server_url + '/article', {
+    Notebookid: articleId,
+    content: content,
+    title: title
+  })
+
+  if (res.data == null) {
+    console.error('error')
+  }
 }
+
+export { saveArticle }

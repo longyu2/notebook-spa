@@ -24,6 +24,10 @@ const vditor = ref<Vditor | null>(null)
 function initEditor(initValue: string) {
   vditor.value = new Vditor('vditor', {
     width: '800',
+    outline: {
+      enable: true
+    },
+
     height: 2000,
     toolbarConfig: {
       pin: true
@@ -32,7 +36,6 @@ function initEditor(initValue: string) {
     preview: {
       maxWidth: 800
     },
-
     cache: {
       enable: true
     },

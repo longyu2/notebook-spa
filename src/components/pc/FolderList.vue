@@ -134,7 +134,7 @@ function confirmDelFolder() {
         :class="{ 'folers-button-checked': folderChecked.folderId === item.folder_id }"
       >
         {{
-          item.folder_name.length > 6 ? item.folder_name.substring(0, 6) + '..' : item.folder_name
+          item.folder_name.length > 12 ? item.folder_name.substring(0, 12) + '..' : item.folder_name
         }}
         <el-dropdown placement="bottom" trigger="click" class="dropdown">
           <el-icon class="el-icon--right">
