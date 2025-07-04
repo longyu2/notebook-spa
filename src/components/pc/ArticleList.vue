@@ -6,7 +6,7 @@ import ArticleContent from './ArticleContent.vue'
 import { computed } from 'vue'
 import MoveToFolder from '@/components/pc/MoveToFolder.vue'
 import { ElMessage } from 'element-plus'
-import { log } from 'console'
+
 const props = defineProps(['folderId'])
 let isCheckedAll = ref(false) // 定义全选按钮状态的变量
 let IsShowMoveToFolder = ref(false)
@@ -354,51 +354,39 @@ getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
           v-for="(item, index) in articleList"
           :key="index"
           @click="byIdSelContent($event, item['Notebookid'])"
-          :class="{
-            'article-list-buttonchecked': item.Notebookid === articleChecked.id
-          }"
+          :class="{ 'article-list-buttonchecked': item.Notebookid === articleChecked.id }"
+          @mousemove="articleList[index].hovered = true"
+          @mouseleave="articleList[index].hovered = false"
+          shadow="hover"
+          class="el-articlelist-card ul-li-item"
         >
-          <el-card
-            id="el-card"
-            @mousemove="articleList[index].hovered = true"
-            @mouseleave="articleList[index].hovered = false"
-            shadow="hover"
-            class="el-articlelist-card"
-          >
-            <div class="ul-li-item">
-              <el-checkbox v-model="item.checked" class="checkbox" size="large" />
-              <div class="ul-list-texts">
-                <p
-                  class="p_1"
-                  v-html="
-                    `${
-                      item.title != ''
-                        ? item.title.substring(0, queryStr == '' ? 14 : 20)
-                        : '无标题'
-                    }`
-                  "
-                ></p>
-                <!-- 三元表达式，在query字符串有值的时候，会多生成一个B标签，多6字符，所以三元表达式来substring -->
-                <p class="p_2" v-html="item.content.substring(0, queryStr == '' ? 14 : 20)"></p>
-                <p class="p_3" id="p_3">
-                  {{ item.createtime }}
-                  <el-icon style="margin-left: 5px"
-                    ><Edit @click="editCreatetime(item.Notebookid)"
-                  /></el-icon>
-                </p>
-              </div>
+          <el-checkbox v-model="item.checked" class="checkbox" size="large" />
+          <div class="ul-list-texts">
+            <p
+              class="p_1"
+              v-html="
+                `${item.title != '' ? item.title.substring(0, queryStr == '' ? 14 : 20) : '无标题'}`
+              "
+            ></p>
+            <!-- 三元表达式，在query字符串有值的时候，会多生成一个B标签，多6字符，所以三元表达式来substring -->
+            <p class="p_2" v-html="item.content.substring(0, queryStr == '' ? 14 : 20)"></p>
+            <p class="p_3" id="p_3">
+              {{ item.createtime }}
+              <el-icon style="margin-left: 5px"
+                ><Edit @click="editCreatetime(item.Notebookid)"
+              /></el-icon>
+            </p>
+          </div>
 
-              <div class="del-icon-box">
-                <el-icon
-                  class="article-del-icon"
-                  @click="deleteArticle(item.Notebookid)"
-                  v-show="item.hovered"
-                  size="large"
-                  ><Delete
-                /></el-icon>
-              </div>
-            </div>
-          </el-card>
+          <div class="del-icon-box">
+            <el-icon
+              class="article-del-icon"
+              @click="deleteArticle(item.Notebookid)"
+              v-show="item.hovered"
+              size="large"
+              ><Delete
+            /></el-icon>
+          </div>
         </li>
       </ul>
     </div>

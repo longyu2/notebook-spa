@@ -7,21 +7,22 @@ import axios from 'axios'
 let folders: any = ref([]) // 定义响应式文件夹
 
 //初始化，填充文件夹
-axios.get(`${server_url}/folders`).then((res) => {
-  folders.value = res.data
-})
+const init = async () => {
+  folders.value = (await axios.get(`${server_url}/folders`)).data
+}
 
+init()
 let addFolderDialogForm = ref({
   Visible: false, // 用于控制新增文件夹的对话框的显示与否
   newFolderName: '' // 输入的新文件夹名
 })
 
 // 新建文件夹
-function createFolder() {
+const createFolder = () => {
   addFolderDialogForm.value.Visible = true
 }
 // 新建文件夹确认
-function confirmClick() {
+const confirmClick = () => {
   addFolderDialogForm.value.Visible = false
   let name = addFolderDialogForm.value.newFolderName
   axios
@@ -36,7 +37,7 @@ function confirmClick() {
 }
 
 // 文件夹更名
-function folderRename(folder_id: any, index: any) {
+const folderRename = (folder_id: any, index: any) => {
   let newName = prompt('请输入新文件夹名')
   if (newName === null || newName === undefined) {
     newName = ''
@@ -66,7 +67,7 @@ watch(folderChecked, (newFolderChecked) => {
 })
 
 // 切换文件夹 ，根据输入的folderid 来进行视图的切换
-function changeFolder(folderId: any, folderName: any) {
+const changeFolder = (folderId: any, folderName: any) => {
   if (folderName == '全部笔记') {
     folderChecked.value = { folderId: -2, folderName: '全部笔记' }
     return
@@ -79,34 +80,25 @@ function changeFolder(folderId: any, folderName: any) {
   folderChecked.value = { folderId: folderId, folderName: folderName }
 }
 // 文件夹删除
-function deleteFolder(folder_id: any, index: any) {
+const deleteFolder = (folder_id: any, index: any) => {
   foldeDelDialogVisible.value = true
   delFolder = { folder_id, index }
 }
 
 // 确认删除
-function confirmDelFolder() {
+const confirmDelFolder = async () => {
   foldeDelDialogVisible.value = false
-  // const folder_id = delFolder.id;
-  axios
-    .delete(`${server_url}/folders`, {
-      params: { folder_id: delFolder.folder_id }
-    })
-    .then((restults) => console.log(restults.data))
+
+  await axios.delete(`${server_url}/folders`, {
+    params: { folder_id: delFolder.folder_id }
+  })
+
   folders.value.splice(delFolder.index, 1)
 }
 </script>
 
 <template>
   <div id="folder" class="shadow">
-    <h4>
-      {{
-        folderChecked.folderName.length > 9
-          ? folderChecked.folderName.substring(0, 8) + '...'
-          : folderChecked.folderName
-      }}
-    </h4>
-
     <ul class="folders-box">
       <li
         @click="changeFolder(-2, '全部笔记')"
@@ -121,10 +113,10 @@ function confirmDelFolder() {
         未分类
       </li>
 
-      <li class="my-folder">
+      <nav class="my-folder">
         <span>我的文件夹</span>
         <el-icon @click="createFolder"><Plus /></el-icon>
-      </li>
+      </nav>
 
       <li
         class="folder-item"

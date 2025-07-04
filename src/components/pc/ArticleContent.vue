@@ -9,8 +9,9 @@ import type { UploadProps, UploadUserFile } from 'element-plus'
 
 const fileList = ref<UploadUserFile[]>([])
 import Vditor from 'vditor'
-import 'vditor/dist/index.css'
+import 'vditor/src/assets/less/index.less'
 
+import ArticleContentTool from '@/components/pc/ArticleContentTool.vue'
 /**
  *  用来锁住内容，保证只是因切换文章产生的content 和 title 变化不会被
  *  watch 监听到，从而覆盖 产生变化，导致修改时间发生惨痛的变化
@@ -18,23 +19,25 @@ import 'vditor/dist/index.css'
 let [contentUpdateLock, titleUpdateLock] = [false, ref(false)]
 let titlePlaceholder = ref('请输入标题')
 
+let vditorHeight = Math.floor(window.innerHeight * 0.9)
+
 const vditor = ref<Vditor | null>(null)
 
 // 用于初始化编辑器的函数，传入参数
-function initEditor(initValue: string) {
+const initEditor = (initValue: string) => {
   vditor.value = new Vditor('vditor', {
-    width: '800',
     outline: {
+      position: 'left',
       enable: true
     },
 
-    height: 2000,
+    height: vditorHeight,
     toolbarConfig: {
       pin: true
     },
 
     preview: {
-      maxWidth: 800
+      maxWidth: vditorHeight
     },
     cache: {
       enable: true
@@ -177,53 +180,59 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
 </script>
 
 <template>
-  <div class="article-content-box shadow">
-    <div id="TopRight">
-      <span>你好， {{ user.userName }}！</span>
-      <span>
-        你当前阅读的是第
-        <b>
-          <span>{{ props.articleCheckedIndex }} </span>
-        </b>
+  <div class="right-container">
+    <div class="article-content-box shadow">
+      <div id="TopRight">
+        <span>你好， {{ user.userName }}！</span>
+        <span>
+          你当前阅读的是第
+          <b>
+            <span>{{ props.articleCheckedIndex }} </span>
+          </b>
 
-        篇文章
-      </span>
+          篇文章
+        </span>
 
-      <span class="word-count">
-        共
-        <b><span v-text="content.length"></span></b>字</span
-      >
+        <span class="word-count">
+          共
+          <b><span v-text="content.length"></span></b>字</span
+        >
 
-      <router-link to="show">展示模式</router-link>
+        <router-link to="show">展示模式</router-link>
 
-      <router-link to="random">随机推荐</router-link>
+        <router-link to="random">随机推荐</router-link>
 
-      <el-upload
-        v-model:file-list="fileList"
-        class="upload-demo"
-        :action="`${server_url}/upload`"
-        :on-success="handleSuccess"
-        :headers="uploadHeaders"
-        multiple="true"
-        limit="100"
-      >
-        <el-button text size="large">上传图片</el-button>
-      </el-upload>
-      <el-button text size="large" @click="pubArticle">复制外部链接</el-button>
+        <el-upload
+          v-model:file-list="fileList"
+          class="upload-demo"
+          :action="`${server_url}/upload`"
+          :on-success="handleSuccess"
+          :headers="uploadHeaders"
+          multiple="true"
+          limit="100"
+        >
+          <button class="btn" size="large">上传图片</button>
+        </el-upload>
+        <button class="btn" size="large" @click="pubArticle">复制外部链接</button>
 
-      <div class="space"></div>
+        <div class="space"></div>
 
-      <router-link to="admin" class="setting">
-        <el-icon size="25"><Setting /></el-icon>
-      </router-link>
+        <router-link to="admin" class="setting">
+          <el-icon size="25"><Setting /></el-icon>
+        </router-link>
+      </div>
+
+      <input
+        id="input-title"
+        :placeholder="titlePlaceholder"
+        :disabled="titleUpdateLock"
+        v-model="title"
+      />
+      <div id="vditor-box">
+        <div id="vditor" class="vditor"></div>
+      </div>
     </div>
 
-    <input
-      id="input-title"
-      :placeholder="titlePlaceholder"
-      :disabled="titleUpdateLock"
-      v-model="title"
-    />
-    <div id="vditor" class="vditor"></div>
+    <ArticleContentTool> </ArticleContentTool>
   </div>
 </template>

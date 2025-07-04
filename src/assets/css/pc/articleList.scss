@@ -3,7 +3,7 @@ $radius: 10px;
 $box-height: 99vh;
 $left-width: 315px;
 $article-list-size: 15px;
-$checked-color: rgb(85, 144, 226);
+$checked-color: rgba(85, 144, 226, 0.5);
 
 @media screen and (min-width: 500px) {
   // 隐藏电脑端中的返回按钮，这是pc端和移动端唯一不同
@@ -16,11 +16,11 @@ $checked-color: rgb(85, 144, 226);
   }
 
   .article-list-box {
+    mix-blend-mode: difference;
     margin-left: 14px;
     width: auto;
     height: $box-height;
     border: $black-border;
-    color: #111111;
     border: 0px;
 
     position: relative;
@@ -125,67 +125,66 @@ $checked-color: rgb(85, 144, 226);
       height: 85vh;
       min-width: $left-width;
 
-      overflow: auto;
-      background-color: white;
+      overflow-y: auto;
       border-radius: $radius;
-
-      .el-articlelist-card {
-        .el-card__body {
+      li {
+        margin-top: 10px;
+        // border: 1px solid #ddd;
+        box-shadow: 0px 0px 7px 2px #ddd;
+        display: flex;
+        flex-direction: row;
+        .checkbox {
+          margin-left: 10px;
+          margin-top: 0px;
+          margin-right: 10px;
         }
-        .ul-li-item {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          .checkbox {
-            margin-top: -10px;
-            margin-right: 10px;
-          }
-          .ul-list-texts {
-            width: 210px;
-            .p_1 {
-              min-height: 20px;
-              font-size: $article-list-size;
-              b {
-                color: orange;
-              }
-            }
 
-            .p_2 {
-              min-height: 23px;
-              line-height: 20px;
-              font-size: $article-list-size;
-              b {
-                color: orange;
-              }
-            }
-            .p_3 {
-              width: 100%;
-              line-height: 25px;
-              font-size: $article-list-size;
-              color: gray;
-              display: flex;
-              justify-content: flex-start;
-              align-items: center;
+        .ul-list-texts {
+          padding: 10px;
+          width: 210px;
+          color: #ddd;
+          .p_1 {
+            min-height: 25px;
+            font-size: $article-list-size;
+            b {
+              color: orange;
             }
           }
-          .del-icon-box {
-            width: 30px;
-            height: 65px;
+
+          .p_2 {
+            min-height: 25px;
+            line-height: 20px;
+            font-size: $article-list-size;
+            b {
+              color: orange;
+            }
+          }
+          .p_3 {
+            width: 100%;
+            line-height: 25px;
+            font-size: $article-list-size;
+
             display: flex;
-            justify-content: center;
-            flex-direction: column;
-            .article-del-icon {
-              width: inherit;
+            justify-content: flex-start;
+            align-items: center;
+          }
+        }
+        .del-icon-box {
+          width: 30px;
+          height: 65px;
+          display: flex;
+          justify-content: center;
+          flex-direction: column;
+          .article-del-icon {
+            width: inherit;
 
-              &:hover {
-                transition: 0.2s all ease-in-out;
-                cursor: pointer;
-                scale: 1.3;
-              }
+            &:hover {
+              transition: 0.2s all ease-in-out;
+              cursor: pointer;
+              scale: 1.3;
             }
           }
         }
-        padding: 0%;
       }
     }
 
@@ -194,33 +193,21 @@ $checked-color: rgb(85, 144, 226);
     }
 
     li:hover {
-      #el-card {
-        background-color: $checked-color;
-        color: #fff;
-        #p_3 {
-          color: #fff;
-        }
-      }
-    }
-    li:active {
-      #el-card {
-        background-color: rgb(13, 57, 118);
-      }
-    }
-
-    li:visited {
-      #el-card {
-        background-color: $checked-color;
-      }
-    }
-  }
-  .article-list-buttonchecked {
-    #el-card {
       background-color: $checked-color;
       color: #fff;
       #p_3 {
         color: #fff;
       }
     }
+    li:active {
+      background-color: rgb(13, 57, 118);
+    }
+
+    li:visited {
+      background-color: $checked-color;
+    }
+  }
+  .article-list-buttonchecked {
+    background-color: $checked-color;
   }
 }
