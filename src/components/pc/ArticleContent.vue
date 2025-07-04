@@ -3,15 +3,20 @@ import { ref, watch, onMounted } from 'vue'
 import axios from 'axios'
 import { server_url } from '../../assets/constants/server_url'
 import { saveArticle } from '@/assets/js/ArticlesTools'
-let user = JSON.parse(localStorage.getItem('user')!)
-let [title, content] = [ref(''), ref('')]
 import type { UploadProps, UploadUserFile } from 'element-plus'
-
-const fileList = ref<UploadUserFile[]>([])
 import Vditor from 'vditor'
 import 'vditor/src/assets/less/index.less'
-
+import { ElMessage } from 'element-plus'
 import ArticleContentTool from '@/components/pc/ArticleContentTool.vue'
+
+// 文件上传
+const token = localStorage.getItem('token')
+
+const uploadHeaders = { Authorization: token }
+
+const fileList = ref<UploadUserFile[]>([])
+let user = JSON.parse(localStorage.getItem('user')!)
+let [title, content] = [ref(''), ref('')]
 /**
  *  用来锁住内容，保证只是因切换文章产生的content 和 title 变化不会被
  *  watch 监听到，从而覆盖 产生变化，导致修改时间发生惨痛的变化
@@ -95,11 +100,6 @@ watch(
   }
 )
 
-// 返回按钮关闭文章内容
-function hideContent() {
-  emit('contentHide')
-}
-
 // 定义当内容发生更改时用来通知父组件的emit
 const contentUpdate = (title: any, content: any) => {
   emit('contentUpdate', {
@@ -137,8 +137,6 @@ watch(
   }
 )
 
-import { ElMessage } from 'element-plus'
-
 // 外部链接
 const pubArticle = () => {
   axios.put(`${server_url}/pubarticle/${props.articleId}`).then((data) => {
@@ -155,11 +153,7 @@ const pubArticle = () => {
   })
 }
 
-// 文件上传
-const token = localStorage.getItem('token')
-
-const uploadHeaders = { Authorization: token }
-
+// 上传成功的回调
 const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
   const newImageUrl = `${server_url.replace('/v1', '')}/${response.url}`
 

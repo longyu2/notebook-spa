@@ -124,13 +124,11 @@ $checked-color: rgba(85, 144, 226, 0.5);
       margin-top: 10px;
       height: 85vh;
       min-width: $left-width;
-
       overflow-y: auto;
-      border-radius: $radius;
       li {
         margin-top: 10px;
         // border: 1px solid #ddd;
-        box-shadow: 0px 0px 7px 2px #ddd;
+        box-shadow: 0px 0px 2px 1px #aaa;
         display: flex;
         flex-direction: row;
         .checkbox {

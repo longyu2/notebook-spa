@@ -188,7 +188,7 @@ const delete_content = () => {
 /** 删除单篇文章 */
 const deleteArticle = async (articleId: number) => {
   // 调用后台的删除接口，将参数传递给后台进行删除
-  let result = await axios.delete(`${server_url}/articles`, {
+  await axios.delete(`${server_url}/articles`, {
     data: { del_sql_notebookid_list: [articleId] }
   })
 

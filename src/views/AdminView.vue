@@ -41,8 +41,6 @@ function quit() {
   localStorage.setItem('token', '')
   router.push('/login')
 }
-
-function output() {}
 </script>
 
 <template>

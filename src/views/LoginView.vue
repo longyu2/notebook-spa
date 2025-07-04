@@ -6,7 +6,6 @@ import { useRouter } from 'vue-router'
 import axios from 'axios'
 
 const router = useRouter()
-let isloginShow = ref(true)
 let username = ref('')
 let userpwd = ref('')
 
@@ -15,26 +14,24 @@ const keyUpEnter = () => {
   login_click()
 }
 
-const login_click = () => {
-  axios
-    .post(`${server_url}/session`, {
-      username: username.value,
-      passwd: userpwd.value
-    })
-    .then((results) => {
-      if (results.data.status == '成功') {
-        localStorage.setItem('token', results.data.data.token) // 将token 存储
-        localStorage.setItem('user', JSON.stringify(results.data.data.user))
+const login_click = async () => {
+  const result: any = await axios.post(`${server_url}/session`, {
+    username: username.value,
+    passwd: userpwd.value
+  })
 
-        ElMessage({
-          message: '登录成功',
-          type: 'success'
-        })
-        router.push({ path: '/' })
-      } else {
-        ElMessage.error('登录失败，用户名或密码错误！')
-      }
+  if (result.data.status == '成功') {
+    localStorage.setItem('token', result.data.data.token) // 将token 存储
+    localStorage.setItem('user', JSON.stringify(result.data.data.user))
+
+    ElMessage({
+      message: '登录成功',
+      type: 'success'
     })
+    router.push({ path: '/' })
+  } else {
+    ElMessage.error('登录失败，用户名或密码错误！')
+  }
 }
 </script>
 
