@@ -143,33 +143,31 @@ const confirmDelFolder = async () => {
         </el-dropdown>
       </li>
     </ul>
-
-    <!-- 删除对话框 -->
-    <el-dialog v-model="foldeDelDialogVisible" title="Tips" width="30%">
-      <span> 你确定要删除这个文件夹吗？删除后文件夹内文章将变成未分类状态 </span>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="foldeDelDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="confirmDelFolder()"> 确认 </el-button>
-        </span>
-      </template>
-    </el-dialog>
-
-    <!-- 新增对话框 -->
-    <el-dialog v-model="addFolderDialogForm.Visible" title="新建文件夹">
-      <el-form>
-        <el-form-item label="请输入文件夹名">
-          <el-input v-model="addFolderDialogForm.newFolderName" autocomplete="off" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="addFolderDialogForm.Visible = false">取消</el-button>
-          <el-button type="primary" @click="confirmClick()"> 确认 </el-button>
-        </span>
-      </template>
-    </el-dialog>
   </div>
+  <!-- 删除对话框 -->
+  <el-dialog v-model="foldeDelDialogVisible" title="Tips" width="30%">
+    <span> 你确定要删除这个文件夹吗？删除后文件夹内文章将变成未分类状态 </span>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="foldeDelDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmDelFolder()"> 确认 </el-button>
+      </span>
+    </template>
+  </el-dialog>
 
+  <!-- 新增对话框 -->
+  <el-dialog id="addFolder" v-model="addFolderDialogForm.Visible" title="新建文件夹">
+    <el-form>
+      <el-form-item label="请输入文件夹名">
+        <el-input v-model="addFolderDialogForm.newFolderName" autocomplete="off" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="addFolderDialogForm.Visible = false">取消</el-button>
+        <el-button type="primary" @click="confirmClick()"> 确认 </el-button>
+      </span>
+    </template>
+  </el-dialog>
   <ArticleList :folderId="folderChecked.folderId"> </ArticleList>
 </template>

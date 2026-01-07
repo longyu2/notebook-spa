@@ -6,13 +6,13 @@ $checked-color: rgb(85, 144, 226);
 
 @media screen and (min-width: 500px) {
   #folder {
+    z-index: 10;
     mix-blend-mode: difference;
     color: #ddd;
     flex-shrink: 0;
     width: 10vw;
     min-width: 160px;
     height: 96vh;
-    background-color: rgba(255, 255, 255, 0);
 
     padding: 20px 15px;
     display: flex;
