@@ -82,11 +82,12 @@ $box-height: 99vh;
       #vditor-box {
         width: 1300px;
         height: 90vh;
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: rgba(0, 0, 0, 0);
       }
       .vditor {
         height: 70vh;
         overflow-y: auto;
+        background-color: rgba(0, 0, 0, 0);
       }
     }
   }
