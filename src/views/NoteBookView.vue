@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import FolderList from '@/components/pc/FolderList.vue'
+import { _isMobile } from '@/assets/constants/index'
+import { useRouter, useRoute } from 'vue-router'
+const router = useRouter()
+
+if (_isMobile()) {
+  router.push('/notebook_phone')
+}
 </script>
 
 <template>

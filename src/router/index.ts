@@ -5,20 +5,15 @@ const Regist = () => import('@/views/RegistView.vue')
 const NoteBookView = () => import('@/views/NoteBookView.vue')
 
 const NoteBookPhoneView = () => import('@/views/NoteBookPhoneView.vue')
-
+const DiskView = () => import('@/views/WebDiskView.vue')
 const Admin = () => import('@/views/AdminView.vue')
 
 const Random = () => import('@/views/RandomArticleView.vue')
-const App = () => import('@/App.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/',
-      name: 'app',
-      component: App
-    },
+    { path: '/', redirect: '/notebook' },
     {
       path: '/admin',
       name: 'admin',
@@ -50,12 +45,18 @@ const router = createRouter({
       name: 'phone',
       component: NoteBookPhoneView
       // redirect: "/notebook_phone/list",
+    },
+    {
+      path: '/disk',
+      name: 'disk',
+      component: DiskView
+      // redirect: "/notebook_phone/list",
     }
   ]
 })
 
 router.beforeEach((to, from) => {
-  if (to.path != '/login' && to.path != '/regist') {
+  if (to.path != '/login' && to.path != '/regist' && to.path != '/disk') {
     if (localStorage.getItem('token') == null) {
       return { name: 'login' }
     }

@@ -208,6 +208,7 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
           <button class="btn" size="large">上传图片</button>
         </el-upload>
         <button class="btn" size="large" @click="pubArticle">复制外部链接</button>
+        <router-link to="disk"><button class="btn" size="large">网盘</button></router-link>
 
         <div class="space"></div>
 
