@@ -44,13 +44,16 @@ const router = createRouter({
       path: '/notebook_phone',
       name: 'phone',
       component: NoteBookPhoneView
-      // redirect: "/notebook_phone/list",
     },
     {
       path: '/disk',
       name: 'disk',
       component: DiskView
-      // redirect: "/notebook_phone/list",
+    },
+    {
+      path: '/show',
+      name: 'show',
+      component: () => import('@/views/ShowView.vue')
     }
   ]
 })
