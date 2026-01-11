@@ -20,14 +20,21 @@
     </div>
 
     <ul class="elegant-list" role="list">
-      <a v-for="i in filesList" :key="i" :href="`${disk_server_url}/upload/disk/${i}`">
-        <li class="list-item">
-          <div class="item-icon">✓</div>
-          <nav class="item-content">
+      <li class="list-item" v-for="i in filesList" :key="i">
+        <img
+          class="thunb-img"
+          :src="`${disk_server_url}/upload/thumbnails/${i}`"
+          width="50px"
+          alt=""
+        />
+        <nav class="item-content">
+          <a :href="`${disk_server_url}/upload/disk/${i}`">
             {{ i }}
-          </nav>
-        </li>
-      </a>
+          </a>
+
+          <el-icon size="large " @click="deleteBtnClick(i)" class="del-btn"><Delete /></el-icon>
+        </nav>
+      </li>
     </ul>
   </div>
 </template>
@@ -40,6 +47,15 @@ import { server_url } from '../assets/constants/server_url'
 import { ref } from 'vue'
 const filesList = ref([])
 const disk_server_url = server_url.replace('v1', '')
+
+const deleteBtnClick = async (i: string) => {
+  const filename = i
+  // 直接放服务器发送删除请求
+  await axios.delete(`${server_url}/files/${filename}`)
+  // 删除成功后刷新文件列表
+  getFiles('/')
+}
+
 // 获得文件列表
 const getFiles = async (folderPath: string) => {
   const result = await axios.get(`${server_url}/files?folderPath=${folderPath}`)
@@ -101,7 +117,7 @@ body {
 }
 
 .list-card {
-  width: 380px;
+  width: 30vw;
   max-width: 90vw;
   background: white;
   border-radius: 20px;
@@ -152,6 +168,11 @@ body {
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  .thunb-img {
+    width: 100px;
+    border-radius: 8px;
+    margin-right: 12px;
+  }
 }
 
 .list-item:last-child {
@@ -200,6 +221,14 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  .del-btn {
+  }
+  .del-btn:hover {
+    color: red;
+    cursor: pointer;
+    transition: 200ms;
+    scale: 1.5;
+  }
 }
 
 .item-text {
