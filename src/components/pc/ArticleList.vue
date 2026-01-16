@@ -34,6 +34,15 @@ watch(
   }
 )
 
+// 监听articleChecked 的id变化，如有变化，存储到localStorage 中，实现记忆上次选中的文章
+watch(
+  () => articleChecked.value.id,
+  (articleChecked, prevArticleChecked) => {
+    console.log('articleChecked 变化了', articleChecked)
+    localStorage.setItem('lastCheckedArticleId', articleChecked.toString())
+  }
+)
+
 const isAllButtonShow = ref(false) // 控制全选按钮显示
 
 // 监听全选按钮，全选按钮如有变化，改变所有选中
@@ -63,7 +72,19 @@ const getArticleByFoldeId = (folderId: string) => {
 
     articleList.value = articles.splice(0, 100) //  查询到的信息存储到article数组中
 
-    articleChecked.value.id = articleList.value[0].Notebookid // 选中列表中最新的文章
+    // 获取上次选中的文章id
+    const lastCheckedArticleId = parseInt(localStorage.getItem('lastCheckedArticleId')!)
+
+    // 如果存在上次选中的文章id，则选中该文章
+    const lastCheckedArticle = articleList.value.find(
+      (article: { Notebookid: number }) => article.Notebookid === lastCheckedArticleId
+    )
+    if (lastCheckedArticle) {
+      articleChecked.value.id = lastCheckedArticleId
+    } else {
+      articleChecked.value.id = articleList.value[0].Notebookid // 选中列表中最新的文章
+    }
+
     updateCheckIndex()
   })
 }
@@ -84,9 +105,7 @@ const byIdSelContent = (event: any, Notebookid: any) => {
   if (event.target.tagName === 'SPAN') {
     return // 如果事件对象是子元素，直接停止执行，防止穿透
   }
-
   articleChecked.value.id = Notebookid // 更改需要展示的文章
-  updateCheckIndex()
 }
 
 const queryStr = ref('') // queryStr 用来查询
