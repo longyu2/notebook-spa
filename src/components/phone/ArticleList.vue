@@ -142,6 +142,7 @@ function addArticle() {
       //返回的是只有一个元素的数组，还是需要用下标0取
       articles.value.unshift(newArticle)
       // 新建文章后跳转此文章的编辑页面
+      console.log('新建完成')
       byIdSelContent(newArticle.Notebookid)
     })
 }
@@ -166,7 +167,7 @@ function contentHide() {
   <div class="article-list-box shadow">
     <div id="left">
       <van-list id="List-ul">
-        <van-cell
+        <div
           v-for="(item, index) in articles.filter((item: any, index: any) => index % 2 == 0)"
           :key="index"
           @click="byIdSelContent(item['Notebookid'])"
@@ -175,19 +176,28 @@ function contentHide() {
           }"
         >
           <div class="ul-li-item">
-            <input type="checkbox" name="" v-model="item.checked" class="checkbox" id="" />
+            <input
+              type="checkbox"
+              v-show="CheckedArticles.length > 0"
+              name=""
+              v-model="item.checked"
+              class="checkbox"
+              id=""
+            />
 
             <div class="ul-list-texts">
               <span class="p_1" v-text="item.title.substring(0, 14)"></span>
 
               <p class="p_2" v-text="item.content.substring(0, 14)"></p>
-              <p class="p_3" v-text="item.createtime"></p>
+              <div class="p3-div">
+                <p class="p_3" v-text="item.createtime"></p>
+              </div>
             </div>
           </div>
-        </van-cell>
+        </div>
       </van-list>
       <van-list id="List-ul-2">
-        <van-cell
+        <div
           v-for="(item, index) in articles.filter((item: any, index: any) => index % 2 != 0)"
           :key="index"
           @click="byIdSelContent(item['Notebookid'])"
@@ -196,19 +206,30 @@ function contentHide() {
           }"
         >
           <div class="ul-li-item">
-            <input type="checkbox" name="" v-model="item.checked" class="checkbox" id="" />
+            <input
+              type="checkbox"
+              v-show="CheckedArticles.length > 0"
+              name=""
+              v-model="item.checked"
+              class="checkbox"
+              id=""
+            />
 
             <div class="ul-list-texts">
               <span class="p_1" v-text="item.title.substring(0, 14)"></span>
 
               <p class="p_2" v-text="item.content.substring(0, 14)"></p>
-              <p class="p_3" v-text="item.createtime"></p>
+              <div class="p3-div">
+                <p class="p_3" v-text="item.createtime"></p>
+              </div>
             </div>
           </div>
-        </van-cell>
+        </div>
       </van-list>
 
-      <img class="img-add-btn" @click="addArticle()" src="@/assets/addNewNoteBook.svg" alt="" />
+      <div class="img-add-btn" @click="addArticle()">
+        <img src="@/assets/addNewNoteBook.svg" alt="" />
+      </div>
     </div>
   </div>
 

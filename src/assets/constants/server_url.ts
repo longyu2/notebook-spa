@@ -10,6 +10,7 @@ let server_url: string = ''
 // }
 
 server_url = 'http://home.misaka-mikoto.cn:9999/v1'
+server_url = 'http://b.misaka-mikoto.cn:9999/v1'
 // server_url = 'http://localhost:9999/v1'
 
 export { server_url }

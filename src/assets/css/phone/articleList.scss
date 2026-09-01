@@ -24,6 +24,7 @@ $left-width: 15vw;
       width: 100vw;
       display: flex;
       #List-ul {
+        padding: 0px;
         width: 50vw;
       }
       #List-ul-2 {
@@ -32,12 +33,20 @@ $left-width: 15vw;
 
       .ul-li-item {
         box-sizing: border-box;
-        padding: 3px;
+        padding: 15px;
         margin: 0%;
         text-align: left;
         min-height: 10vh;
         border: 0.5px solid rgb(151, 129, 129);
-        border-radius: 10px;
+        border-radius: 0px;
+        position: relative;
+        .p3-div {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          position: absolute;
+          bottom: 0px;
+        }
       }
 
       .img-add-btn {
@@ -45,6 +54,17 @@ $left-width: 15vw;
         position: fixed;
         bottom: 10vw;
         right: 10vw;
+        background-color: rgb(255, 255, 255);
+        overflow: hidden;
+        border-radius: 50%;
+        img {
+          width: 20vw;
+          transition: transform 1s ease; /* ← 1.5秒完成，比默认慢很多 */
+        }
+        /* 点击按住时缩小到 0.9 倍 */
+        img:active {
+          transform: scale(2.9);
+        }
       }
     }
   }
