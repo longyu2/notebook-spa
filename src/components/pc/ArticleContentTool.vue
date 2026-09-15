@@ -1,6 +1,6 @@
 <script setup lang="ts"></script>
 <template>
-  <div id="right">dfdfssssssssssssssssss</div>
+  <div id="right"></div>
 </template>
 
 <style lang="scss">
