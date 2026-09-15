@@ -37,6 +37,14 @@ function updatePasswd() {
     })
 }
 
+const theme = ref(localStorage.getItem('theme') || 'light') // 获取本地存储的主题，默认是light
+function updateTheme() {
+  localStorage.setItem('theme', theme.value)
+  console.log('主题已更改为：' + theme.value)
+
+  location.reload()
+}
+
 function quit() {
   localStorage.setItem('token', '')
   router.push('/login')
@@ -54,6 +62,15 @@ function quit() {
       <span> 输入新密码：</span>
       <el-input class="el-input" type="text" v-model="passwdText" />
       <el-button @click="updatePasswd">修改密码</el-button>
+    </div>
+
+    <div class="select-theme-box">
+      <span> 主题选择：</span>
+      <el-select v-model="theme" @change="updateTheme">
+        <el-option value="semiTransparent" label="半透明"></el-option>
+        <el-option value="dark" label="浅色"></el-option>
+        <el-option value="no" label="vditor默认"></el-option>
+      </el-select>
     </div>
 
     <br />
@@ -96,6 +113,19 @@ function quit() {
       height: 28px;
     }
   }
+
+  .select-theme-box {
+    width: 100%;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    .el-select {
+      width: 74%;
+      height: 28px;
+    }
+  }
+
   .return {
     width: 100%;
     display: flex;

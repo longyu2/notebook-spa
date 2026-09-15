@@ -37,3 +37,11 @@ body {
     }
   }
 }
+body {
+  --word-color: rgb(0, 0, 0);
+  --all-backcolor: rgba(255, 255, 255, 0.8);
+}
+
+.vditor-reset {
+  color: var(--word-color) !important;
+}

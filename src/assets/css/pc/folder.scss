@@ -6,9 +6,10 @@ $checked-color: rgb(85, 144, 226);
 
 @media screen and (min-width: 500px) {
   #folder {
+    background-color: var(--all-backcolor) !important;
     z-index: 10;
     mix-blend-mode: difference;
-    color: #ddd;
+    color: var(--word-color);
     flex-shrink: 0;
     width: 10vw;
     min-width: 160px;
@@ -102,7 +103,7 @@ $checked-color: rgb(85, 144, 226);
   }
 
   .folers-button-checked {
-    color: #fff;
+    color: var(--word-color);
     background-color: $checked-color;
     animation-name: toRight;
     animation-duration: 0.3s;
@@ -110,7 +111,7 @@ $checked-color: rgb(85, 144, 226);
     z-index: 10;
 
     .el-icon--right {
-      color: #fff;
+      color: var(--word-color);
       font-weight: bold;
     }
   }

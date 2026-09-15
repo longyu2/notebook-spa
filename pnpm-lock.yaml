@@ -36,8 +36,8 @@ importers:
         specifier: ^4.7.2
         version: 4.7.2(vue@3.3.4)
       vditor:
-        specifier: ^3.11.1
-        version: 3.11.1
+        specifier: ^4.0.0
+        version: 4.0.0
       vite-plugin-autodeploys:
         specifier: ^2.0.0
         version: 2.0.0
@@ -1677,8 +1677,8 @@ packages:
     peerDependencies:
       vue: ^3.0.0
 
-  vditor@3.11.1:
-    resolution: {integrity: sha512-7rjNSXYVyZG0mVZpUG2tfxwnoNtkcRCnwdSju+Zvpjf/r72iQa6kLpeThFMIKPuQ5CRnQQv6gnR3eNU6UGbC2Q==}
+  vditor@4.0.0:
+    resolution: {integrity: sha512-JUeSmmNNxXaq4j29F6OZ/vLgyM/Wt/SpSK4o/gyrc02uTsS+iTeC0ofajxbW29WSJ4LFMec4nrywVul51PrLvg==}
 
   vite-plugin-autodeploys@2.0.0:
     resolution: {integrity: sha512-FZAzVI6B5ElI+kPoF0jDRMzAIp9VuH6Tdo3OPA+CUr5FaggWWq3L8eu7e8r4ul41JBVk2tOtxLsxEao1R+C/fQ==}
@@ -3387,7 +3387,7 @@ snapshots:
       '@vue/shared': 3.3.4
       vue: 3.3.4
 
-  vditor@3.11.1:
+  vditor@4.0.0:
     dependencies:
       diff-match-patch: 1.0.5
 

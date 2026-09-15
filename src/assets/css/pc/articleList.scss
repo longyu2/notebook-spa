@@ -16,6 +16,8 @@ $checked-color: rgba(85, 144, 226, 0.5);
   }
 
   .article-list-box {
+    background-color: red;
+    background-color: var(--all-backcolor, rgba(0, 0, 0, 0.3)) !important;
     mix-blend-mode: difference;
     margin-left: 14px;
     width: auto;
@@ -68,7 +70,8 @@ $checked-color: rgba(85, 144, 226, 0.5);
             margin-left: 2vh;
             height: 25px;
             padding: 10px;
-            color: white;
+            color: var(--word-color);
+
             background-color: cornflowerblue;
             border: 0ch;
             border-radius: 5px;
@@ -140,7 +143,8 @@ $checked-color: rgba(85, 144, 226, 0.5);
         .ul-list-texts {
           padding: 10px;
           width: 210px;
-          color: #ddd;
+          color: var(--word-color);
+
           .p_1 {
             min-height: 25px;
             font-size: $article-list-size;

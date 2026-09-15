@@ -29,7 +29,7 @@ let vditorHeight = Math.floor(window.innerHeight * 0.9)
 const vditor = ref<Vditor | null>(null)
 
 // 用于初始化编辑器的函数，传入参数
-const initEditor = (initValue: string) => {
+const initEditor = async (initValue: string) => {
   vditor.value = new Vditor('vditor', {
     outline: {
       position: 'left',
@@ -56,8 +56,44 @@ const initEditor = (initValue: string) => {
   })
 }
 
-onMounted(() => {
-  initEditor('')
+// vditor源文件没改，刷新后可以自动回默认样式，透明样式在js代码里面改
+const setTheme = (theme: string) => {
+  //
+  // // 这里才是真正的未点击时设置编辑器背景透明度
+  // --panel-background-color: rgba(0, 0, 0, 0.01);
+  // --panel-shadow: 0 1px 2px rgba(0, 0, 0, 0);
+
+  // // 这里才是真正的未点击时设置工具栏背景透明度
+  // --toolbar-background-color: rgba(0, 0, 0, 0.3);
+
+  // // 这个是编辑区点击后的背景色
+  // --textarea-background-color:rgba(0, 0, 0, 0.2);
+
+  const el = document.body.querySelector('.vditor') as HTMLElement
+  if (theme === 'semiTransparent') {
+    document.body.style.setProperty('--word-color', 'white')
+    document.body.style.setProperty('--all-backcolor', 'rgba(0, 0, 0, 0.1)')
+    console.log('设置主题', theme)
+
+    el.style.setProperty('--panel-background-color', 'rgba(0, 0, 0, 0.1)')
+    el.style.setProperty('--toolbar-background-color', 'rgba(0, 0, 0, 0.3)')
+    el.style.setProperty('--textarea-background-color', 'rgba(0, 0, 0, 0.2)')
+  } else if (theme === 'light') {
+    // el.style.setProperty('--panel-background-color', 'rgba(255, 255, 255, 0.8)')
+    // el.style.setProperty('--toolbar-background-color', 'rgba(255, 255, 255, 0.8)')
+    // el.style.setProperty('--textarea-background-color', 'rgba(255, 255, 255, 0.8)')
+  } else if (theme === 'dark') {
+    // el.style.setProperty('--panel-background-color', 'rgba(0, 0, 0, 0.8)')
+    // el.style.setProperty('--toolbar-background-color', 'rgba(0, 0, 0, 0.8)')
+    // el.style.setProperty('--textarea-background-color', 'rgba(0, 0, 0, 0.8)')
+  } else if (theme === 'no') {
+    console.error('未知主题')
+  }
+}
+
+onMounted(async () => {
+  await initEditor('')
+  setTheme(localStorage.getItem('theme') || 'no') // 设置主题
 })
 
 const props = defineProps(['articleId', 'articleCheckedIndex', 'queryStr'])
