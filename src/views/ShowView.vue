@@ -4,7 +4,8 @@
 
 <script setup lang="ts">
 import axios from 'axios'
-import { server_url } from '@/assets/constants/index'
+const server_url = localStorage.getItem('server_url')
+
 import { onMounted } from 'vue'
 
 const pushToHtml = (text: string, style = 'basic') => {

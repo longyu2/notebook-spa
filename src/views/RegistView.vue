@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { server_url } from '@/assets/constants/index'
+const server_url = localStorage.getItem('server_url')
+
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'
 import { watch } from 'vue'

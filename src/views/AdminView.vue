@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { server_url } from '../assets/constants/server_url'
+const server_url = localStorage.getItem('server_url')
+
 import headImg from '../assets/images/head.png'
 import { ref } from 'vue'
 import axios from 'axios'
@@ -11,13 +12,6 @@ const router = useRouter()
 let passwdText = ref('')
 
 const back = () => history.back() // 返回按钮，返回前一个页面
-const server_url_storage = ref(server_url)
-
-/** 修改服务器地址 */
-const updateServerUrl = () => {
-  localStorage.setItem('server_url', server_url_storage.value) // 将更改的服务器地址存到浏览器本地存储
-  location.reload() // 刷新页面
-}
 
 function updatePasswd() {
   axios
@@ -74,14 +68,6 @@ function quit() {
     </div>
 
     <br />
-
-    <div style="display: flex; line-height: 20px; width: 100%">
-      服务器地址：
-      <el-select v-model="server_url_storage" @change="updateServerUrl">
-        <el-option value="https://misaka-mikoto.cn:9999/v1">腾讯云9999端口(https)</el-option>
-        <el-option value="http://localhost:9999/v1">本地9999端口(http)</el-option>
-      </el-select>
-    </div>
 
     <div class="space"></div>
     <el-button @click="quit">退出登录</el-button>

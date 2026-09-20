@@ -43,7 +43,8 @@
 import type { UploadProps, UploadUserFile } from 'element-plus'
 
 import axios from 'axios'
-import { server_url } from '../assets/constants/server_url'
+const server_url = localStorage.getItem('server_url')
+
 import { ref } from 'vue'
 const filesList = ref([])
 const disk_server_url = server_url.replace('v1', '')

@@ -15,9 +15,7 @@ if (_isMobile()) {
   </div>
 </template>
 
-<script lang="ts">
-import axios from 'axios'
-</script>
+<script lang="ts"></script>
 
 <style lang="scss" scoped>
 $black-border: 1px solid black;

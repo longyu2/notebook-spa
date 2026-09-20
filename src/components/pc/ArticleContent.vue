@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue'
 import axios from 'axios'
-import { server_url } from '../../assets/constants/server_url'
+const server_url = localStorage.getItem('server_url')
+
 import { saveArticle } from '@/assets/js/ArticlesTools'
 import type { UploadProps, UploadUserFile } from 'element-plus'
 import Vditor from 'vditor'

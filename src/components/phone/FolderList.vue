@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { server_url } from '@/assets/constants/index'
+const server_url = localStorage.getItem('server_url')
+
 import ArticleList from '@/components/phone/ArticleList.vue'
 import axios from 'axios'
 import 'vant/lib/index.css'

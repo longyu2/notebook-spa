@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-import { server_url } from '@/assets/constants/index'
+const server_url = localStorage.getItem('server_url')
+
 const router = useRouter()
 
 // 页面加载时执行

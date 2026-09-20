@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { server_url } from '@/assets/constants/index'
+const server_url = localStorage.getItem('server_url')
+
 import ArticleList from '@/components/pc/ArticleList.vue'
 import axios from 'axios'
 

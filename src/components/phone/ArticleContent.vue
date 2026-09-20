@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import axios from 'axios'
-import { server_url } from '../../assets/constants/server_url'
+const server_url = localStorage.getItem('server_url')
+
 import { saveArticle } from '@/assets/js/ArticlesTools'
 let user = JSON.parse(localStorage.getItem('user')!)
 

@@ -4,18 +4,20 @@ import { ElMessage } from 'element-plus'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
+const server_url_storage = ref(server_url)
 
 const router = useRouter()
 let username = ref('')
 let userpwd = ref('')
 
-// 回车自动提交
-const keyUpEnter = () => {
-  login_click()
+/** 修改服务器地址 */
+const updateServerUrl = () => {
+  console.log(server_url_storage.value)
+  localStorage.setItem('server_url', server_url_storage.value) // 将更改的服务器地址存到浏览器本地存储
 }
 
 const login_click = async () => {
-  const result: any = await axios.post(`${server_url}/session`, {
+  const result: any = await axios.post(`${server_url_storage.value}/session`, {
     username: username.value,
     passwd: userpwd.value
   })
@@ -51,8 +53,26 @@ const login_click = async () => {
           type="password"
           placeholder="Please input password"
           show-password
-          v-on:keyup.enter="keyUpEnter"
+          v-on:keyup.enter="login_click"
         />
+
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            line-height: 30px;
+            margin-top: 10px;
+            width: 100%;
+          "
+        >
+          <p>服务器地址：</p>
+          <el-select v-model="server_url_storage" @change="updateServerUrl">
+            <el-option value="https://misaka-mikoto.cn:9999/v1">美国</el-option>
+            <el-option value="http://localhost:9999/v1">本地</el-option>
+          </el-select>
+        </div>
+
         <el-button class="login-btn" type="success" @click="login_click()">登录</el-button>
         <a class="forget" href="">忘记密码? </a>
         <router-link to="regist" class="forget">没有账号？去注册</router-link>

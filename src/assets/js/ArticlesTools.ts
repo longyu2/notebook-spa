@@ -1,5 +1,6 @@
 // 本工具模块用于存储可复用的对文章进行增删改查的函数
-import { server_url } from '@/assets/constants/index'
+const server_url = localStorage.getItem('server_url')
+
 import axios from 'axios'
 
 // 导出saveArticle 函数

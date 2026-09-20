@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import axios from 'axios'
-import { server_url } from '@/assets/constants/server_url'
+const server_url = localStorage.getItem('server_url')
 
 let count = 0
 let NoteBookList: any = []
