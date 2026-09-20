@@ -10,6 +10,11 @@
     {
       "path": "./tsconfig.vitest.json"
     }
-  ]
-  
+  ],
+    "compilerOptions": {
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+
+  "exclude": ["deploy.ts", "node_modules", "dist"]
 }

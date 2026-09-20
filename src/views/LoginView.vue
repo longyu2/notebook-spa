@@ -68,7 +68,7 @@ const login_click = async () => {
         >
           <p>服务器地址：</p>
           <el-select v-model="server_url_storage" @change="updateServerUrl">
-            <el-option value="https://misaka-mikoto.cn:9999/v1">美国</el-option>
+            <el-option value="http://b.misaka-mikoto.cn:9999/v1">美国</el-option>
             <el-option value="http://localhost:9999/v1">本地</el-option>
           </el-select>
         </div>

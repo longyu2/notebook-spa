@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+
 const server_url = localStorage.getItem('server_url')
 
 import ArticleList from '@/components/pc/ArticleList.vue'

@@ -176,6 +176,7 @@ watch(
 
 // 外部链接
 const pubArticle = () => {
+  if (server_url == null) return
   axios.put(`${server_url}/pubarticle/${props.articleId}`).then((data) => {
     if (data.data.status == '200') {
       navigator.clipboard.writeText(`${server_url.replace('/v1', '')}/${data.data.url}`)
@@ -192,6 +193,7 @@ const pubArticle = () => {
 
 // 上传成功的回调
 const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
+  if (server_url == null) return
   const newImageUrl = `${server_url.replace('/v1', '')}/${response.url}`
 
   vditor.value!.setValue(content.value + `![](${newImageUrl})\n`)
