@@ -5,6 +5,7 @@ import axios from 'axios'
 
 // 导出saveArticle 函数
 const saveArticle = async (articleId: string, title: string, content: string) => {
+  console.log('save')
   // 将内容保存到云
   const res = await axios.put(server_url + '/article', {
     Notebookid: articleId,

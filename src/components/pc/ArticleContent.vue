@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 const server_url = localStorage.getItem('server_url')
 
@@ -18,16 +18,25 @@ const uploadHeaders = { Authorization: token }
 const fileList = ref<UploadUserFile[]>([])
 let user = JSON.parse(localStorage.getItem('user')!)
 let [title, content] = [ref(''), ref('')]
-/**
- *  用来锁住内容，保证只是因切换文章产生的content 和 title 变化不会被
- *  watch 监听到，从而覆盖 产生变化，导致修改时间发生惨痛的变化
- */
-let [contentUpdateLock, titleUpdateLock] = [false, ref(false)]
+let titleUpdateLock = ref(false)
+
 let titlePlaceholder = ref('请输入标题')
 
 let vditorHeight = Math.floor(window.innerHeight * 0.9)
 
 const vditor = ref<Vditor | null>(null)
+
+// 已保存提示
+let savedTip = ref(false)
+let tipTimer: ReturnType<typeof setTimeout> | null = null
+
+function showSavedTip() {
+  savedTip.value = true
+  if (tipTimer) clearTimeout(tipTimer)
+  tipTimer = setTimeout(() => {
+    savedTip.value = false
+  }, 1500)
+}
 
 // 用于初始化编辑器的函数，传入参数
 const initEditor = async (initValue: string) => {
@@ -52,41 +61,26 @@ const initEditor = async (initValue: string) => {
       vditor.value!.setValue(initValue)
     },
     input: (md) => {
-      content.value = md // 回调将编辑器输入
+      content.value = md
+      save()
     }
   })
 }
 
 // vditor源文件没改，刷新后可以自动回默认样式，透明样式在js代码里面改
 const setTheme = (theme: string) => {
-  //
-  // // 这里才是真正的未点击时设置编辑器背景透明度
-  // --panel-background-color: rgba(0, 0, 0, 0.01);
-  // --panel-shadow: 0 1px 2px rgba(0, 0, 0, 0);
-
-  // // 这里才是真正的未点击时设置工具栏背景透明度
-  // --toolbar-background-color: rgba(0, 0, 0, 0.3);
-
-  // // 这个是编辑区点击后的背景色
-  // --textarea-background-color:rgba(0, 0, 0, 0.2);
-
   const el = document.body.querySelector('.vditor') as HTMLElement
   if (theme === 'semiTransparent') {
     document.body.style.setProperty('--word-color', 'white')
     document.body.style.setProperty('--all-backcolor', 'rgba(0, 0, 0, 0.1)')
-    console.log('设置主题', theme)
 
     el.style.setProperty('--panel-background-color', 'rgba(0, 0, 0, 0.1)')
     el.style.setProperty('--toolbar-background-color', 'rgba(0, 0, 0, 0.3)')
     el.style.setProperty('--textarea-background-color', 'rgba(0, 0, 0, 0.2)')
   } else if (theme === 'light') {
-    // el.style.setProperty('--panel-background-color', 'rgba(255, 255, 255, 0.8)')
-    // el.style.setProperty('--toolbar-background-color', 'rgba(255, 255, 255, 0.8)')
-    // el.style.setProperty('--textarea-background-color', 'rgba(255, 255, 255, 0.8)')
+    //
   } else if (theme === 'dark') {
-    // el.style.setProperty('--panel-background-color', 'rgba(0, 0, 0, 0.8)')
-    // el.style.setProperty('--toolbar-background-color', 'rgba(0, 0, 0, 0.8)')
-    // el.style.setProperty('--textarea-background-color', 'rgba(0, 0, 0, 0.8)')
+    //
   } else if (theme === 'no') {
     console.error('未知主题')
   }
@@ -94,30 +88,28 @@ const setTheme = (theme: string) => {
 
 onMounted(async () => {
   await initEditor('')
-  setTheme(localStorage.getItem('theme') || 'no') // 设置主题
+  setTheme(localStorage.getItem('theme') || 'no')
+})
+
+onUnmounted(() => {
+  if (tipTimer) clearTimeout(tipTimer)
 })
 
 const props = defineProps(['articleId', 'articleCheckedIndex', 'queryStr'])
 const emit = defineEmits(['contentUpdate', 'contentHide'])
 
-// 监听tite 和 content
-watch([title, content], ([newTitle, newContent]) => {
-  // 如果被锁住，不可以触发储存方法
-  if (!contentUpdateLock) {
-    // 如果queryStr不空且content包含querystr，则去色
-    if (props.queryStr != '' && content.value.indexOf(`***~~${props.queryStr}~~***`) != -1) {
-      content.value = content.value.replace(`***${props.queryStr}***`, props.queryStr)
-    }
-
-    saveArticle(props.articleId, title.value, content.value)
-  } else {
-    contentUpdateLock = false // 触发后解锁，则不会影响正常使用
-  }
-
-  // 将内容的变化通知父组件，使其修改列表中的显示
-
+// 将内容的变化通知父组件，使其修改列表中的显示
+function save() {
+  saveArticle(props.articleId, title.value, content.value)
   contentUpdate(title, content)
-})
+  showSavedTip()
+}
+
+function onInput(event: Event) {
+  const target = event.target as HTMLInputElement
+  title.value = target.value
+  save()
+}
 
 // 监控props中的articleId，若其等于-9999，禁用编辑器
 watch(
@@ -125,14 +117,16 @@ watch(
   (newProps) => {
     if (newProps === -9999) {
       title.value = ''
+      vditor.value!.setValue('')
+      vditor.value?.disabled()
       titleUpdateLock.value = true
-      vditor.value!.setValue('') // 清空编辑器
-      vditor.value?.disabled() // 禁用编辑器
       titlePlaceholder.value = ''
+      savedTip.value = false
+      if (tipTimer) clearTimeout(tipTimer)
     } else {
       titlePlaceholder.value = '请输入标题'
+      vditor.value?.enable()
       titleUpdateLock.value = false
-      vditor.value?.enable() // 启用编辑器
     }
   }
 )
@@ -152,25 +146,27 @@ watch(
   (articleId, prevArticleId) => {
     if (articleId == prevArticleId) {
       console.error('错误，watch新旧值相等了！')
-    } else {
-      // 使用axios 获取文章信息
-      axios.get(`${server_url}/article/${props.articleId}`).then(async (results) => {
-        // 将查询到的文章信息赋给title 和 content 两个响应性变量
-        contentUpdateLock = true // 由articleId变化而产生的刷新，锁住
-        title.value = results.data[0].title
-        content.value = results.data[0].content
-
-        if (props.queryStr != '') {
-          // 如果queryStr 不为空，则高亮queryStr
-          content.value = content.value.replace(props.queryStr, `***~~${props.queryStr}~~***`)
-          await initEditor(content.value)
-          vditor.value?.disabled()
-        } else {
-          await initEditor(content.value)
-          vditor.value?.enable()
-        }
-      })
+      return
     }
+
+    // 切文章时清掉上一篇的"已保存"提示
+    savedTip.value = false
+    if (tipTimer) clearTimeout(tipTimer)
+
+    axios.get(`${server_url}/article/${props.articleId}`).then(async (results) => {
+      title.value = results.data[0].title
+      content.value = results.data[0].content
+
+      if (props.queryStr != '') {
+        content.value = content.value.replace(props.queryStr, `***~~${props.queryStr}~~***`)
+        vditor.value?.disabled()
+        titleUpdateLock.value = true
+      } else {
+        vditor.value?.enable()
+        titleUpdateLock.value = false
+      }
+      await vditor.value!.setValue(content.value)
+    })
   }
 )
 
@@ -197,18 +193,18 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
   const newImageUrl = `${server_url.replace('/v1', '')}/${response.url}`
 
   vditor.value!.setValue(content.value + `![](${newImageUrl})\n`)
-  content.value = content.value + `![](${newImageUrl})\n` // 为编辑区加上图片
+  content.value = content.value + `![](${newImageUrl})\n`
 
-  // 这里再次调用一个接口，将图片信息保存到服务器
   axios.post(`${server_url}/image`, {
     imagePath: response.url,
     Notebookid: props.articleId
   })
 
-  // 当列表里每一项的状态都是success以后才清空文件列表
   if (fileList.value.every((item) => item.status === 'success')) {
-    fileList.value = [] // 清空文件列表
+    fileList.value = []
   }
+
+  save()
 }
 </script>
 
@@ -234,7 +230,6 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
         <router-link to="show">数据统计</router-link>
 
         <router-link to="random">随机推荐</router-link>
-
         <el-upload
           v-model:file-list="fileList"
           class="upload-demo"
@@ -250,6 +245,9 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
         <router-link to="disk"><button class="btn" size="large">网盘</button></router-link>
 
         <div class="space"></div>
+        <Transition name="save-tip-fade">
+          <span v-if="savedTip" class="save-tip">已保存 ✓</span>
+        </Transition>
 
         <router-link to="admin" class="setting">
           <el-icon size="25"><Setting /></el-icon>
@@ -260,7 +258,8 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
         id="input-title"
         :placeholder="titlePlaceholder"
         :disabled="titleUpdateLock"
-        v-model="title"
+        :value="title"
+        @input="onInput"
       />
       <div id="vditor-box">
         <div id="vditor" class="vditor"></div>
@@ -270,3 +269,24 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
     <ArticleContentTool> </ArticleContentTool>
   </div>
 </template>
+
+<style>
+.save-tip {
+  font-size: 13px;
+  margin-left: 8px;
+  display: inline-block;
+  color: rgba(120, 220, 150, 0.85);
+}
+
+.save-tip-fade-enter-active,
+.save-tip-fade-leave-active {
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.save-tip-fade-enter-from,
+.save-tip-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+</style>
