@@ -11,7 +11,7 @@ const DIST_DIR = path.resolve(__dirname, 'dist');
 const ZIP_PATH = path.resolve(__dirname, 'dist.zip');
 const KEY_PATH = path.resolve(__dirname, 'deploy.key');
 
-const SERVER_URL = 'http://b.misaka-mikoto.cn:9999/v1';
+const SERVER_URL = 'http://misaka-mikoto.cn:9994/v1';
 // const SERVER_URL = 'http://localhost:9999/v1';
 
 function readDeployKey(): string {

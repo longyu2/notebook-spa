@@ -28,7 +28,7 @@
           alt=""
         />
         <nav class="item-content">
-          <a :href="`${disk_server_url}/upload/disk/${i}`">
+          <a :href="`${disk_server_url}/upload/disk/${i}`" download>
             {{ i }}
           </a>
 
