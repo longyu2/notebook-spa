@@ -313,8 +313,10 @@ const contentUpdate = (data: { articleId: any; content: any; title: any }) => {
     getWordCount()
   }, 100)
 }
-
-getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
+import { onMounted } from 'vue'
+onMounted(() => {
+  getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
+})
 </script>
 
 <template>
