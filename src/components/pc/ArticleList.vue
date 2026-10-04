@@ -151,6 +151,29 @@ const searchArticle = () => {
   }
 }
 
+/*
+  按「可见字符数」截断，忽略 <b></b> 这类高亮标签本身占用的字符。
+  这样无论搜索框有没有值、内容里有没有高亮标签，列表显示的文字长度都一致。
+*/
+const visibleSlice = (html: string, max: number) => {
+  let result = ''
+  let visible = 0
+  let i = 0
+  while (i < html.length && visible < max) {
+    if (html[i] === '<') {
+      const end = html.indexOf('>', i)
+      if (end === -1) break
+      result += html.slice(i, end + 1)
+      i = end + 1
+    } else {
+      result += html[i]
+      visible++
+      i++
+    }
+  }
+  return result
+}
+
 // 修改时间
 const editCreatetime = async (notebookId: string) => {
   const createtime = prompt('请输入时间，默认按 xxxx-xx-xx xx:xx:xx输入')
@@ -384,14 +407,9 @@ onMounted(() => {
         >
           <el-checkbox v-model="item.checked" class="checkbox" size="large" />
           <div class="ul-list-texts">
-            <p
-              class="p_1"
-              v-html="
-                `${item.title != '' ? item.title.substring(0, queryStr == '' ? 14 : 20) : '无标题'}`
-              "
-            ></p>
-            <!-- 三元表达式，在query字符串有值的时候，会多生成一个B标签，多6字符，所以三元表达式来substring -->
-            <p class="p_2" v-html="item.content.substring(0, queryStr == '' ? 14 : 20)"></p>
+            <p class="p_1" v-html="item.title != '' ? visibleSlice(item.title, 14) : '无标题'"></p>
+            <!-- 按可见字符数截断（visibleSlice），标签不占长度，搜索前后显示长度一致 -->
+            <p class="p_2" v-html="visibleSlice(item.content, 14)"></p>
             <p class="p_3" id="p_3">
               {{ item.createtime }}
               <el-icon style="margin-left: 5px"

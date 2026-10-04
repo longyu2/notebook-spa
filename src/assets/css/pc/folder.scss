@@ -1,19 +1,20 @@
 $black-border: 1px solid black;
-$radius: 0px;
+$radius: 8px;
 $box-height: 905px;
 $left-width: 300px;
-$checked-color: rgb(85, 144, 226);
+// 选中态不再用固定蓝色，改为基于 --word-color 派生（见 .folers-button-checked）
 
 @media screen and (min-width: 500px) {
   #folder {
     background-color: var(--all-backcolor) !important;
     z-index: 10;
-    mix-blend-mode: difference;
     color: var(--word-color);
     flex-shrink: 0;
     width: 10vw;
     min-width: 160px;
     height: 96vh;
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-panel);
 
     padding: 20px 15px;
     display: flex;
@@ -21,7 +22,7 @@ $checked-color: rgb(85, 144, 226);
     align-items: flex-start;
     overflow-x: visible;
     .addFolderBtn:hover {
-      background-color: #a0cfff;
+      background-color: color-mix(in srgb, var(--word-color) 10%, transparent);
     }
     .folders-box {
       width: inherit;
@@ -62,8 +63,8 @@ $checked-color: rgb(85, 144, 226);
           background-color 0.35s,
           color 0.35s;
         &:hover {
-          color: #fff;
-          background-color: $checked-color;
+          color: var(--word-color);
+          background-color: color-mix(in srgb, var(--word-color) 6%, transparent);
         }
         button {
           background: 0%;
@@ -82,7 +83,7 @@ $checked-color: rgb(85, 144, 226);
             justify-content: center;
           }
           .el-icon--right:hover {
-            background-color: #a0cfff;
+            background-color: color-mix(in srgb, var(--word-color) 10%, transparent);
           }
         }
       }
@@ -103,12 +104,24 @@ $checked-color: rgb(85, 144, 226);
   }
 
   .folers-button-checked {
+    position: relative;
     color: var(--word-color);
-    background-color: $checked-color;
+    background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
     animation-name: toRight;
     animation-duration: 0.3s;
     animation-fill-mode: forwards;
     z-index: 10;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background-color: var(--color-accent);
+    }
 
     .el-icon--right {
       color: var(--word-color);

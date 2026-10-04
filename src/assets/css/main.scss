@@ -1,11 +1,11 @@
 .shadow {
-  box-shadow: 0px 0px 7px 1px rgba(200, 200, 200, 1);
+  box-shadow: 0px 2px 8px 1px rgba(0, 0, 0, 0.06);
 }
 
 /* 滚动槽 */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   border-radius: 3px;
@@ -40,9 +40,43 @@ body {
 }
 body {
   --word-color: rgb(0, 0, 0);
-  --all-backcolor: rgba(255, 255, 255, 0.8);
+  --all-backcolor: rgba(255, 255, 255, 0.85);
+
+  /* === Design Tokens === */
+  --radius-panel: 8px;
+  --radius-item: 6px;
+  --color-primary: #5590e2;
+  --color-primary-hover: #3d7bc4;
+  --color-danger: #e24b4a;
+  --color-danger-hover: #c83a39;
+  --color-accent: #ef9f27;
+  --color-text-secondary: #888780;
+  --color-border: rgba(0, 0, 0, 0.08);
+  --shadow-panel: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --gap-sm: 8px;
+  --gap-md: 16px;
+  --gap-lg: 24px;
 }
 
 .vditor-reset {
   color: var(--word-color) !important;
+}
+
+/* Vditor 表格跟随主题变量：
+   默认主题下 Vditor 把行背景写死成 #fafbfc / #fff、边框 #dfe2e5，
+   半透模式下文字变白后就成了白字白底，表格内容完全看不见。
+   这里改成由 --word-color 推导的半透明色，浅色/半透明两种模式都能正常显示。 */
+.vditor-reset table tr {
+  background-color: transparent !important;
+}
+
+.vditor-reset table tbody tr:nth-child(2n) {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+  background-color: color-mix(in srgb, var(--word-color) 4%, transparent) !important;
+}
+
+.vditor-reset table td,
+.vditor-reset table th {
+  border-color: #dfe2e5 !important;
+  border-color: color-mix(in srgb, var(--word-color) 18%, transparent) !important;
 }

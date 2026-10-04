@@ -1,9 +1,8 @@
 $black-border: 1px solid black;
-$radius: 10px;
+$radius: 8px;
 $box-height: 99vh;
 $left-width: 315px;
 $article-list-size: 15px;
-$checked-color: rgba(85, 144, 226, 0.5);
 
 @media screen and (min-width: 500px) {
   // 隐藏电脑端中的返回按钮，这是pc端和移动端唯一不同
@@ -16,14 +15,13 @@ $checked-color: rgba(85, 144, 226, 0.5);
   }
 
   .article-list-box {
-    background-color: red;
     background-color: var(--all-backcolor, rgba(0, 0, 0, 0.3)) !important;
-    mix-blend-mode: difference;
-    margin-left: 14px;
+    margin-left: var(--gap-md);
     width: auto;
     height: $box-height;
-    border: $black-border;
-    border: 0px;
+    border: none;
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-panel);
 
     position: relative;
     display: flex;
@@ -51,7 +49,27 @@ $checked-color: rgba(85, 144, 226, 0.5);
         display: flex;
         justify-content: space-between;
         align-items: center;
+
+        /* 跟随主题，避免半透模式下出现白色输入框 */
+        .el-input__wrapper {
+          background-color: var(--all-backcolor);
+          border-radius: var(--radius-item) 0 0 var(--radius-item);
+          box-shadow: 0 0 0 1px color-mix(in srgb, var(--word-color) 16%, transparent) inset;
+        }
+        .el-input__inner {
+          color: var(--word-color);
+          &::placeholder {
+            color: color-mix(in srgb, var(--word-color) 45%, transparent);
+          }
+        }
+        .el-input-group__append {
+          background-color: color-mix(in srgb, var(--word-color) 8%, transparent);
+          color: var(--word-color);
+          box-shadow: none;
+          border-radius: 0 var(--radius-item) var(--radius-item) 0;
+        }
         .search-icon {
+          cursor: pointer;
         }
       }
 
@@ -72,12 +90,12 @@ $checked-color: rgba(85, 144, 226, 0.5);
             padding: 10px;
             color: var(--word-color);
 
-            background-color: cornflowerblue;
-            border: 0ch;
-            border-radius: 5px;
-            font-size: 1%;
+            background-color: var(--color-primary);
+            border: none;
+            border-radius: var(--radius-item);
+            font-size: 13px;
             &:hover {
-              background-color: crimson;
+              background-color: var(--color-danger);
               transform: scale(1.2);
             }
           }
@@ -86,13 +104,13 @@ $checked-color: rgba(85, 144, 226, 0.5);
             height: 25px;
             padding: 10px;
             color: white;
-            background-color: $checked-color;
-            font-size: 0.1vw;
-            border: 0ch;
-            border-radius: 5px;
+            background-color: var(--color-primary);
+            font-size: 13px;
+            border: none;
+            border-radius: var(--radius-item);
             line-height: 18px;
             &:hover {
-              background-color: orange;
+              background-color: var(--color-accent);
               transform: scale(1.2);
             }
           }
@@ -130,8 +148,8 @@ $checked-color: rgba(85, 144, 226, 0.5);
       overflow-y: auto;
       li {
         margin-top: 10px;
-        // border: 1px solid #ddd;
-        box-shadow: 0px 0px 2px 1px #aaa;
+        // 跟随主题的柔和描边，替代写死的 #aaa 灰色发光
+        box-shadow: 0 0 3px 0 color-mix(in srgb, var(--word-color) 18%, transparent);
         display: flex;
         flex-direction: row;
         .checkbox {
@@ -149,7 +167,7 @@ $checked-color: rgba(85, 144, 226, 0.5);
             min-height: 25px;
             font-size: $article-list-size;
             b {
-              color: orange;
+              color: var(--color-accent);
             }
           }
 
@@ -158,7 +176,7 @@ $checked-color: rgba(85, 144, 226, 0.5);
             line-height: 20px;
             font-size: $article-list-size;
             b {
-              color: orange;
+              color: var(--color-accent);
             }
           }
           .p_3 {
@@ -194,22 +212,28 @@ $checked-color: rgba(85, 144, 226, 0.5);
       z-index: 2;
     }
 
+    /* 悬停 / 按下：半透明叠加，文字保持主题色（不再强制白字） */
     li:hover {
-      background-color: $checked-color;
-      color: #fff;
-      #p_3 {
-        color: #fff;
-      }
+      background-color: color-mix(in srgb, var(--word-color) 6%, transparent);
     }
     li:active {
-      background-color: rgb(13, 57, 118);
+      background-color: color-mix(in srgb, var(--word-color) 14%, transparent);
     }
 
-    li:visited {
-      background-color: $checked-color;
+    /* 选中项：半透明叠加 + 左侧琥珀色高亮条（替代原来的蓝色） */
+    #left li.article-list-buttonchecked {
+      position: relative;
+      background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
     }
-  }
-  .article-list-buttonchecked {
-    background-color: $checked-color;
+    #left li.article-list-buttonchecked::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background-color: var(--color-accent);
+    }
   }
 }

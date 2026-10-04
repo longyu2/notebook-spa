@@ -6,20 +6,23 @@ $box-height: 99vh;
 @media screen and (min-width: 500px) {
   .right-container {
     background-color: var(--all-backcolor) !important;
-
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-panel);
+    margin-left: var(--gap-md);
+    flex: 1;
     display: flex;
     flex-direction: row;
     .article-content-box {
       min-width: 400px;
       height: $box-height;
-      margin-left: 14px;
+      margin-left: var(--gap-md);
       flex-grow: 4;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
 
       #TopRight {
-        width: 1290px;
+        width: 100%;
         padding: 5px;
         height: 4vh;
         display: flex;
@@ -39,7 +42,7 @@ $box-height: 99vh;
         a:hover {
           margin: 5px;
           font-size: small;
-          color: orange;
+          color: var(--color-accent);
           transform: translate(0px, -3px);
         }
 
@@ -47,13 +50,13 @@ $box-height: 99vh;
           padding: 7px;
           color: var(--word-color);
 
-          background-color: rgba(0, 0, 0, 0);
-          border: 0;
-          border-radius: 3px;
+          background-color: transparent;
+          border: none;
+          border-radius: var(--radius-item);
           transition: all 0.3s ease;
           &:hover {
             margin-top: -5px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--color-border);
           }
         }
         .word-count {
@@ -75,18 +78,21 @@ $box-height: 99vh;
         padding-left: 8px;
         font-weight: 400;
         font-size: 24px;
-        border: 0px solid red;
+        border: none;
         outline: none;
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: rgba(0, 0, 0, 0.03);
         color: var(--word-color);
       }
       #vditor-box {
-        width: 1300px;
+        width: 100%;
         height: 90vh;
         background-color: var(--all-backcolor);
+        display: flex;
+        flex-direction: column;
       }
       .vditor {
-        height: 70vh;
+        height: 100%;
+        flex: 1;
         overflow-y: auto;
         background-color: var(--all-backcolor);
       }
