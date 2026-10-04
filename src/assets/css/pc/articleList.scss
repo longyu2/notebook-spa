@@ -3,6 +3,8 @@ $radius: 8px;
 $box-height: 99vh;
 $left-width: 315px;
 $article-list-size: 15px;
+// 选中项右移的行程（比文件夹的 26px 短一些）
+$slide: 16px;
 
 @media screen and (min-width: 500px) {
   // 隐藏电脑端中的返回按钮，这是pc端和移动端唯一不同
@@ -16,14 +18,18 @@ $article-list-size: 15px;
 
   .article-list-box {
     background-color: var(--all-backcolor, rgba(0, 0, 0, 0.3)) !important;
-    margin-left: var(--gap-md);
-    width: auto;
+    margin-left: var(--gap-lg);
+    /* 定死面板宽度，让 #left 能向右溢出 $slide 形成凸出区 */
+    width: $left-width;
     height: $box-height;
     border: none;
     border-radius: var(--radius-panel);
     box-shadow: var(--shadow-panel);
 
     position: relative;
+    /* 高于右侧内容面板(auto)，选中项凸出时才能盖在上面；
+       低于文件夹面板(z-index:10)，避免挡住文件夹的凸出 */
+    z-index: 9;
     display: flex;
     flex-direction: column;
     justify-content: space-around;
@@ -144,10 +150,27 @@ $article-list-size: 15px;
       padding-top: 10px;
       margin-top: 10px;
       height: 85vh;
-      min-width: $left-width;
+      /* 选中项要右移 26px 并凸出面板盖住右侧内容区。
+         但 #left 必须纵向滚动，overflow-y:auto 会把 overflow-x 也算成 auto，
+         从而把凸出部分裁掉（overflow-clip-margin 在这种情况下不生效）。
+         解法：给 #left 一个比面板宽 $slide 的确定宽度 + 负 margin，
+         裁切边界随之右移，选中项就能露到面板外面，而面板宽度仍按 315px 算。 */
+      width: calc(#{$left-width} + #{$slide});
+      margin-right: -$slide;
       overflow-y: auto;
+      overflow-x: hidden;
+      /* 滚动条会跟着跑到面板外，隐藏掉；滚轮仍可正常滚动 */
+      scrollbar-width: none;
+      &::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+      }
       li {
         margin-top: 10px;
+        /* 预留 $slide：选中项右移后正好填满这段，凸出面板外 */
+        width: calc(100% - #{$slide});
+        /* 和文件夹同款斜角，但列表更宽，收窄斜度让角钝一点 */
+        clip-path: polygon(0 1%, 100% 0%, 98% 100%, 0% 100%);
         // 跟随主题的柔和描边，替代写死的 #aaa 灰色发光
         box-shadow: 0 0 3px 0 color-mix(in srgb, var(--word-color) 18%, transparent);
         display: flex;
@@ -212,18 +235,37 @@ $article-list-size: 15px;
       z-index: 2;
     }
 
-    /* 悬停 / 按下：半透明叠加，文字保持主题色（不再强制白字） */
+    /* 悬停 / 按下：文字保持主题色，底色由主题令牌决定 */
     li:hover {
-      background-color: color-mix(in srgb, var(--word-color) 6%, transparent);
+      background-color: var(--select-hover);
     }
     li:active {
-      background-color: color-mix(in srgb, var(--word-color) 14%, transparent);
+      background-color: var(--select-active);
     }
 
-    /* 选中项：半透明叠加 + 左侧琥珀色高亮条（替代原来的蓝色） */
+    /* 右移动画：和文件夹的 toRight 同款节奏，但行程用 $slide */
+    @keyframes articleToRight {
+      from {
+        transform: translateX(0);
+      }
+
+      75% {
+        transform: translateX($slide + 6px);
+      }
+      to {
+        transform: translateX($slide);
+      }
+    }
+
+    /* 选中项：主题选中底色 + 左侧高亮条 + 右移动画 */
     #left li.article-list-buttonchecked {
       position: relative;
-      background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
+      background-color: var(--select-checked);
+      /* 终态兜底，动画被禁用时也停在右移后的位置 */
+      transform: translateX($slide);
+      animation-name: articleToRight;
+      animation-duration: 0.3s;
+      animation-fill-mode: forwards;
     }
     #left li.article-list-buttonchecked::before {
       content: '';
@@ -233,7 +275,7 @@ $article-list-size: 15px;
       bottom: 0;
       width: 3px;
       border-radius: 0 3px 3px 0;
-      background-color: var(--color-accent);
+      background-color: var(--select-bar);
     }
   }
 }

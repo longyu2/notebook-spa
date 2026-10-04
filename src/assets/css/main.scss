@@ -19,16 +19,20 @@
   -webkit-box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
-@media (min-width: 768px) {
-  body {
-    background-image: url(../images/wallhaven-zyxvqy.jpg);
-  }
-}
 body {
-  background-attachment: fixed;
-  background-size: 100vw;
-  background-repeat: no-repeat;
+  /* 浅色主题不铺壁纸，用浅白纯色底，避免花哨背景干扰阅读 */
+  background-color: #f5f6f8;
   overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  /* 只有半透明主题才铺壁纸：面板是暗色半透的，需要背景图透出来才有味道 */
+  body[data-theme='semiTransparent'] {
+    background-image: url(../images/wallhaven-zyxvqy.jpg);
+    background-attachment: fixed;
+    background-size: 100vw;
+    background-repeat: no-repeat;
+  }
 }
 
 .el-but {
@@ -40,7 +44,8 @@ body {
 }
 body {
   --word-color: rgb(0, 0, 0);
-  --all-backcolor: rgba(255, 255, 255, 0.85);
+  /* 浅色主题不要那么半透，提高不透明度 */
+  --all-backcolor: rgba(255, 255, 255, 0.96);
 
   /* === Design Tokens === */
   --radius-panel: 8px;
@@ -56,6 +61,22 @@ body {
   --gap-sm: 8px;
   --gap-md: 16px;
   --gap-lg: 24px;
+
+  /* === 列表/文件夹选中态 === */
+  /* 默认（浅色主题）：蓝色系，由 --color-primary 派生，越深越"选中" */
+  --select-hover: color-mix(in srgb, var(--color-primary) 30%, #fff);
+  --select-active: color-mix(in srgb, var(--color-primary) 52%, #fff);
+  --select-checked: color-mix(in srgb, var(--color-primary) 72%, #fff);
+  --select-bar: var(--color-primary);
+}
+
+/* 半透明主题（白字 + 暗色半透面板）下，选中态改成白色半透明叠加 */
+body[data-theme='semiTransparent'] {
+  --select-hover: rgba(255, 255, 255, 0.06);
+  --select-active: rgba(255, 255, 255, 0.16);
+  --select-checked: rgba(255, 255, 255, 0.12);
+  /* 半透明主题维持原样，竖条仍是琥珀色 */
+  --select-bar: #ef9f27;
 }
 
 .vditor-reset {

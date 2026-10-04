@@ -1,5 +1,5 @@
 $black-border: 1px solid black;
-$radius: 8px;
+$radius: 0px; // 选中项保持 clip-path 的锐利斜角，不要圆角
 $box-height: 905px;
 $left-width: 300px;
 // 选中态不再用固定蓝色，改为基于 --word-color 派生（见 .folers-button-checked）
@@ -64,7 +64,7 @@ $left-width: 300px;
           color 0.35s;
         &:hover {
           color: var(--word-color);
-          background-color: color-mix(in srgb, var(--word-color) 6%, transparent);
+          background-color: var(--select-hover);
         }
         button {
           background: 0%;
@@ -92,21 +92,25 @@ $left-width: 300px;
 
   @keyframes toRight {
     from {
-      margin-left: 0px;
+      transform: translateX(0);
     }
 
     75% {
-      margin-left: 35px;
+      transform: translateX(35px);
     }
     to {
-      margin-left: 26px;
+      transform: translateX(26px);
     }
   }
 
   .folers-button-checked {
     position: relative;
     color: var(--word-color);
-    background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
+    background-color: var(--select-checked);
+    /* 终态兜底：与动画终点一致。用 transform 而非 margin-left，
+       不会被 .folder-item 的 margin、全局 * reset 等影响；
+       动画若被环境禁用，也仍停在右移后的位置 */
+    transform: translateX(26px);
     animation-name: toRight;
     animation-duration: 0.3s;
     animation-fill-mode: forwards;
@@ -120,7 +124,7 @@ $left-width: 300px;
       bottom: 0;
       width: 3px;
       border-radius: 0 3px 3px 0;
-      background-color: var(--color-accent);
+      background-color: var(--select-bar);
     }
 
     .el-icon--right {

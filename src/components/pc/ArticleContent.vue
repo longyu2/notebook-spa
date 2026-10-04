@@ -70,6 +70,8 @@ const initEditor = async (initValue: string) => {
 // vditor源文件没改，刷新后可以自动回默认样式，透明样式在js代码里面改
 const setTheme = (theme: string) => {
   const el = document.body.querySelector('.vditor') as HTMLElement
+  // 把当前主题标记到 body 上，供 css 里区分选中态等主题相关的样式
+  document.body.setAttribute('data-theme', theme)
   if (theme === 'semiTransparent') {
     document.body.style.setProperty('--word-color', 'white')
     document.body.style.setProperty('--all-backcolor', 'rgba(0, 0, 0, 0.1)')
