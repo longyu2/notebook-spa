@@ -150,7 +150,7 @@ $slide: 16px;
       padding-top: 10px;
       margin-top: 10px;
       height: 85vh;
-      /* 选中项要右移 26px 并凸出面板盖住右侧内容区。
+      /* 选中项要右移 $slide 并凸出到面板外。
          但 #left 必须纵向滚动，overflow-y:auto 会把 overflow-x 也算成 auto，
          从而把凸出部分裁掉（overflow-clip-margin 在这种情况下不生效）。
          解法：给 #left 一个比面板宽 $slide 的确定宽度 + 负 margin，
@@ -159,11 +159,28 @@ $slide: 16px;
       margin-right: -$slide;
       overflow-y: auto;
       overflow-x: hidden;
-      /* 滚动条会跟着跑到面板外，隐藏掉；滚轮仍可正常滚动 */
-      scrollbar-width: none;
+
+      /* 滚动条必然落在面板外 —— 滚动条的左边缘就是上面的溢出裁切边界，
+         所以它只能待在面板右侧那 24px 的间隙里（这是 CSS 的硬约束，
+         要凸出就没法把滑块收进面板）。既然位置固定，就在样式上让它成立：
+         轨道全透明、滑块收成一颗细药丸，看上去像一根贴在面板右缘的滑轨，
+         而不是间隙里凭空多出来的一条灰柱。默认压暗，鼠标进列表才提亮。 */
       &::-webkit-scrollbar {
-        width: 0;
-        height: 0;
+        width: 8px;
+      }
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      &::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
+        /* 2px 透明边框 + padding-box：8px 的槽里只画 4px 的滑块 */
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        transition: background-color 0.2s;
+      }
+      &:hover::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-thumb-hover);
       }
       li {
         margin-top: 10px;
@@ -276,6 +293,23 @@ $slide: 16px;
       width: 3px;
       border-radius: 0 3px 3px 0;
       background-color: var(--select-bar);
+    }
+  }
+
+  /* 「新建笔记」加号：图标 svg 里写死了 fill="#1296db" 的亮蓝，
+     在浅色主题的白底上没问题，压在半透明主题的暗色磨砂面板上就很"贴图感"，
+     和面板的白字、白色叠加选中态也不是一路。
+     这里用 filter 把图标整体转成白色 —— 不用改 svg、也不用改模板：
+       brightness(0) 先把所有像素压成纯黑（alpha 形状保留），invert(1) 再翻成纯白。
+     默认压一点不透明度当玻璃感，hover 提亮到纯白并加一圈轻微光晕。
+     注意：这条必须留在 PC 的媒体查询里 —— data-theme 是挂在 body 上的，
+     写在全域的话手机视图的 #ImageButtonAdd 也会被转白，而手机是浅色底，会直接看不见。 */
+  body[data-theme='semiTransparent'] #ImageButtonAdd {
+    filter: brightness(0) invert(1);
+    opacity: 0.82;
+    &:hover {
+      opacity: 1;
+      filter: brightness(0) invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.55));
     }
   }
 }

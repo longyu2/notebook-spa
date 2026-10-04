@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import axios from 'axios'
 const server_url = localStorage.getItem('server_url')
 
@@ -111,6 +111,55 @@ function onInput(event: Event) {
   const target = event.target as HTMLInputElement
   title.value = target.value
   save()
+}
+
+/* ===== AI 助手与编辑器的接口 =====
+   正文直接问 vditor 实例要（getValue 比响应式的 content 更实时，
+   比如用户刚敲完还没触发 input 回调时也不会拿到旧值），拿不到再退回 content。 */
+const getAiContext = () => {
+  let md = ''
+  let selection = ''
+  try {
+    md = vditor.value?.getValue() || ''
+    selection = vditor.value?.getSelection() || ''
+  } catch {
+    md = ''
+  }
+  return {
+    title: title.value || '',
+    content: md || content.value || '',
+    selection
+  }
+}
+
+// 把 AI 结果写回编辑器。注意 setValue / updateValue / insertValue 都是程序化写入，
+// 不会触发编辑器的 input 回调，所以要手动把内容同步进 content 并落一次盘。
+const applyAiResult = ({
+  text,
+  mode
+}: {
+  text: string
+  mode: 'replaceAll' | 'replaceSelection' | 'insert'
+}) => {
+  if (!vditor.value) return
+  if (mode === 'replaceAll') {
+    // clearStack = false：保留撤销栈。
+    // AI 现在是「整篇覆写」，万一它漏了段落或改歪了，用户必须能 Ctrl+Z 回去 ——
+    // 默认的 setValue(text) 会把撤销栈清空，那就真没法救了。
+    vditor.value.setValue(text, false)
+  } else if (mode === 'replaceSelection') {
+    vditor.value.updateValue(text)
+  } else {
+    vditor.value.insertValue(text)
+  }
+  vditor.value.focus()
+  nextTick(() => {
+    const md = vditor.value?.getValue()
+    if (typeof md === 'string') {
+      content.value = md
+      save()
+    }
+  })
 }
 
 // 监控props中的articleId，若其等于-9999，禁用编辑器
@@ -268,7 +317,7 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
       </div>
     </div>
 
-    <ArticleContentTool> </ArticleContentTool>
+    <ArticleContentTool :get-context="getAiContext" @apply="applyAiResult" />
   </div>
 </template>
 

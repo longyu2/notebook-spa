@@ -2,6 +2,12 @@ $black-border: 1px solid black;
 $radius: 0px; // 选中项保持 clip-path 的锐利斜角，不要圆角
 $box-height: 905px;
 $left-width: 300px;
+// 选中项右移的行程（.folers-button-checked 的 translateX 要和它保持一致）
+$slide: 26px;
+// 滚动容器的裁切边界要往外推的距离。选中项右移 $slide 后到达最右，
+// 再留 4px 余量：li 走的是 content-box（width + padding），
+// 不留余量的话右缘会正好压线、被切掉一两个像素。
+$clip-out: $slide + 4px;
 // 选中态不再用固定蓝色，改为基于 --word-color 派生（见 .folers-button-checked）
 
 @media screen and (min-width: 500px) {
@@ -25,11 +31,46 @@ $left-width: 300px;
       background-color: color-mix(in srgb, var(--word-color) 10%, transparent);
     }
     .folders-box {
-      width: inherit;
       list-style: none;
       display: flex;
       flex-flow: column nowrap;
       width: 100%;
+
+      /* === 滚动容器 ===
+         文件夹多了原来会直接溢出面板往下冒（#folder 没写 overflow-y，列表也没有高度约束）。
+         这里让 .folders-box 自己滚：
+         - flex:1 + min-height:0 —— 收缩到面板剩余高度，从而产生滚动条
+         - 但滚动容器必然裁切溢出，而选中项要右移 $slide 露到外面，
+           所以用「padding-right + 负 margin」把裁切边界往右推 $clip-out：
+           内容盒宽度不变（li 的百分比基准照旧），只是内边距盒右缘多出一截，
+           选中项右移后仍落在裁切边界以内，不会被切。
+         - 滚动条必然贴在裁切边界，也就是面板右侧那条 24px 间隙里。
+           位置改不了，就在样式上让它成立：做细做淡、轨道全透明，
+           看上去像一根贴着面板右缘的滑轨（和文章列表同款处理）。 */
+      flex: 1 1 auto;
+      min-height: 0;
+      padding-right: $clip-out;
+      margin-right: -$clip-out;
+      overflow-y: auto;
+      overflow-x: hidden;
+
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      &::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
+        /* 2px 透明边框 + padding-box：8px 的槽里只画 4px 的滑块 */
+        border: 2px solid transparent;
+        background-clip: padding-box;
+        transition: background-color 0.2s;
+      }
+      &:hover::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-thumb-hover);
+      }
 
       .my-folder {
         font-weight: 600;
