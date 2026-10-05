@@ -26,6 +26,32 @@ let vditorHeight = Math.floor(window.innerHeight * 0.9)
 
 const vditor = ref<Vditor | null>(null)
 
+/* ===== 编辑器写入队列 =====
+   Vditor 的 lute 是异步加载的（内部 addScript(...).then()），
+   在 after 回调跑完之前 this.vditor.lute 还是 undefined，
+   此时 setValue / getValue / disabled 全都会抛异常。
+
+   而文章只要几毫秒就回来了，lute 却要等两秒多 —— 于是 watch 里的
+   setValue(正文) 先抛掉、正文根本没进编辑器，等 after 再跑时再写一个
+   initValue('')，编辑器就彻底空了。表现就是「AI 读不到正文」。
+
+   所以统一走下面的入口：编辑器没就绪就先把「该写什么」排进队列，
+   after 里再补写。这样文章加载和编辑器初始化谁先谁后都不会丢正文。 */
+let editorReady = false
+let pendingApply: { md: string; disabled: boolean } | null = null
+
+/** 把正文写进编辑器；编辑器还没就绪就先排队，等 after 里补写。 */
+function applyToEditor(md: string, disabled: boolean) {
+  if (!editorReady || !vditor.value) {
+    pendingApply = { md, disabled }
+    return
+  }
+  pendingApply = null
+  if (disabled) vditor.value.disabled()
+  else vditor.value.enable()
+  vditor.value.setValue(md)
+}
+
 // 已保存提示
 let savedTip = ref(false)
 let tipTimer: ReturnType<typeof setTimeout> | null = null
@@ -58,7 +84,17 @@ const initEditor = async (initValue: string) => {
       enable: true
     },
     after: () => {
-      vditor.value!.setValue(initValue)
+      /* 到这里 lute 才真正就绪，setValue 才不会抛异常。
+         先标记就绪，再把排队中的正文补写进去 —— 文章很可能早就加载好了，
+         只是之前写不进来而已。只有队列为空（文章还没回来）时才写初始值。 */
+      editorReady = true
+      if (pendingApply) {
+        const { md, disabled } = pendingApply
+        pendingApply = null
+        applyToEditor(md, disabled)
+      } else if (initValue) {
+        vditor.value?.setValue(initValue)
+      }
     },
     input: (md) => {
       content.value = md
@@ -114,8 +150,10 @@ function onInput(event: Event) {
 }
 
 /* ===== AI 助手与编辑器的接口 =====
-   正文直接问 vditor 实例要（getValue 比响应式的 content 更实时，
-   比如用户刚敲完还没触发 input 回调时也不会拿到旧值），拿不到再退回 content。 */
+   正文优先问 vditor 实例要（getValue 比响应式的 content 更实时，
+   比如用户刚敲完还没触发 input 回调时也不会拿到旧值）。
+   但编辑器没就绪时 getValue 会抛异常，这时退回 content ——
+   那里存的始终是「当前这篇文章」的正文，也就是用户正在看的 content view。 */
 const getAiContext = () => {
   let md = ''
   let selection = ''
@@ -127,7 +165,12 @@ const getAiContext = () => {
   }
   return {
     title: title.value || '',
-    content: md || content.value || '',
+    /* 这里必须用 trim() 判断，不能写 `md || content.value`：
+       编辑器为空时 Vditor 的 getValue() 返回的是 "\n" 而不是 ""，
+       而 "\n" 是 truthy，会把后面那个兜底整个短路掉 ——
+       结果就是正文明明好好躺在 content 里，AI 却只收到一个换行符，
+       表现就是「AI 读不到正文」。 */
+    content: md.trim() ? md : content.value || '',
     selection
   }
 }
@@ -168,15 +211,16 @@ watch(
   (newProps) => {
     if (newProps === -9999) {
       title.value = ''
-      vditor.value!.setValue('')
-      vditor.value?.disabled()
+      // 同样走队列：新建文章时编辑器可能还没就绪
+      applyToEditor('', true)
       titleUpdateLock.value = true
       titlePlaceholder.value = ''
       savedTip.value = false
       if (tipTimer) clearTimeout(tipTimer)
     } else {
       titlePlaceholder.value = '请输入标题'
-      vditor.value?.enable()
+      // 编辑器没就绪时不必也不能动它：正文加载完会走 applyToEditor 一并 enable
+      if (editorReady) vditor.value?.enable()
       titleUpdateLock.value = false
     }
   }
@@ -204,19 +248,20 @@ watch(
     savedTip.value = false
     if (tipTimer) clearTimeout(tipTimer)
 
-    axios.get(`${server_url}/article/${props.articleId}`).then(async (results) => {
+    axios.get(`${server_url}/article/${props.articleId}`).then((results) => {
       title.value = results.data[0].title
       content.value = results.data[0].content
 
-      if (props.queryStr != '') {
+      const highlight = props.queryStr != ''
+      if (highlight) {
         content.value = content.value.replace(props.queryStr, `***~~${props.queryStr}~~***`)
-        vditor.value?.disabled()
         titleUpdateLock.value = true
       } else {
-        vditor.value?.enable()
         titleUpdateLock.value = false
       }
-      await vditor.value!.setValue(content.value)
+      // 走队列写入：编辑器还没就绪（lute 没加载完）就等 after 补写，
+      // 直接 setValue 会抛异常，正文就再也进不去了。
+      applyToEditor(content.value, highlight)
     })
   }
 )

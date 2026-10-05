@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Promotion, Delete, CopyDocument, Refresh, Document, Setting } from '@element-plus/icons-vue'
 import { server_url } from '@/assets/constants/server_url'
@@ -171,7 +171,12 @@ const WRITE_RULE = [
   '如果你只是在回答问题、解释概念或给建议（用户没有让你改文档），就直接用文字回复，不要调用工具。'
 ].join('\n')
 
-const systemPrompt = computed(() => {
+/* 这里必须是普通函数，绝不能写成 computed。
+   getContext() 读的是 vditor 的实时内容（getValue() 是去读 DOM），那不是响应式数据，
+   computed 追踪不到任何依赖 —— 一旦算过一次就永久缓存，用户改了正文它也不知道。
+   实测过：编辑器改成「丙」之后，第二次请求发出的 system 提示词和第一次一字不差。
+   写成普通函数，每次 send() 时现算，才能做到「编辑器一变，AI 读到的就变」。 */
+function buildSystemPrompt(): string {
   const ctx = props.getContext()
   const content = ctx.content || ''
   const doc = content.slice(0, MAX_CONTEXT)
@@ -191,13 +196,13 @@ const systemPrompt = computed(() => {
     '</文章正文>',
     '当用户要求你改写时，' + OUTPUT_RULE
   ].join('\n')
-})
+}
 
-/** 文档没超长时才允许整篇覆写 */
-const canFullRewrite = computed(() => {
+/** 文档没超长时才允许整篇覆写（同样必须是普通函数，理由见 buildSystemPrompt） */
+function canFullRewrite(): boolean {
   const ctx = props.getContext()
   return (ctx.content || '').length <= MAX_CONTEXT
-})
+}
 
 
 /** 模型偶尔还是会用 ``` 包裹，兜一层防御 */
@@ -229,9 +234,10 @@ async function send(history: ChatMessage[], target: ChatMessage) {
         stream: true,
         thinking: thinkingOn.value,
         // 文档太长时不给工具，模型只能文字回复，避免它拿半篇文档去「覆写全文」
-        ...(canFullRewrite.value ? { tools: [WRITE_TOOL] } : {}),
+        ...(canFullRewrite() ? { tools: [WRITE_TOOL] } : {}),
         messages: [
-          { role: 'system', content: systemPrompt.value },
+          // 每次发送都现从 vditor 取一次正文，绝不复用上一次的
+          { role: 'system', content: buildSystemPrompt() },
           ...history.map((m) => ({ role: m.role, content: m.content }))
         ]
       }),
@@ -336,7 +342,7 @@ function runWriteTool(calls: ToolCallAcc[], target: ChatMessage) {
     }
 
     // 双保险：即使提示词没拦住，也不拿被截断的上下文去覆写全文
-    if (!canFullRewrite.value) {
+    if (!canFullRewrite()) {
       notes.push('✗ 文档超出长度上限，不能整篇覆写')
       continue
     }
