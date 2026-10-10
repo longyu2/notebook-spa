@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Promotion, Delete, CopyDocument, Refresh, Document, Setting } from '@element-plus/icons-vue'
 import { server_url } from '@/assets/constants/server_url'
@@ -43,6 +43,13 @@ const emit = defineEmits<{
 interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
+  /**
+   * 本条消息的意图。
+   *  - chat    ：提问/闲聊，只回答，绝不碰编辑器（不给工具）
+   *  - command ：要求改动文档，允许模型调用 write_document 写回
+   *  - action  ：点预设动作按钮触发的，也算 command
+   */
+  intent?: 'chat' | 'command' | 'action'
   /** 这条是「改写类动作」的结果，可以回写编辑器 */
   canApply?: boolean
   /** 正在流式接收 */
@@ -52,6 +59,15 @@ interface ChatMessage {
   action?: boolean
   /** 模型正在思考（thinking 模式会先吐 reasoning_content，正文还没开始） */
   thinking?: boolean
+  /** 深度思考过程全文（reasoning_content 累积起来的内容） */
+  reasoning?: string
+  /** 思考过程面板当前是否展开 */
+  reasoningOpen?: boolean
+  /**
+   * 用户手动开合过思考过程。
+   * 一旦为 true，就不再自动收起 —— 否则用户刚点开、正文一开始又被合上，很烦人。
+   */
+  reasoningPinned?: boolean
 }
 
 const messages = ref<ChatMessage[]>([])
@@ -69,14 +85,55 @@ const keyMasked = ref('')
 const saving = ref(false)
 const testing = ref(false)
 
-/* ---- 深度思考开关（对应 DeepSeek 的 thinking.type） ---- */
-// 默认开：DeepSeek 服务端默认就是思考模式，保持默认不改变既有行为。
-// 关掉能明显变快，适合「润色一句话」这种不需要深思的活儿。
-const thinkingOn = ref(localStorage.getItem('ai_thinking') !== '0')
+/* ---- 深度思考档位（对应 DeepSeek 的 thinking.type + reasoning_effort） ----
+ *
+ * 官方只认三档真实强度：low / high / max，默认 high。
+ * （medium / xhigh 只是兼容别名，服务端会映射成 high，所以不暴露成独立档位。）
+ * 再加一个「关闭」，共四档。
+ *
+ * 关闭走 thinking.type = "disabled"，而不是把 reasoning_effort 设成 "none" ——
+ * 后者不是合法强度值；而且 disabled 时不能再带 reasoning_effort，两个一起发是非法组合。
+ * 这段翻译全在后端做，前端只管传档位字符串。
+ */
+type ThinkLevel = 'off' | 'low' | 'high' | 'max'
 
-function toggleThinking() {
-  thinkingOn.value = !thinkingOn.value
-  localStorage.setItem('ai_thinking', thinkingOn.value ? '1' : '0')
+const THINK_LEVELS: { key: ThinkLevel; label: string; hint: string }[] = [
+  { key: 'off', label: '关', hint: '不思考，最快' },
+  { key: 'low', label: '低', hint: '轻量思考，较快' },
+  { key: 'high', label: '标准', hint: '默认档，质量与速度均衡' },
+  { key: 'max', label: '最高', hint: '最充分的推理，最慢但最细致' }
+]
+
+function initialThinkLevel(): ThinkLevel {
+  const saved = localStorage.getItem('ai_thinking_level')
+  if (saved && THINK_LEVELS.some((l) => l.key === saved)) return saved as ThinkLevel
+  // 兼容上一版的布尔开关：只有明确关过才当 off，其余保持默认 high
+  return localStorage.getItem('ai_thinking') === '0' ? 'off' : 'high'
+}
+
+const thinkingLevel = ref<ThinkLevel>(initialThinkLevel())
+
+function setThinkLevel(k: ThinkLevel) {
+  thinkingLevel.value = k
+  localStorage.setItem('ai_thinking_level', k)
+}
+
+/** 当前档位的说明文字，给整组控件当 tooltip */
+const thinkingHint = computed(
+  () => THINK_LEVELS.find((l) => l.key === thinkingLevel.value)?.hint ?? ''
+)
+
+/* ---- 流式传输开关 ----
+ *
+ * 开：后端把 SSE 原样透传，正文边生成边显示（打字机效果）。
+ * 关：后端等整段生成完再一次性返回 JSON（stream: false），长文改写时页面不会一直滚，
+ *     代价是等待期间看不到任何进度。两条路径前端都要能处理。
+ */
+const streamOn = ref(localStorage.getItem('ai_stream') !== '0')
+
+function toggleStream() {
+  streamOn.value = !streamOn.value
+  localStorage.setItem('ai_stream', streamOn.value ? '1' : '0')
 }
 
 /**
@@ -171,31 +228,130 @@ const WRITE_RULE = [
   '如果你只是在回答问题、解释概念或给建议（用户没有让你改文档），就直接用文字回复，不要调用工具。'
 ].join('\n')
 
+/* ===== 提问 / 命令 判定 ===== */
+
+/**
+ * 命令类关键词：出现这些字样，基本可以断定用户是要改文档。
+ * 判断顺序上，「问」优先于「改」—— 因为「帮我把这段改得更好吗？」是征询，
+ * 而「怎么改写第三段？」是提问，两者都含「改」字，但都不该直接动稿子。
+ */
+const CMD_WORDS = [
+  '润色', '改写', '修改', '改成', '改为', '改一下', '改得', '改这', '改下',
+  '扩写', '精简', '压缩', '缩短', '展开', '补充', '补上', '加上', '加一段', '添加',
+  '删掉', '删除', '去掉', '移除', '替换', '换成', '纠错', '错别字', '语病',
+  '重写', '续写', '翻译', '排版', '格式化', '整理成', '改成更',
+  '插入', '写回', '更新文档'
+  /* 注意：「全文」「整篇」这类只是范围限定词，不是动作，绝不能放进命令词表。
+     它们和「总结/分析/看一遍」搭配时全是提问（「全文总结一下」「整篇讲了什么」），
+     放进来会把这些误判成改写命令。 */
+]
+
+/**
+ * 提问类关键词：出现这些就问，不做任何写入。
+ *
+ * 「总结/概括/整理」这几个是双面的：既是动词命令（「帮我总结成一段」），
+ * 也是提问名词（「总结一下文章内容」）。这类歧义词一律归到「提问」——
+ * 判成提问只是少写一次，用户觉得该改会再说一句；判成命令却可能把稿子改了。
+ */
+const ASK_WORDS = [
+  '什么', '为什么', '为何', '怎么', '如何', '怎样', '是否', '能不能', '可以吗',
+  '吗？', '吗?', '呢？', '呢?', '？', '?',
+  '解释', '说明一下', '讲讲', '介绍一下', '总结一下', '概括', '分析',
+  '区别', '哪个', '哪些', '多少', '几段', '多长', '几个字',
+  '建议', '你觉得', '好不好', '行不行',
+  '总结', '概述', '讲讲看', '说说'
+]
+
+/**
+ * 明确的「动手改」前缀：只有这些开头，才认为用户是在下命令。
+ * 用来收拾「帮我写个总结」这类：光看「总结」是歧义，但带「帮我写/帮我改」就是命令。
+ */
+const CMD_PREFIX = /^(帮我|请|麻烦|给我|替我)?\s*(写|写个|写一段|写个总结|改|做|生成|整理出|弄)/
+
+/**
+ * 判断这轮对话是「提问」还是「命令」。
+ *
+ * 保守优先：只要看起来像提问，就按提问处理（不给工具）。
+ * 漏判成命令的代价是「模型可能顺手改了稿子」，用户下次就不会放心提问了；
+ * 漏判成提问的代价只是「这次没写回，用户再点一下按钮」—— 后者轻得多。
+ */
+function detectIntent(text: string): 'chat' | 'command' {
+  const t = text.trim()
+  if (!t) return 'chat'
+
+  const hasCmd = CMD_WORDS.some((w) => t.includes(w))
+  const hasAsk = ASK_WORDS.some((w) => t.includes(w))
+
+  // 问号结尾 → 一律当提问，哪怕里面带了「改写」之类的动词
+  if (/[?？]\s*$/.test(t)) return 'chat'
+
+  // 「帮我写个总结」这类：疑问词只是内容名词，真正表意的是「帮我写」
+  if (CMD_PREFIX.test(t)) return 'command'
+
+  // 有命令词且没歧义词 → 命令
+  if (hasCmd && !hasAsk) return 'command'
+
+  // 两者都占：短句更像命令（「润色一下」），长句更像讨论（「这文章要怎么润色」）
+  if (hasCmd && hasAsk) return t.length <= 12 ? 'command' : 'chat'
+
+  return 'chat'
+}
+
+/** 只有命令类消息才允许写回编辑器 */
+function allowsWrite(intent: ChatMessage['intent']): boolean {
+  return intent === 'command' || intent === 'action'
+}
+
+/**
+ * 输入框里当前的文字会被判成什么，实时显示给用户看。
+ * 这里用 computed 是安全的：input 是 ref，读它就是在建立响应式依赖。
+ */
+const inputMode = computed(() => detectIntent(input.value))
+
 /* 这里必须是普通函数，绝不能写成 computed。
    getContext() 读的是 vditor 的实时内容（getValue() 是去读 DOM），那不是响应式数据，
    computed 追踪不到任何依赖 —— 一旦算过一次就永久缓存，用户改了正文它也不知道。
    实测过：编辑器改成「丙」之后，第二次请求发出的 system 提示词和第一次一字不差。
    写成普通函数，每次 send() 时现算，才能做到「编辑器一变，AI 读到的就变」。 */
-function buildSystemPrompt(): string {
+function buildSystemPrompt(writeAllowed: boolean): string {
   const ctx = props.getContext()
   const content = ctx.content || ''
   const doc = content.slice(0, MAX_CONTEXT)
   const truncated = content.length > MAX_CONTEXT
+
+  /* 三种模式的提示词必须说清楚，不能混：
+     ① writeAllowed = true  —— 本轮是改写命令，允许（且要求）调用工具写回；
+     ② writeAllowed = false 且文档超长 —— 看不到全文，禁止覆写，怕弄丢后半篇；
+     ③ writeAllowed = false 且文档正常 —— 本轮是提问，只回答，一个字都不要动稿子。 */
+  let modeRule: string
+  if (writeAllowed) {
+    modeRule = WRITE_RULE
+  } else if (truncated) {
+    modeRule =
+      '注意：这篇文章太长，你只看到了开头部分。此时不要调用 write_document 覆写全文，' +
+      '否则会把你看不到的内容弄丢；请改用文字回复，说明情况并让用户自己决定。'
+  } else {
+    modeRule = [
+      '【本轮是提问，不是改写】用户只是在向你提问或和你讨论，绝对不要改动文档。',
+      '直接在对话里回答即可，不要输出整篇正文，也不要调用任何写文档的工具。',
+      '如果用户确实想要你改稿，他会明确说「帮我改」「润色一下」这类命令。'
+    ].join('\n')
+  }
+
   return [
     '你是一个中文写作助手，帮助用户润色、改写和答疑。',
     MATH_RULE,
-    // 文档超长时模型看不到全文，此时禁止整篇覆写，否则后半篇会被写丢
-    truncated
-      ? '注意：这篇文章太长，你只看到了开头部分。此时不要调用 write_document 覆写全文，' +
-        '否则会把你看不到的内容弄丢；请改用文字回复，说明情况并让用户自己决定。'
-      : WRITE_RULE,
+    modeRule,
     '用户当前正在编辑的文章如下（供你理解上下文）：',
     '<文章标题>' + (ctx.title || '（无标题）') + '</文章标题>',
     '<文章正文>',
     doc + (truncated ? '\n……（正文过长，以上仅为开头部分）' : ''),
     '</文章正文>',
-    '当用户要求你改写时，' + OUTPUT_RULE
-  ].join('\n')
+    // 只有命令模式才需要「只输出正文」这条 —— 提问模式要的恰恰是有解释的回答
+    writeAllowed ? '当用户要求你改写时，' + OUTPUT_RULE : ''
+  ]
+    .filter(Boolean)
+    .join('\n')
 }
 
 /** 文档没超长时才允许整篇覆写（同样必须是普通函数，理由见 buildSystemPrompt） */
@@ -204,6 +360,12 @@ function canFullRewrite(): boolean {
   return (ctx.content || '').length <= MAX_CONTEXT
 }
 
+
+/** 手动开合深度思考过程；标记 pinned 之后就不再被自动收起覆盖 */
+function toggleReasoning(m: ChatMessage) {
+  m.reasoningOpen = !m.reasoningOpen
+  m.reasoningPinned = true
+}
 
 /** 模型偶尔还是会用 ``` 包裹，兜一层防御 */
 function stripFence(text: string): string {
@@ -219,9 +381,18 @@ async function scrollToBottom() {
 }
 
 /** 核心：把 messages 发给后端转发，流式接收 */
-async function send(history: ChatMessage[], target: ChatMessage) {
+async function send(history: ChatMessage[], target: ChatMessage, intent?: ChatMessage['intent']) {
   loading.value = true
   abortCtrl = new AbortController()
+
+  /* 两道闸：
+     ① 这轮必须是「命令」才考虑写回 —— 提问根本不该碰编辑器；
+     ② 文档没超长才允许整篇覆写。
+     合起来决定要不要把 write_document 下发给模型。
+     不给工具是硬约束：模型看不到这个函数，就不可能误改文档，
+     比在提示词里求它「别改」可靠得多。 */
+  const writeAllowed = allowsWrite(intent) && canFullRewrite()
+
   try {
     const res = await fetch(`${apiBase()}/ai/chat`, {
       method: 'POST',
@@ -231,13 +402,12 @@ async function send(history: ChatMessage[], target: ChatMessage) {
         Authorization: localStorage.getItem('token') || ''
       },
       body: JSON.stringify({
-        stream: true,
-        thinking: thinkingOn.value,
-        // 文档太长时不给工具，模型只能文字回复，避免它拿半篇文档去「覆写全文」
-        ...(canFullRewrite() ? { tools: [WRITE_TOOL] } : {}),
+        stream: streamOn.value,
+        thinking: thinkingLevel.value,
+        ...(writeAllowed ? { tools: [WRITE_TOOL] } : {}),
         messages: [
           // 每次发送都现从 vditor 取一次正文，绝不复用上一次的
-          { role: 'system', content: buildSystemPrompt() },
+          { role: 'system', content: buildSystemPrompt(writeAllowed) },
           ...history.map((m) => ({ role: m.role, content: m.content }))
         ]
       }),
@@ -259,6 +429,38 @@ async function send(history: ChatMessage[], target: ChatMessage) {
       return
     }
 
+    /* 非流式路径：后端返回的是 { status, data } 这种一次性 JSON，
+       结构跟 SSE 的 delta 完全不同，必须单独处理。
+       （tool_calls 在这里是完整对象，不像流式那样按 index 增量拼接。） */
+    if (!streamOn.value) {
+      const j = await res.json()
+      const message = j?.data?.choices?.[0]?.message
+      if (!message) {
+        target.content = '后端没有返回内容'
+        target.error = true
+        return
+      }
+      if (message.reasoning_content) {
+        target.reasoning = message.reasoning_content
+        target.reasoningOpen = false // 一次性到达，没必要占着位置
+      }
+      target.content = stripFence(message.content || '')
+
+      const calls = message.tool_calls
+      if (Array.isArray(calls) && calls.length) {
+        runWriteTool(
+          calls.map((c: any) => ({
+            id: c.id || '',
+            name: c.function?.name || '',
+            args: c.function?.arguments || ''
+          })),
+          target,
+          intent
+        )
+      }
+      return
+    }
+
     const reader = res.body!.getReader()
     const decoder = new TextDecoder()
     const buf = { v: '' }
@@ -266,12 +468,22 @@ async function send(history: ChatMessage[], target: ChatMessage) {
 
     const handlers = {
       onText: (t: string) => {
-        target.thinking = false
+        if (target.thinking) {
+          target.thinking = false
+          // 正文开始了就把思考过程收起来，把位置让给答案；
+          // 但用户自己点开过就不动它，否则刚展开又被合上，很烦
+          if (!target.reasoningPinned) target.reasoningOpen = false
+        }
         target.content += t
       },
-      onThinking: () => {
-        // thinking 模式下正文还没开始，不给反馈用户会以为卡住了
+      onReasoning: (t: string) => {
+        if (!target.reasoning) {
+          target.reasoning = ''
+          target.reasoningOpen = true
+        }
+        target.reasoning += t
         if (!target.thinking) {
+          // thinking 模式下正文还没开始，不给反馈用户会以为卡住了
           target.thinking = true
           scrollToBottom()
         }
@@ -292,7 +504,7 @@ async function send(history: ChatMessage[], target: ChatMessage) {
 
     // 模型请求了动作 → 直接落到编辑器上，不需要用户再点按钮
     if (toolAcc.size) {
-      runWriteTool([...toolAcc.values()], target)
+      runWriteTool([...toolAcc.values()], target, intent)
     }
   } catch (err: any) {
     if (err?.name === 'AbortError') {
@@ -316,10 +528,22 @@ async function send(history: ChatMessage[], target: ChatMessage) {
  * 参数是模型生成的 JSON，官方文档明确说了不保证合法、也可能臆造参数，
  * 所以这里必须校验后再用，不能直接信。
  */
-function runWriteTool(calls: ToolCallAcc[], target: ChatMessage) {
+function runWriteTool(calls: ToolCallAcc[], target: ChatMessage, intent?: ChatMessage['intent']) {
   const notes: string[] = []
   const before = (props.getContext().content || '').length
   let applied = false
+
+  /* 最后一道闸。正常情况下提问轮压根不给工具，模型无从调用；
+     但万一后端/模型仍吐了工具调用，这里直接丢弃 —— 宁可少写一次，
+     也不能在用户只是提问的时候把稿子改了。 */
+  if (!allowsWrite(intent)) {
+    target.content =
+      target.content.trim() +
+      '\n\n（本轮是提问，已忽略模型给出的改写内容，编辑器未改动）'
+    target.action = true
+    target.canApply = false
+    return
+  }
 
   for (const c of calls) {
     if (c.name !== 'write_document') {
@@ -410,26 +634,33 @@ async function runAction(action: (typeof QUICK_ACTIONS)[number]) {
   const scope = ctx.selection && ctx.selection.trim() ? '选中的内容' : '全文'
   const userMsg: ChatMessage = {
     role: 'user',
-    content: `【${action.label}·${scope}】\n\n${target}`
+    content: `【${action.label}·${scope}】\n\n${target}`,
+    // 点按钮 = 明确的改写命令，允许写回
+    intent: 'action'
   }
   const aiMsg: ChatMessage = { role: 'assistant', content: '', streaming: true, canApply: true }
   pushMessage(userMsg)
   const liveAi = pushMessage(aiMsg)
   await scrollToBottom()
-  await send([userMsg], liveAi)
+  await send([userMsg], liveAi, userMsg.intent)
 }
 
-/** 自由提问 */
-async function ask() {
-  const q = input.value.trim()
+/**
+ * 输入框发送。
+ *
+ * 这里做「提问 vs 命令」的判定：判断成命令才把 write_document 工具下发给模型，
+ * 提问则不给工具 —— 模型看不到工具就不可能误改文档，比靠提示词求它别改可靠得多。
+ */
+async function ask(text?: string) {
+  const q = (text ?? input.value).trim()
   if (!q || loading.value) return
-  const userMsg: ChatMessage = { role: 'user', content: q }
+  const userMsg: ChatMessage = { role: 'user', content: q, intent: detectIntent(q) }
   const aiMsg: ChatMessage = { role: 'assistant', content: '', streaming: true, canApply: true }
   pushMessage(userMsg)
   const liveAi = pushMessage(aiMsg)
   input.value = ''
   await scrollToBottom()
-  await send([userMsg], aiMsg)
+  await send([userMsg], liveAi, userMsg.intent)
 }
 
 function stop() {
@@ -634,11 +865,12 @@ onMounted(loadStatus)
 
     <div ref="listEl" class="ai-card__list">
       <p v-if="!messages.length" class="ai-card__empty">
-        直接说要什么，它会改好整篇并写回编辑器，比如：<br />
+        可以直接下命令，它会改好整篇并写回编辑器：<br />
         「把全文润色一遍」<br />
         「在第三段后面加一段总结」<br />
-        「把标题改得更吸引人」<br />
-        也可以只提问，那种情况它只回答、不动你的稿子。<br />
+        <span class="ai-card__empty-sep">也可以只是提问，它只回答、不动你的稿子：</span>
+        「这篇文章主要讲了什么」<br />
+        「第二段的论证有什么问题」<br />
         <span class="ai-card__empty-key">Enter 发送 / Shift+Enter 换行</span>
       </p>
 
@@ -648,11 +880,28 @@ onMounted(loadStatus)
         class="ai-msg"
         :class="m.role === 'user' ? 'ai-msg--user' : 'ai-msg--ai'"
       >
-        <div v-if="m.thinking" class="ai-msg__body ai-msg__body--thinking">
+        <!-- 深度思考过程：默认折叠，流式思考时自动展开，正文一开始自动收起 -->
+        <div v-if="m.reasoning" class="ai-reason">
+          <button class="ai-reason__head" @click="toggleReasoning(m)">
+            <span class="ai-reason__caret" :class="{ 'ai-reason__caret--open': m.reasoningOpen }"
+              >▶</span
+            >
+            <span class="ai-reason__title">深度思考过程</span>
+            <span v-if="m.thinking" class="ai-reason__live">
+              <span class="ai-msg__spinner"></span>思考中
+            </span>
+            <span v-else class="ai-reason__len">{{ m.reasoning.length }} 字</span>
+          </button>
+          <div v-show="m.reasoningOpen" class="ai-reason__body">{{ m.reasoning }}</div>
+        </div>
+
+        <!-- 还没有思考内容可显示时，给个转圈，别让用户以为卡住 -->
+        <div v-if="m.thinking && !m.reasoning" class="ai-msg__body ai-msg__body--thinking">
           <span class="ai-msg__spinner"></span>思考中
         </div>
+
         <div
-          v-else
+          v-if="m.content || !m.reasoning"
           class="ai-msg__body"
           :class="{ 'ai-msg__body--error': m.error, 'ai-msg__body--action': m.action }"
         >{{ m.content }}<span v-if="m.streaming" class="ai-msg__cursor"></span></div>
@@ -689,30 +938,61 @@ onMounted(loadStatus)
       <textarea
         v-model="input"
         rows="3"
-        placeholder="问点什么，或输入自定义指令…"
+        :placeholder="
+          inputMode === 'command'
+            ? '要改哪里？例如「把全文润色一遍」'
+            : '提问，或直接说要改什么…'
+        "
         @keydown="onKeydown"
       ></textarea>
       <button v-if="loading" class="ai-send ai-send--stop" title="停止" @click="stop">
         <el-icon><Refresh /></el-icon>
       </button>
-      <button v-else class="ai-send" :disabled="!input.trim()" title="发送" @click="ask">
+      <button v-else class="ai-send" :disabled="!input.trim()" title="发送" @click="ask()">
         <el-icon><Promotion /></el-icon>
       </button>
     </div>
 
-    <!-- 深度思考开关：对应 DeepSeek 的 thinking.type。
-         放在输入框下方当控制栏用，输入框就不会被顶到面板最底部，
-         视线不用一路甩到底才能打字。 -->
-    <button
-      class="ai-think"
-      :class="{ 'ai-think--on': thinkingOn }"
-      :title="thinkingOn ? '深度思考已开启：回答更细致，但更慢' : '深度思考已关闭：响应更快'"
-      @click="toggleThinking"
-    >
-      <span class="ai-think__dot"></span>
-      深度思考
-      <span class="ai-think__state">{{ thinkingOn ? '开' : '关' }}</span>
-    </button>
+    <!-- 底部控制栏：左边实时显示这轮会被判成「提问」还是「改写」，
+         右边是深度思考档位和流式传输开关。用户不必猜系统会怎么理解自己的话。 -->
+    <div class="ai-card__bar">
+      <span
+        class="ai-card__mode"
+        :class="{ 'ai-card__mode--cmd': inputMode === 'command' }"
+        :title="
+          inputMode === 'command'
+            ? '这条会被当成改写命令，AI 可以改你的稿子'
+            : '这条会被当成提问，AI 只回答、不会动你的稿子'
+        "
+      >
+        {{ inputMode === 'command' ? '改写模式' : '提问模式' }}
+      </span>
+
+      <div class="ai-think" :title="`深度思考：${thinkingHint}`">
+        <span class="ai-think__label">思考</span>
+        <div class="ai-think__seg">
+          <button
+            v-for="lv in THINK_LEVELS"
+            :key="lv.key"
+            class="ai-think__opt"
+            :class="{ 'ai-think__opt--on': thinkingLevel === lv.key }"
+            :title="lv.hint"
+            @click="setThinkLevel(lv.key)"
+          >
+            {{ lv.label }}
+          </button>
+        </div>
+      </div>
+
+      <button
+        class="ai-stream"
+        :class="{ 'ai-stream--on': streamOn }"
+        :title="streamOn ? '流式传输已开：边生成边显示' : '流式传输已关：等全部生成完再一次性显示'"
+        @click="toggleStream"
+      >
+        <span class="ai-stream__dot"></span>流式
+      </button>
+    </div>
   </div>
 </template>
 
@@ -723,11 +1003,11 @@ onMounted(loadStatus)
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  background-color: color-mix(in srgb, var(--word-color) 4%, transparent);
-  border: 1px solid color-mix(in srgb, var(--word-color) 14%, transparent);
+  gap: 12px;
+  background-color: color-mix(in srgb, var(--word-color) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--word-color) 18%, transparent);
   border-radius: var(--radius-panel);
-  padding: 14px 12px;
+  padding: 16px 14px;
 
   &__header {
     display: flex;
@@ -736,34 +1016,34 @@ onMounted(loadStatus)
   }
 
   &__icon {
-    color: var(--color-primary);
-    font-size: 18px;
+    color: var(--color-primary-text);
+    font-size: 22px;
   }
 
   &__title {
     color: var(--word-color);
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 18px;
+    font-weight: 600;
     letter-spacing: 0.5px;
   }
 
   &__model {
     margin-left: auto;
-    font-size: 11px;
-    color: color-mix(in srgb, var(--word-color) 45%, transparent);
+    font-size: 13px;
+    color: color-mix(in srgb, var(--word-color) 62%, transparent);
   }
 
   &__gear {
-    color: color-mix(in srgb, var(--word-color) 45%, transparent);
+    color: color-mix(in srgb, var(--word-color) 62%, transparent);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 17px;
     transition:
       color 0.2s,
       transform 0.3s;
 
     &:hover,
     &--on {
-      color: var(--color-primary);
+      color: var(--color-primary-text);
     }
 
     &--on {
@@ -772,9 +1052,9 @@ onMounted(loadStatus)
   }
 
   &__clear {
-    color: color-mix(in srgb, var(--word-color) 45%, transparent);
+    color: color-mix(in srgb, var(--word-color) 62%, transparent);
     cursor: pointer;
-    font-size: 14px;
+    font-size: 17px;
     transition: color 0.2s;
 
     &:hover {
@@ -783,16 +1063,17 @@ onMounted(loadStatus)
   }
 
   &__notice {
-    font-size: 12px;
-    line-height: 1.6;
-    color: color-mix(in srgb, var(--word-color) 70%, transparent);
-    background-color: color-mix(in srgb, var(--color-accent) 14%, transparent);
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: color-mix(in srgb, var(--word-color) 88%, transparent);
+    background-color: color-mix(in srgb, var(--color-accent) 18%, transparent);
     border-radius: var(--radius-item);
-    padding: 8px 10px;
+    padding: 11px 13px;
     cursor: pointer;
 
     u {
-      color: var(--color-primary);
+      color: var(--color-primary-text);
+      font-weight: 600;
     }
   }
 
@@ -802,21 +1083,30 @@ onMounted(loadStatus)
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     padding-right: 2px;
   }
 
   &__empty {
-    font-size: 12px;
-    line-height: 1.7;
-    color: color-mix(in srgb, var(--word-color) 45%, transparent);
+    font-size: 14.5px;
+    line-height: 1.85;
+    /* 空状态是用户第一眼看到的内容，不能是灰蒙蒙的一片 —— 提到 76% */
+    color: color-mix(in srgb, var(--word-color) 76%, transparent);
     margin-top: 4px;
   }
 
   &__empty-key {
     display: inline-block;
-    margin-top: 6px;
-    color: color-mix(in srgb, var(--word-color) 32%, transparent);
+    margin-top: 10px;
+    color: color-mix(in srgb, var(--word-color) 56%, transparent);
+  }
+
+  /* 「也可以只是提问」这句换个主色，把两段示例分开，扫一眼就懂有两种用法 */
+  &__empty-sep {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--color-primary-text);
+    font-weight: 500;
   }
 
   &__actions {
@@ -834,23 +1124,23 @@ onMounted(loadStatus)
       flex: 1;
       min-width: 0;
       resize: none;
-      /* rows=3 的自然高度（3×18.75 + 14 内边距 + 2 边框 ≈ 72px）。
+      /* rows=3 的自然高度（3×24 + 16 内边距 + 2 边框 ≈ 90px）。
          写死 min-height 是为了字号或 line-height 以后被改动时，
          输入框不会跟着塌下去 —— 这个高度是按「看得见两句话」定的。 */
-      min-height: 72px;
+      min-height: 100px;
       font-family: inherit;
-      font-size: 12.5px;
-      line-height: 1.5;
+      font-size: 15px;
+      line-height: 1.6;
       color: var(--word-color);
       background-color: var(--all-backcolor);
-      border: 1px solid color-mix(in srgb, var(--word-color) 16%, transparent);
+      border: 1px solid color-mix(in srgb, var(--word-color) 24%, transparent);
       border-radius: var(--radius-item);
-      padding: 7px 9px;
+      padding: 9px 11px;
       outline: none;
       transition: border-color 0.2s;
 
       &::placeholder {
-        color: color-mix(in srgb, var(--word-color) 38%, transparent);
+        color: color-mix(in srgb, var(--word-color) 55%, transparent);
       }
 
       &:focus {
@@ -863,17 +1153,17 @@ onMounted(loadStatus)
 .ai-config {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px;
+  gap: 7px;
+  padding: 12px;
   border-radius: var(--radius-item);
-  background-color: color-mix(in srgb, var(--word-color) 6%, transparent);
-  border: 1px solid color-mix(in srgb, var(--word-color) 12%, transparent);
+  background-color: color-mix(in srgb, var(--word-color) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--word-color) 16%, transparent);
 
   &__label {
     display: flex;
     align-items: baseline;
     gap: 6px;
-    font-size: 12px;
+    font-size: 14.5px;
     color: var(--word-color);
     white-space: nowrap;
   }
@@ -883,25 +1173,25 @@ onMounted(loadStatus)
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 10.5px;
-    color: color-mix(in srgb, var(--word-color) 45%, transparent);
+    font-size: 13px;
+    color: color-mix(in srgb, var(--word-color) 62%, transparent);
   }
 
   &__input {
     width: 100%;
     box-sizing: border-box;
     font-family: inherit;
-    font-size: 12.5px;
+    font-size: 15px;
     color: var(--word-color);
     background-color: var(--all-backcolor);
-    border: 1px solid color-mix(in srgb, var(--word-color) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--word-color) 24%, transparent);
     border-radius: var(--radius-item);
-    padding: 6px 8px;
+    padding: 7px 9px;
     outline: none;
     transition: border-color 0.2s;
 
     &::placeholder {
-      color: color-mix(in srgb, var(--word-color) 38%, transparent);
+      color: color-mix(in srgb, var(--word-color) 55%, transparent);
     }
 
     &:focus {
@@ -910,9 +1200,9 @@ onMounted(loadStatus)
   }
 
   &__hint {
-    font-size: 10.5px;
-    line-height: 1.5;
-    color: color-mix(in srgb, var(--word-color) 45%, transparent);
+    font-size: 13px;
+    line-height: 1.6;
+    color: color-mix(in srgb, var(--word-color) 62%, transparent);
   }
 
   &__btns {
@@ -929,27 +1219,28 @@ onMounted(loadStatus)
   gap: 6px;
 
   &__body {
-    font-size: 12.5px;
-    line-height: 1.7;
+    font-size: 15px;
+    line-height: 1.8;
     color: var(--word-color);
     white-space: pre-wrap;
     word-break: break-word;
     border-radius: var(--radius-item);
-    padding: 8px 10px;
+    padding: 11px 13px;
 
     &--error {
       color: var(--color-danger);
+      font-weight: 500;
     }
 
     /* 动作回执：左侧加一道主色条，和普通问答明显区分开 */
     &--action {
       border-left: 3px solid var(--color-primary);
-      background-color: color-mix(in srgb, var(--color-primary) 8%, transparent);
+      background-color: color-mix(in srgb, var(--color-primary) 11%, transparent);
     }
 
     /* 模型思考中，正文还没开始 */
     &--thinking {
-      color: color-mix(in srgb, var(--word-color) 50%, transparent);
+      color: color-mix(in srgb, var(--word-color) 72%, transparent);
       background-color: transparent;
       padding: 4px 2px;
     }
@@ -957,22 +1248,22 @@ onMounted(loadStatus)
 
   &__spinner {
     display: inline-block;
-    width: 11px;
-    height: 11px;
-    margin-right: 6px;
+    width: 13px;
+    height: 13px;
+    margin-right: 7px;
     vertical-align: -1px;
-    border: 2px solid color-mix(in srgb, var(--word-color) 18%, transparent);
+    border: 2px solid color-mix(in srgb, var(--word-color) 26%, transparent);
     border-top-color: var(--color-primary);
     border-radius: 50%;
     animation: ai-spin 0.7s linear infinite;
   }
 
   &--user &__body {
-    background-color: color-mix(in srgb, var(--color-primary) 14%, transparent);
+    background-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
   }
 
   &--ai &__body {
-    background-color: color-mix(in srgb, var(--word-color) 7%, transparent);
+    background-color: color-mix(in srgb, var(--word-color) 10%, transparent);
   }
 
   /**
@@ -1001,6 +1292,84 @@ onMounted(loadStatus)
   }
 }
 
+/**
+ * 深度思考过程。
+ *
+ * 这是次要信息，但**不能太淡** —— 用户明确要求「看得清」，所以正文色号
+ * 只降到 78%，仍远高于 AA 线。折叠时只占一行，不跟答案抢位置。
+ */
+.ai-reason {
+  border: 1px solid color-mix(in srgb, var(--word-color) 16%, transparent);
+  border-radius: var(--radius-item);
+  background-color: color-mix(in srgb, var(--word-color) 4%, transparent);
+  overflow: hidden;
+
+  &__head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    color: color-mix(in srgb, var(--word-color) 72%, transparent);
+    background-color: transparent;
+    border: none;
+    padding: 8px 10px;
+    cursor: pointer;
+    text-align: left;
+
+    &:hover {
+      color: var(--word-color);
+      background-color: color-mix(in srgb, var(--word-color) 6%, transparent);
+    }
+  }
+
+  &__caret {
+    flex-shrink: 0;
+    font-size: 9px;
+    color: color-mix(in srgb, var(--word-color) 62%, transparent);
+    transition: transform 0.15s;
+
+    &--open {
+      transform: rotate(90deg);
+    }
+  }
+
+  &__title {
+    flex: 1;
+  }
+
+  &__live {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    color: var(--color-primary-text);
+    font-weight: 600;
+  }
+
+  &__len {
+    flex-shrink: 0;
+    font-weight: 400;
+    color: color-mix(in srgb, var(--word-color) 56%, transparent);
+  }
+
+  &__body {
+    /* 思考过程可能很长，限高 + 内部滚动，别把答案顶出屏幕 */
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 4px 10px 10px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: color-mix(in srgb, var(--word-color) 78%, transparent);
+    white-space: pre-wrap;
+    word-break: break-word;
+    border-top: 1px solid color-mix(in srgb, var(--word-color) 12%, transparent);
+  }
+}
+
 /** 柔和脉冲：句尾指示点 */
 @keyframes ai-pulse {
   0%,
@@ -1024,13 +1393,13 @@ onMounted(loadStatus)
 
 .ai-chip {
   font-family: inherit;
-  font-size: 12px;
+  font-size: 14.5px;
   line-height: 1;
   color: var(--word-color);
-  background-color: color-mix(in srgb, var(--word-color) 8%, transparent);
-  border: 1px solid transparent;
+  background-color: color-mix(in srgb, var(--word-color) 11%, transparent);
+  border: 1px solid color-mix(in srgb, var(--word-color) 14%, transparent);
   border-radius: 999px;
-  padding: 5px 10px;
+  padding: 8px 14px;
   cursor: pointer;
   transition:
     background-color 0.2s,
@@ -1038,72 +1407,169 @@ onMounted(loadStatus)
     color 0.2s;
 
   &:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
-    border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
-    color: var(--color-primary);
+    background-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
+    border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+    color: var(--color-primary-text);
   }
 
   &:disabled {
-    opacity: 0.45;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 }
 
 /**
- * 深度思考开关。
- * align-self 是必须的：.ai-card 是 column flex，默认 align-items: stretch
- * 会把按钮拉满整行，看着像个大横条。
+ * 底部控制栏：左边是模式提示，右边是深度思考档位。
+ * 面板最窄到 280px 时两件东西放不下，所以允许 flex-wrap —— 宁可换行也不挤扁。
+ */
+.ai-card__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 模式指示：提问=中性灰，改写=主色，颜色本身就是最强的提示 */
+.ai-card__mode {
+  flex-shrink: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 7px 12px;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--word-color) 72%, transparent);
+  background-color: color-mix(in srgb, var(--word-color) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--word-color) 14%, transparent);
+
+  &--cmd {
+    color: var(--color-primary-text);
+    font-weight: 600;
+    background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+    border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+  }
+}
+
+/**
+ * 深度思考档位：一个标签 + 四档分段控件。
+ *
+ * 为什么用分段控件而不是「点一下循环切换」：四档循环要从「关」到「最高」按三下，
+ * 而且当前在哪一档全靠记；分段控件一次点击直达，且当前档位一直可见。
+ * 也不用下拉菜单 —— 那要多一层弹层，为了四个选项不划算。
  */
 .ai-think {
-  align-self: flex-start;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: 13px;
   line-height: 1;
-  color: color-mix(in srgb, var(--word-color) 55%, transparent);
-  background-color: transparent;
-  border: 1px solid color-mix(in srgb, var(--word-color) 16%, transparent);
-  border-radius: 999px;
-  padding: 5px 10px;
-  cursor: pointer;
-  transition:
-    color 0.2s,
-    border-color 0.2s,
-    background-color 0.2s;
+  color: color-mix(in srgb, var(--word-color) 62%, transparent);
 
-  &__dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: color-mix(in srgb, var(--word-color) 30%, transparent);
-    transition:
-      background-color 0.2s,
-      box-shadow 0.2s;
+  &__label {
+    font-size: 13px;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--word-color) 62%, transparent);
+    white-space: nowrap;
   }
 
-  &__state {
-    color: color-mix(in srgb, var(--word-color) 38%, transparent);
+  &__seg {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--word-color) 24%, transparent);
+    background-color: color-mix(in srgb, var(--word-color) 6%, transparent);
+  }
+
+  &__opt {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--word-color) 72%, transparent);
+    background-color: transparent;
+    border: none;
+    border-radius: 999px;
+    padding: 5px 9px;
+    cursor: pointer;
+    transition:
+      color 0.15s,
+      background-color 0.15s;
+
+    &:hover {
+      color: var(--word-color);
+      background-color: color-mix(in srgb, var(--word-color) 10%, transparent);
+    }
+
+    /* 选中态跟模式药丸走同一套：蓝色淡底 + 深蓝字。
+       不用「蓝底白字」—— 品牌蓝 #5590e2 压白字只有 2.9:1，过不了 AA。
+       这套组合实测 5.18:1。
+       注意 --on 必须连 :hover 一起写死：.ai-think__opt:hover 的特异性高于单个类，
+       否则鼠标划过去时选中态会被 hover 的灰底盖掉。 */
+    &--on,
+    &--on:hover {
+      color: var(--color-primary-text);
+      font-weight: 600;
+      background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+    }
+  }
+}
+
+/**
+ * 流式传输开关。
+ * 只有开/关两态，不值得上分段控件，一个带状态点的小胶囊就够。
+ * 配色跟模式药丸、档位选中态同一套：蓝色淡底 + 深蓝字（实测 5.4:1）。
+ * 同样要把 :hover 一起写死，否则鼠标划过时开启态会被 hover 的灰边盖掉。
+ */
+.ai-stream {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--word-color) 62%, transparent);
+  background-color: transparent;
+  border: 1px solid color-mix(in srgb, var(--word-color) 24%, transparent);
+  border-radius: 999px;
+  padding: 6px 11px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s,
+    background-color 0.15s;
+
+  &__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: color-mix(in srgb, var(--word-color) 40%, transparent);
+    transition:
+      background-color 0.15s,
+      box-shadow 0.15s;
   }
 
   &:hover {
     color: var(--word-color);
-    border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+    border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
   }
 
-  &--on {
-    color: var(--color-primary);
-    border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
-    background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  &--on,
+  &--on:hover {
+    color: var(--color-primary-text);
+    font-weight: 600;
+    border-color: color-mix(in srgb, var(--color-primary) 40%, transparent);
+    background-color: color-mix(in srgb, var(--color-primary) 14%, transparent);
 
-    .ai-think__dot {
+    .ai-stream__dot {
       background-color: var(--color-primary);
       box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
-    }
-
-    .ai-think__state {
-      color: var(--color-primary);
     }
   }
 }
@@ -1111,15 +1577,15 @@ onMounted(loadStatus)
 .ai-op {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   font-family: inherit;
-  font-size: 11.5px;
+  font-size: 14px;
   line-height: 1;
-  color: color-mix(in srgb, var(--word-color) 78%, transparent);
+  color: color-mix(in srgb, var(--word-color) 92%, transparent);
   background-color: transparent;
-  border: 1px solid color-mix(in srgb, var(--word-color) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--word-color) 30%, transparent);
   border-radius: var(--radius-item);
-  padding: 4px 8px;
+  padding: 7px 12px;
   cursor: pointer;
   transition:
     color 0.2s,
@@ -1127,13 +1593,13 @@ onMounted(loadStatus)
     background-color 0.2s;
 
   &:hover {
-    color: var(--color-primary);
+    color: var(--color-primary-text);
     border-color: var(--color-primary);
-    background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
   }
 
   &:disabled {
-    opacity: 0.45;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 
@@ -1168,9 +1634,9 @@ onMounted(loadStatus)
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  font-size: 15px;
+  width: 36px;
+  height: 36px;
+  font-size: 17px;
   color: #fff;
   background-color: var(--color-primary);
   border: none;

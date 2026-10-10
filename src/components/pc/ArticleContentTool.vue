@@ -49,12 +49,14 @@ function updateTheme() {
      这个式子不是拍脑袋来的 —— 右边栏能吃到的最大宽度是：
        视口宽 - 979px
      = 视口宽 - (左右内边距40 + 文件夹160 + 列表315+24 + 间距24+16 + 编辑器min-width 400)
-     所以写成 calc(100vw - 1000px)，留 21px 余量。
-     为什么不用固定值：实测在 1280 宽下定宽 340 会顶穿编辑器 min-width，
-     而 .article-list-box 没写 flex-shrink:0，它会替编辑器挨刀被压到 260px，
+     所以写成 calc(100vw - 920px)，留约 60px 余量 —— 比原来（-1000px）多让出 80px，
+     编辑器中间会更窄一些，AI 栏更宽。
+     为什么不用固定值：实测小屏下定宽会顶穿编辑器 min-width，
+     而 .article-list-box 没写 flex-shrink:0，它会替编辑器挨刀被压窄，
      导致 #left 的凸出量算错、列表排版坏掉。响应式则小屏自动退让，不会伤到别人。
-     窄屏兜底 260px（和改造前一致），宽屏封顶 380px。 */
-  width: clamp(260px, calc(100vw - 1000px), 380px);
+     窄屏兜底 280px（原来 260px，太窄字都放不下），宽屏封顶 460px（原来 380px）。
+     下限也要够大：编辑器 min-width 400 是硬底，AI 栏再宽也不会把列表挤变形。 */
+  width: clamp(280px, calc(100vw - 920px), 460px);
   flex-shrink: 0;
   height: 99vh;
   box-sizing: border-box;
@@ -67,13 +69,14 @@ function updateTheme() {
 
   .theme-card {
     flex-shrink: 0;
-    /* 跟随主题：浅色=淡灰底/深色边框，半透明=淡白底/浅色边框 */
+    /* 跟随主题：浅色=淡灰底/深色边框，半透明=淡白底/浅色边框。
+       不透明度要和 .ai-card 保持一致，否则两张卡片叠在一起会有明显的「一深一浅」。 */
     background-color: rgba(0, 0, 0, 0.02);
-    background-color: color-mix(in srgb, var(--word-color) 4%, transparent);
+    background-color: color-mix(in srgb, var(--word-color) 5%, transparent);
     border: 1px solid var(--color-border);
-    border-color: color-mix(in srgb, var(--word-color) 14%, transparent);
+    border-color: color-mix(in srgb, var(--word-color) 18%, transparent);
     border-radius: var(--radius-panel);
-    padding: 16px;
+    padding: 16px 14px;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -85,14 +88,15 @@ function updateTheme() {
     }
 
     &__icon {
-      color: var(--color-primary);
-      font-size: 18px;
+      /* 蓝字压浅底必须用 --color-primary-text：#5590e2 在白底上只有 2.5:1，看不清 */
+      color: var(--color-primary-text);
+      font-size: 22px;
     }
 
     &__title {
       color: var(--word-color);
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 18px;
+      font-weight: 600;
       letter-spacing: 0.5px;
     }
   }
@@ -106,7 +110,7 @@ function updateTheme() {
       background-color: var(--all-backcolor);
       border-radius: var(--radius-item);
       box-shadow: 0 0 0 1px var(--color-border) inset;
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--word-color) 16%, transparent) inset;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--word-color) 24%, transparent) inset;
       transition: box-shadow 0.2s ease;
 
       &:hover {
@@ -122,17 +126,17 @@ function updateTheme() {
 
     :deep(.el-input__inner) {
       color: var(--word-color);
-      font-size: 13px;
+      font-size: 15px;
     }
 
     :deep(.el-select__caret) {
       color: var(--color-text-secondary);
-      color: color-mix(in srgb, var(--word-color) 55%, transparent);
+      color: color-mix(in srgb, var(--word-color) 70%, transparent);
       transition: color 0.2s ease;
     }
 
     :deep(.el-select__caret:hover) {
-      color: var(--color-primary);
+      color: var(--color-primary-text);
     }
   }
 }
@@ -156,12 +160,12 @@ function updateTheme() {
 }
 
 .theme-select-popper .el-select-dropdown__item {
-  height: 34px;
-  line-height: 34px;
+  height: 36px;
+  line-height: 36px;
   margin: 2px 6px;
   padding-left: 14px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--word-color);
   transition: background-color 0.15s ease;
 }
@@ -171,7 +175,7 @@ function updateTheme() {
 }
 
 .theme-select-popper .el-select-dropdown__item.selected {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-weight: 500;
   background-color: rgba(85, 144, 226, 0.14);
 }

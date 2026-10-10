@@ -20,8 +20,14 @@ export interface ToolCallAcc {
 export interface SSEHandlers {
   /** 正文增量 */
   onText?: (t: string) => void
-  /** 思考中（thinking 模式会先下发 reasoning_content，此时正文还没开始） */
-  onThinking?: () => void
+  /**
+   * 思考过程增量。
+   *
+   * thinking 模式下模型会先把 reasoning_content 逐块吐完，再开始吐 content。
+   * 这里把**文本**交出去（而不是只报一个「开始思考了」的信号），
+   * 面板才能把思考过程实时显示出来。
+   */
+  onReasoning?: (t: string) => void
 }
 
 /**
@@ -59,7 +65,7 @@ export function parseSSEChunk(
     const delta = json.choices?.[0]?.delta
     if (!delta) continue
 
-    if (delta.reasoning_content) handlers.onThinking?.()
+    if (delta.reasoning_content) handlers.onReasoning?.(delta.reasoning_content)
     if (delta.content) handlers.onText?.(delta.content)
 
     if (Array.isArray(delta.tool_calls)) {

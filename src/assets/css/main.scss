@@ -73,6 +73,14 @@ body {
   --radius-item: 6px;
   --color-primary: #5590e2;
   --color-primary-hover: #3d7bc4;
+  /* 蓝色作为「文字」用的版本。
+     #5590e2 叠在白底上对比度只有 2.9:1（WCAG AA 小字要求 4.5），
+     当按钮底色没问题，但拿来做蓝字标签就偏淡、看不清。
+     这个更深的蓝专供「蓝字压浅底」场景（AI 面板的模式药丸/深度思考开关等）。
+     取值经过实测：纯卡片底 6.05:1；压在 6%~11% 蓝色染色底（药丸/chip）上
+     仍有 5.44~5.71:1，全部过 AA。不要拿它替换 --color-primary —— 那个是品牌色，
+     还兼着按钮填充、选中态派生等用途。 */
+  --color-primary-text: #245aa8;
   --color-danger: #e24b4a;
   --color-danger-hover: #c83a39;
   --color-accent: #ef9f27;
@@ -111,6 +119,10 @@ body[data-theme='semiTransparent'] {
   --scrollbar-track: transparent;
   --scrollbar-thumb: rgba(255, 255, 255, 0.26);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.48);
+
+  /* 半透明主题是深底，蓝字要往亮里调才看得清 —— 和浅色主题正好相反。
+     实测对暗卡片底 8.15:1，对蓝色染色底 7.10:1，都远超 AA。 */
+  --color-primary-text: #8ab6f0;
 }
 
 .vditor-reset {
