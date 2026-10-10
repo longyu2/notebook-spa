@@ -24,13 +24,29 @@ $box-height: 99vh;
       #TopRight {
         width: 100%;
         padding: 5px;
-        height: 4vh;
+        /* 原来是写死的 height: 4vh。顶栏有 10 个条目，窄屏一行放不下，
+           写死高度会把内容硬挤在一行里 → 中文被压成竖排。
+           改成 min-height + 允许换行：宽屏仍是一行，窄屏自动折成两行。 */
+        min-height: 4vh;
         display: flex;
+        flex-wrap: wrap;
+        align-content: center;
+        row-gap: 4px;
         justify-content: space-around;
         align-items: center;
 
         .space {
           flex: 1 1 auto; //可放大 可缩小
+        }
+
+        /* 顶栏里全是中文。flex 子项默认 min-width:auto，收缩时按「最长单词」算宽度，
+           而中文没有空格 —— 每个汉字都是断点，于是元素被压成 1 个字宽、竖着排。
+           实测 1920 下就已经整条竖排了。nowrap + flex-shrink:0 让它们保持整行。 */
+        > span,
+        > a,
+        .btn {
+          white-space: nowrap;
+          flex-shrink: 0;
         }
 
         span,
@@ -64,7 +80,9 @@ $box-height: 99vh;
         }
         .upload-demo {
           display: flex;
-          min-width: 300px;
+          /* 原来是 300px，可这一块只放「上传图片」一个按钮（约 90px），
+             白白吃掉 210px，正是把顶栏挤成竖排的主因。改 0 让它按内容宽度走。 */
+          min-width: 0;
           min-height: 50px;
           button {
             margin-top: 2px;

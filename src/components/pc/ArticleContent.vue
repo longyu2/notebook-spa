@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import axios from 'axios'
 const server_url = localStorage.getItem('server_url')
 
@@ -149,6 +149,44 @@ function onInput(event: Event) {
   save()
 }
 
+/* ===== 「是否 AI 生成」标记 =====
+   存库字段 Notebooklist.is_ai_generated（迁移 V002）。
+   两条写入路径：
+     1) AI 回写正文（applyAiResult）→ 自动置 true
+     2) 顶部状态栏手动点药丸 → 可来回切
+   刻意不复用 PUT /article：那条路要 title+content，
+   而状态栏手上只有文章 id，走整篇保存会把正文覆盖成空。 */
+const isAiGenerated = ref(false)
+const aiFlagSaving = ref(false)
+
+// 没选中文章（articleId 被置成 -9999）时不显示这个开关
+const hasArticle = computed(
+  () => props.articleId != null && props.articleId !== -9999
+)
+
+/** 把标记写进库。乐观更新：先改本地，失败再回滚。 */
+async function setAiGenerated(on: boolean) {
+  if (!hasArticle.value) return
+  if (isAiGenerated.value === on) return
+
+  const prev = isAiGenerated.value
+  isAiGenerated.value = on
+  aiFlagSaving.value = true
+  try {
+    await axios.put(`${server_url}/article/ai-generated`, {
+      Notebookid: props.articleId,
+      is_ai_generated: on ? 1 : 0
+    })
+  } catch {
+    isAiGenerated.value = prev
+    ElMessage({ showClose: true, message: '标记同步失败，请重试', type: 'error' })
+  } finally {
+    aiFlagSaving.value = false
+  }
+}
+
+const toggleAiGenerated = () => setAiGenerated(!isAiGenerated.value)
+
 /* ===== AI 助手与编辑器的接口 =====
    正文优先问 vditor 实例要（getValue 比响应式的 content 更实时，
    比如用户刚敲完还没触发 input 回调时也不会拿到旧值）。
@@ -201,6 +239,9 @@ const applyAiResult = ({
     if (typeof md === 'string') {
       content.value = md
       save()
+      // 正文是 AI 写进来的，顺手把「AI 生成」标记打开。
+      // 用户之后可以在顶部状态栏手动切回「非 AI 生成」。
+      setAiGenerated(true)
     }
   })
 }
@@ -249,8 +290,18 @@ watch(
     if (tipTimer) clearTimeout(tipTimer)
 
     axios.get(`${server_url}/article/${props.articleId}`).then((results) => {
-      title.value = results.data[0].title
-      content.value = results.data[0].content
+      const row = results.data?.[0]
+      // 查不到对应文章（例如 articleId 是 -9999）就直接返回，
+      // 否则下面取 row.title 会抛异常，正文和标记都停在上一篇的状态
+      if (!row) {
+        isAiGenerated.value = false
+        return
+      }
+
+      title.value = row.title
+      content.value = row.content
+      // MySQL 的 tinyint(1) 经 axios 回来是 0 / 1，也可能是 null（老数据）
+      isAiGenerated.value = !!row.is_ai_generated
 
       const highlight = props.queryStr != ''
       if (highlight) {
@@ -323,6 +374,22 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
           <b><span v-text="content.length"></span></b>字</span
         >
 
+        <button
+          v-if="hasArticle"
+          class="ai-flag"
+          :class="{ 'ai-flag--on': isAiGenerated }"
+          :disabled="aiFlagSaving"
+          :title="
+            isAiGenerated
+              ? '正文标记为「AI 生成」，点击改回非 AI 生成'
+              : '正文标记为「非 AI 生成」，点击标记为 AI 生成'
+          "
+          @click="toggleAiGenerated"
+        >
+          <span class="ai-flag__dot"></span>
+          {{ isAiGenerated ? 'AI 生成' : '非 AI 生成' }}
+        </button>
+
         <router-link to="show">数据统计</router-link>
 
         <router-link to="random">随机推荐</router-link>
@@ -372,6 +439,71 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
   margin-left: 8px;
   display: inline-block;
   color: rgba(120, 220, 150, 0.85);
+}
+
+/* ===== 顶部状态栏的「是否 AI 生成」药丸 =====
+   #TopRight 里的 span / a 有统一规则，button 不在其中，所以这里自成一套。
+   颜色一律从令牌派生，不能写死 —— 半透明主题下写死会出现白底白字。 */
+.ai-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 5px;
+  padding: 3px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 999px;
+  /* 默认「非 AI 生成」= 中性灰，不抢眼。
+     不透明度不能低：半透明主题下药丸背后是壁纸图（实测是一块中等亮度的藕紫色），
+     文字按 72% 混出来的实际对比度只有 4.46:1，差一点点没过 AA。
+     抬到 88% 后同一处实测 5.7:1，留出余量。 */
+  color: color-mix(in srgb, var(--word-color) 88%, transparent);
+  background-color: color-mix(in srgb, var(--word-color) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--word-color) 20%, transparent);
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.ai-flag:hover {
+  background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
+  border-color: color-mix(in srgb, var(--word-color) 32%, transparent);
+}
+
+.ai-flag__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  opacity: 0.55;
+}
+
+/* 打开态走蓝色系（不用琥珀色）。
+   文字用 --color-primary-text：品牌蓝 #5590e2 直接当文字色只有 2.9:1，看不清；
+   --color-primary 只用来派生底色和边框。 */
+.ai-flag--on {
+  color: var(--color-primary-text);
+  background-color: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
+.ai-flag--on:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+}
+
+.ai-flag--on .ai-flag__dot {
+  opacity: 1;
+}
+
+.ai-flag:disabled {
+  cursor: default;
+  opacity: 0.6;
 }
 
 .save-tip-fade-enter-active,
