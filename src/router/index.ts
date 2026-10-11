@@ -10,6 +10,9 @@ const Admin = () => import('@/views/AdminView.vue')
 
 const Random = () => import('@/views/RandomArticleView.vue')
 
+/* 公开页：列表和详情共用同一个组件，靠 /public/:aid 参数切换 */
+const PublicBlog = () => import('@/views/PublicBlogView.vue')
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -58,15 +61,36 @@ const router = createRouter({
       component: () => import('@/views/ShowView.vue'),
       // 整页长文，需要文档级滚动（见 main.scss 的 body.page-scroll）
       meta: { pageScroll: true }
+    },
+
+    /* 公开页：不需要登录，任何人都能看（只显示 is_public = 1 的文章） */
+    {
+      path: '/public',
+      name: 'public',
+      component: PublicBlog,
+      meta: { pageScroll: true }
+    },
+    {
+      path: '/public/:aid',
+      name: 'publicArticle',
+      component: PublicBlog,
+      meta: { pageScroll: true }
     }
   ]
 })
 
+/* 免登录可访问的路径前缀（/disk 是历史遗留，保持原样不动） */
+const OPEN_PATHS = ['/login', '/regist', '/disk', '/public']
+
 router.beforeEach((to, from) => {
-  if (to.path != '/login' && to.path != '/regist' && to.path != '/disk') {
-    if (localStorage.getItem('token') == null) {
-      return { name: 'login' }
-    }
+  const open = OPEN_PATHS.some(
+    (p) => to.path === p || to.path.startsWith(p + '/')
+  )
+
+  if (!open && localStorage.getItem('token') == null) {
+    /* 未登录的访客不再直接扔到登录页：站点对外的门面是公开页（像博客首页），
+       登录入口放在公开页右上角。这样分享出去的链接对方能看到内容。 */
+    return { name: 'public' }
   }
 
   return true

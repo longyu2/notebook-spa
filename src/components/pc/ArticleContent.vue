@@ -187,6 +187,40 @@ async function setAiGenerated(on: boolean) {
 
 const toggleAiGenerated = () => setAiGenerated(!isAiGenerated.value)
 
+/* ===== 「是否公开」标记 =====
+   存库字段 Notebooklist.is_public（迁移 V004）。
+   和上面那个 AI 标记同一套路：单独一条 PUT /article/public，只改这一列。 */
+const isPublic = ref(false)
+const pubFlagSaving = ref(false)
+
+/** 把公开标记写进库。乐观更新：先改本地，失败再回滚。 */
+async function setPublicFlag(on: boolean) {
+  if (!hasArticle.value) return
+  if (isPublic.value === on) return
+
+  const prev = isPublic.value
+  isPublic.value = on
+  pubFlagSaving.value = true
+  try {
+    await axios.put(`${server_url}/article/public`, {
+      Notebookid: props.articleId,
+      is_public: on ? 1 : 0
+    })
+    ElMessage({
+      showClose: true,
+      message: on ? '已设为公开，可在「公开页」看到' : '已取消公开',
+      type: 'success'
+    })
+  } catch {
+    isPublic.value = prev
+    ElMessage({ showClose: true, message: '公开标记同步失败，请重试', type: 'error' })
+  } finally {
+    pubFlagSaving.value = false
+  }
+}
+
+const togglePublic = () => setPublicFlag(!isPublic.value)
+
 /* ===== AI 助手与编辑器的接口 =====
    正文优先问 vditor 实例要（getValue 比响应式的 content 更实时，
    比如用户刚敲完还没触发 input 回调时也不会拿到旧值）。
@@ -295,6 +329,7 @@ watch(
       // 否则下面取 row.title 会抛异常，正文和标记都停在上一篇的状态
       if (!row) {
         isAiGenerated.value = false
+        isPublic.value = false
         return
       }
 
@@ -302,6 +337,7 @@ watch(
       content.value = row.content
       // MySQL 的 tinyint(1) 经 axios 回来是 0 / 1，也可能是 null（老数据）
       isAiGenerated.value = !!row.is_ai_generated
+      isPublic.value = !!row.is_public
 
       const highlight = props.queryStr != ''
       if (highlight) {
@@ -390,9 +426,27 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
           {{ isAiGenerated ? 'AI 生成' : '非 AI 生成' }}
         </button>
 
+        <button
+          v-if="hasArticle"
+          class="ai-flag"
+          :class="{ 'ai-flag--on': isPublic }"
+          :disabled="pubFlagSaving"
+          :title="
+            isPublic
+              ? '这篇已公开，任何人都能在公开页看到，点击取消公开'
+              : '这篇未公开，点击设为公开（公开页任何人都能访问）'
+          "
+          @click="togglePublic"
+        >
+          <span class="ai-flag__dot"></span>
+          {{ isPublic ? '已公开' : '未公开' }}
+        </button>
+
         <router-link to="show">数据统计</router-link>
 
         <router-link to="random">随机推荐</router-link>
+
+        <router-link to="public">公开页</router-link>
         <el-upload
           v-model:file-list="fileList"
           class="upload-demo"
