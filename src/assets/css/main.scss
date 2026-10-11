@@ -43,7 +43,19 @@
 body {
   /* 浅色主题不铺壁纸，用浅白纯色底，避免花哨背景干扰阅读 */
   background-color: #f5f6f8;
+  /* 笔记页是固定视口的应用式布局（左中右三栏各自内部滚动），
+     所以这里把文档级滚动关掉，免得出现多余的外层滚动条。 */
   overflow: hidden;
+}
+
+/* 「整页长文」路由（数据统计 / 随机推荐）需要文档级滚动。
+   注意 overflow: hidden 只禁掉「用户」滚动和滚动条，程序化滚动（window.scrollTo）
+   依然生效 —— 所以只看 scrollTo 能不能动会误判成「能滚」，
+   真实症状是：滚动条不见了、滚轮推不动。
+   这个 class 由 router 的 meta.pageScroll 在路由切换时增删（见 src/router/index.ts）。 */
+body.page-scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 @media (min-width: 768px) {
@@ -53,6 +65,15 @@ body {
     background-attachment: fixed;
     background-size: 100vw;
     background-repeat: no-repeat;
+  }
+
+  /* 整页长文页面（数据统计 / 随机推荐）用 cover。
+     壁纸原图 3840x2244，按 100vw 铺在 1440x900 这类屏幕上高度只有 841px，
+     底部会露出一条没盖住的底色；笔记页被三栏面板挡着看不出来，
+     这种整页滚动的页面就非常明显。 */
+  body.page-scroll[data-theme='semiTransparent'] {
+    background-size: cover;
+    background-position: center top;
   }
 }
 

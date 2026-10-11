@@ -22,7 +22,9 @@ const router = createRouter({
     {
       path: '/random',
       name: 'random',
-      component: Random
+      component: Random,
+      // 整页长文，需要文档级滚动（见 main.scss 的 body.page-scroll）
+      meta: { pageScroll: true }
     },
 
     {
@@ -53,7 +55,9 @@ const router = createRouter({
     {
       path: '/show',
       name: 'show',
-      component: () => import('@/views/ShowView.vue')
+      component: () => import('@/views/ShowView.vue'),
+      // 整页长文，需要文档级滚动（见 main.scss 的 body.page-scroll）
+      meta: { pageScroll: true }
     }
   ]
 })
@@ -67,6 +71,13 @@ router.beforeEach((to, from) => {
 
   return true
   // 返回 false 以取消导航
+})
+
+/* 全局 body 是 overflow: hidden（笔记页三栏各自内部滚，不需要文档级滚动）。
+   数据统计 / 随机推荐这类整页长文必须放开，否则滚动条消失、滚轮也推不动。
+   用路由 meta 声明，进出这些页面时切 body 上的 class。 */
+router.afterEach((to) => {
+  document.body.classList.toggle('page-scroll', !!to.meta.pageScroll)
 })
 
 export default router
