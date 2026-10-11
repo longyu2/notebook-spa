@@ -14,7 +14,7 @@ const server_url = localStorage.getItem('server_url')
 const route = useRoute()
 const router = useRouter()
 
-const PAGE_SIZE = 24
+const pageSize = ref(24)
 
 const keyword = ref('') // 输入框里的词
 const activeQ = ref('') // 真正在搜的词（点回车/点搜索按钮后才更新）
@@ -22,12 +22,9 @@ const list = ref<any[]>([])
 const total = ref(0)
 const page = ref(1)
 const loading = ref(false)
-const loadingMore = ref(false)
 const error = ref('')
 
 const inputRef = ref<any>(null)
-
-const hasMore = computed(() => list.value.length < total.value)
 
 /* ===== 关键词高亮 =====
    拆成 [{t, hit}] 交给模板渲染，不用 v-html —— 用户正文里可能有 HTML，
@@ -102,47 +99,56 @@ function fmtDate(s: string) {
 }
 
 /* ===== 请求 ===== */
-async function fetchPage(q: string, targetPage: number, append: boolean) {
+async function fetchPage(q: string, targetPage: number) {
   if (!q) {
     list.value = []
     total.value = 0
     return
   }
 
-  if (append) loadingMore.value = true
-  else loading.value = true
+  loading.value = true
   error.value = ''
 
   try {
     const res = await axios.get(`${server_url}/search`, {
-      params: { q, page: targetPage, size: PAGE_SIZE }
+      params: { q, page: targetPage, size: pageSize.value }
     })
     const data = res.data?.data ?? {}
-    const rows = data.list ?? []
-
-    list.value = append ? list.value.concat(rows) : rows
-    total.value = data.total ?? rows.length
+    list.value = data.list ?? []
+    total.value = data.total ?? (data.list ?? []).length
     page.value = targetPage
   } catch (e: any) {
     error.value = '搜索失败：' + (e?.message || e)
-    if (!append) {
-      list.value = []
-      total.value = 0
-    }
+    list.value = []
+    total.value = 0
   } finally {
     loading.value = false
-    loadingMore.value = false
   }
 }
 
 function runSearch(q: string) {
   activeQ.value = q
-  fetchPage(q, 1, false)
+  fetchPage(q, 1)
 }
 
-function loadMore() {
-  if (!hasMore.value || loadingMore.value) return
-  fetchPage(activeQ.value, page.value + 1, true)
+/* 传统分页：页码/页大小变化 → 改写地址栏，由 watch(route) 统一拉数据
+   （地址栏 ?q=&page=&size= 是唯一事实来源，刷新/前进后退都能还原） */
+function buildQuery(q: string, p: number, s?: number) {
+  const qy: Record<string, string> = {}
+  if (q) qy.q = q
+  if (p > 1) qy.page = String(p)
+  if (s && s !== 24) qy.size = String(s)
+  return qy
+}
+
+function onPageChange(p: number) {
+  window.scrollTo({ top: 0 })
+  router.replace({ path: '/search', query: buildQuery(activeQ.value, p, pageSize.value) })
+}
+
+function onSizeChange(s: number) {
+  pageSize.value = s
+  router.replace({ path: '/search', query: buildQuery(activeQ.value, 1, s) })
 }
 
 /* 输入框回车 / 点放大镜：把词写进地址栏（replace 不留历史），
@@ -151,7 +157,7 @@ function submit() {
   const q = keyword.value.trim()
   if (q === activeQ.value) return
 
-  router.replace({ path: '/search', query: q ? { q } : {} })
+  router.replace({ path: '/search', query: q ? buildQuery(q, 1, pageSize.value) : {} })
 }
 
 /* 从搜索卡片点进文章：写一个一次性的 openArticleId，
@@ -162,13 +168,17 @@ function openArticle(row: any) {
   router.push('/notebook')
 }
 
-/* ===== 地址栏 ?q= 是唯一事实来源 ===== */
+/* ===== 地址栏 ?q=&page=&size= 是唯一事实来源 ===== */
 function syncFromRoute() {
   const raw = route.query.q
   const q = (Array.isArray(raw) ? raw[0] : raw) || ''
+  const p = Math.max(1, parseInt(route.query.page as string, 10) || 1)
+  const s = Math.min(50, Math.max(1, parseInt(route.query.size as string, 10) || 24))
   keyword.value = q
   activeQ.value = q
-  fetchPage(q, 1, false)
+  pageSize.value = s
+  page.value = p
+  fetchPage(q, p)
 }
 
 onMounted(async () => {
@@ -178,7 +188,7 @@ onMounted(async () => {
   inputRef.value?.focus?.()
 })
 
-watch(() => route.query.q, syncFromRoute)
+watch(() => route.fullPath, syncFromRoute)
 </script>
 
 <template>
@@ -261,11 +271,18 @@ watch(() => route.query.q, syncFromRoute)
           </article>
         </div>
 
-        <div v-if="hasMore" class="sp-more">
-          <el-button :loading="loadingMore" @click="loadMore">
-            加载更多（已显示 {{ list.length }} / {{ total }}）
-          </el-button>
-        </div>
+        <el-pagination
+          v-if="total > 0"
+          class="sp-pager"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="total"
+          :page-size="pageSize"
+          :page-sizes="[12, 24, 48]"
+          :current-page="page"
+          @current-change="onPageChange"
+          @size-change="onSizeChange"
+          background
+        />
       </template>
     </template>
   </div>
@@ -442,10 +459,24 @@ watch(() => route.query.q, syncFromRoute)
   }
 }
 
-.sp-more {
+.sp-pager {
   display: flex;
   justify-content: center;
-  padding-top: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: fit-content;
+  margin: 6px auto 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background-color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  /* 主题色对齐品牌蓝；分页条浮在壁纸上也能看清 */
+  --el-color-primary: #5590e2;
+  --el-bg-color: #fff;
+  --el-bg-color-overlay: #fff;
+  --el-text-color-regular: #1f1f1f;
+  --el-border-color: rgba(0, 0, 0, 0.15);
+  --el-fill-color: rgba(0, 0, 0, 0.04);
 }
 
 /* 半透明主题下卡片浮在壁纸上，白底要压得更实一点才看得清 */
