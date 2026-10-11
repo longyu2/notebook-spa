@@ -17,6 +17,12 @@ const router = useRouter()
 
 const pageSize = ref(24)
 
+/* ===== 排序 =====
+   sortField：time = 创建时间，word = 正文字数；order：desc 倒序（默认）/ asc 正序。
+   和 q/page/size 一样，真正的状态放在地址栏（?sort=&order=），刷新/前进后退都能还原。 */
+const sortField = ref<'time' | 'word'>('time')
+const order = ref<'asc' | 'desc'>('desc')
+
 const keyword = ref('') // 输入框里的词
 const activeQ = ref('') // 真正在搜的词（点回车/点搜索按钮后才更新）
 const list = ref<any[]>([])
@@ -145,7 +151,13 @@ async function fetchPage(q: string, targetPage: number) {
 
   try {
     const res = await axios.get(`${server_url}/search`, {
-      params: { q, page: targetPage, size: pageSize.value }
+      params: {
+        q,
+        page: targetPage,
+        size: pageSize.value,
+        sort: sortField.value,
+        order: order.value
+      }
     })
     const data = res.data?.data ?? {}
     list.value = data.list ?? []
@@ -172,6 +184,9 @@ function buildQuery(q: string, p: number, s?: number) {
   if (q) qy.q = q
   if (p > 1) qy.page = String(p)
   if (s && s !== 24) qy.size = String(s)
+  /* 默认排序（时间 + 倒序）不写进地址栏，URL 保持干净；非默认才带上 */
+  if (sortField.value !== 'time') qy.sort = sortField.value
+  if (order.value !== 'desc') qy.order = order.value
   return qy
 }
 
@@ -205,21 +220,55 @@ function backToList() {
   router.push({ path: '/search', query: route.query })
 }
 
-/* ===== 地址栏是唯一事实来源：?q=&page=&size= 管列表，:aid 管详情 ===== */
-function readQuery() {
+/* 排序切换：写地址栏 → watch(route) 统一拉数据。
+   排序一变必须回第 1 页 —— 否则会停在一个「按新排序毫无意义」的页码上。 */
+function applySort(nextSort: 'time' | 'word', nextOrder: 'asc' | 'desc') {
+  if (nextSort === sortField.value && nextOrder === order.value) return
+
+  sortField.value = nextSort
+  order.value = nextOrder
+  window.scrollTo({ top: 0 })
+  router.replace({ path: '/search', query: buildQuery(activeQ.value, 1, pageSize.value) })
+}
+
+function setSortField(f: 'time' | 'word') {
+  applySort(f, order.value)
+}
+
+/* 正序/倒序：方向对「时间」和「字数」是同一套含义，来回切即可 */
+function toggleOrder() {
+  applySort(sortField.value, order.value === 'desc' ? 'asc' : 'desc')
+}
+
+/* ===== 地址栏是唯一事实来源：?q=&page=&size=&sort=&order= 管列表，:aid 管详情 ===== */
+/* 显式标注返回类型：对象字面量里的属性会被拓宽成 string，
+   不写死的话赋值回 ref<'time'|'word'> 就会报 TS2322 */
+function readQuery(): {
+  q: string
+  p: number
+  s: number
+  sort: 'time' | 'word'
+  ord: 'asc' | 'desc'
+} {
   const raw = route.query.q
   const q = (Array.isArray(raw) ? raw[0] : raw) || ''
   const p = Math.max(1, parseInt(route.query.page as string, 10) || 1)
   const s = Math.min(50, Math.max(1, parseInt(route.query.size as string, 10) || 24))
-  return { q, p, s }
+  // 非法/缺省值一律回落到默认排序，和后端的收敛规则保持一致
+  const sort = route.query.sort === 'word' ? 'word' : 'time'
+  const ord = route.query.order === 'asc' ? 'asc' : 'desc'
+  return { q, p, s, sort, ord }
 }
 
 function syncFromRoute() {
-  const { q, p, s } = readQuery()
+  const { q, p, s, sort, ord } = readQuery()
   keyword.value = q
   activeQ.value = q
   pageSize.value = s
   page.value = p
+  /* 先落排序，fetchPage 读的是这两个 ref */
+  sortField.value = sort
+  order.value = ord
   fetchPage(q, p)
 }
 
@@ -308,8 +357,39 @@ watch(() => route.fullPath, sync)
         </div>
 
         <template v-else>
-          <div class="sp-count">
-            找到 <b>{{ total }}</b> 篇包含「{{ activeQ }}」的笔记
+          <div class="sp-tools">
+            <div class="sp-count">
+              找到 <b>{{ total }}</b> 篇包含「{{ activeQ }}」的笔记
+            </div>
+
+            <!-- 排序：字段（时间/字数）× 方向（倒序/正序），和 q/page/size 一样写进地址栏 -->
+            <div class="sp-sort">
+              <span class="sp-sort__label">排序</span>
+              <div class="sp-seg">
+                <button
+                  type="button"
+                  :class="{ 'is-on': sortField === 'time' }"
+                  @click="setSortField('time')"
+                >
+                  按时间
+                </button>
+                <button
+                  type="button"
+                  :class="{ 'is-on': sortField === 'word' }"
+                  @click="setSortField('word')"
+                >
+                  按字数
+                </button>
+              </div>
+              <button
+                type="button"
+                class="sp-dir"
+                :title="order === 'desc' ? '当前倒序，点击切正序' : '当前正序，点击切倒序'"
+                @click="toggleOrder"
+              >
+                {{ order === 'desc' ? '倒序 ↓' : '正序 ↑' }}
+              </button>
+            </div>
           </div>
 
           <div class="sp-grid">
@@ -461,6 +541,83 @@ watch(() => route.fullPath, sync)
   b {
     color: var(--color-primary-text);
     font-weight: 700;
+  }
+}
+
+/* 结果区顶部一行：左边命中数，右边排序控件 */
+.sp-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.sp-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+
+  &__label {
+    color: var(--muted);
+  }
+}
+
+/* 分段控件：按时间 / 按字数。手写而不是 el-radio-group ——
+   和本页 .sp-back 同一套观感，也免得跟 element-plus 的版本差异较劲 */
+.sp-seg {
+  display: inline-flex;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--word-color) 20%, transparent);
+  background-color: color-mix(in srgb, var(--word-color) 5%, transparent);
+
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 5px 14px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: color-mix(in srgb, var(--word-color) 80%, transparent);
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+
+    & + button {
+      border-left: 1px solid color-mix(in srgb, var(--word-color) 14%, transparent);
+    }
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--word-color) 10%, transparent);
+    }
+
+    &.is-on {
+      color: #fff;
+      background-color: var(--color-primary);
+      font-weight: 600;
+    }
+  }
+}
+
+/* 方向开关：倒序 ↓ / 正序 ↑ */
+.sp-dir {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 5px 14px;
+  cursor: pointer;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--word-color) 88%, transparent);
+  background-color: color-mix(in srgb, var(--word-color) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--word-color) 20%, transparent);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
+    border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
   }
 }
 

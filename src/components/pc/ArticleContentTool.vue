@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import AiAssistant from '@/components/pc/AiAssistant.vue'
 
 // AI 面板不直接碰编辑器：正文靠这个回调取，回写靠 apply 事件抛回 ArticleContent.vue
@@ -11,11 +11,25 @@ const emit = defineEmits<{
   (e: 'apply', payload: { text: string; mode: 'replaceAll' | 'replaceSelection' | 'insert' }): void
 }>()
 
-const theme = ref(localStorage.getItem('theme') || 'light') // 获取本地存储的主题，默认是light
-function updateTheme() {
+/* 主题实际只有两种：semiTransparent（半透明，铺壁纸 + 暗面板）和浅色（走 body 上的默认令牌）。
+   localStorage 里可能残留 light / no 这类历史值，只有 semiTransparent 才算半透明，
+   其余一律当浅色 —— 比原来 el-select 直接绑原始字符串更稳（否则下拉会显示空白）。 */
+const theme = ref(localStorage.getItem('theme') === 'semiTransparent' ? 'semiTransparent' : 'dark')
+
+const themeLabel = computed(() => (theme.value === 'semiTransparent' ? '半透明' : '浅色'))
+
+/* 按钮 title 里的目标主题。注意别在模板里写 theme.value ——
+   script setup 的 ref 在模板中已自动解包，theme.value 会取到 undefined */
+const nextThemeLabel = computed(() => (theme.value === 'semiTransparent' ? '浅色' : '半透明'))
+
+/* 只有两个值，一次点击就能切到位，不用再展开下拉 */
+function toggleTheme() {
+  theme.value = theme.value === 'semiTransparent' ? 'dark' : 'semiTransparent'
   localStorage.setItem('theme', theme.value)
   console.log('主题已更改为：' + theme.value)
 
+  /* 主题是往 body / vditor 上挂内联变量（见 ArticleContent.vue 的 setTheme），
+     没有响应式链路，沿用原来的整页刷新最省事也最稳 */
   location.reload()
 }
 </script>
@@ -28,15 +42,20 @@ function updateTheme() {
         <span class="theme-card__title">主题切换</span>
       </div>
 
-      <el-select
-        v-model="theme"
-        class="theme-select"
-        popper-class="theme-select-popper"
-        @change="updateTheme"
+      <!-- 一个按钮一个动作：显示当前主题，点一下切到另一种 -->
+      <button
+        type="button"
+        class="theme-btn"
+        :title="`当前${themeLabel}，点击切换到${nextThemeLabel}`"
+        @click="toggleTheme"
       >
-        <el-option value="semiTransparent" label="半透明"></el-option>
-        <el-option value="dark" label="浅色"></el-option>
-      </el-select>
+        <el-icon class="theme-btn__icon">
+          <Moon v-if="theme === 'semiTransparent'" />
+          <Sunny v-else />
+        </el-icon>
+        <span class="theme-btn__label">{{ themeLabel }}</span>
+        <span class="theme-btn__hint">点击切换</span>
+      </button>
     </div>
 
     <AiAssistant :get-context="getContext" @apply="emit('apply', $event)" />
@@ -101,82 +120,53 @@ function updateTheme() {
     }
   }
 
-  .theme-select {
+  /* 主题按钮：占满整行，两个主题下都要能看清 ——
+     底色/边框/文字全部走主题令牌，不写死颜色（半透明主题下写死 #fff 就是白底白字） */
+  .theme-btn {
     width: 100%;
+    font-family: inherit;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    text-align: left;
+    border-radius: var(--radius-item);
+    color: var(--word-color);
+    background-color: #fff;
+    background-color: var(--all-backcolor);
+    border: 1px solid var(--color-border);
+    border-color: color-mix(in srgb, var(--word-color) 24%, transparent);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
 
-    :deep(.el-input__wrapper) {
-      /* 关键：不能用写死的 #fff，否则半透模式下会白底白字 */
-      background-color: #fff;
-      background-color: var(--all-backcolor);
-      border-radius: var(--radius-item);
-      box-shadow: 0 0 0 1px var(--color-border) inset;
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--word-color) 24%, transparent) inset;
-      transition: box-shadow 0.2s ease;
-
-      &:hover {
-        box-shadow: 0 0 0 1px var(--color-primary) inset;
-      }
-
-      &.is-focus {
-        box-shadow:
-          0 0 0 1px var(--color-primary) inset,
-          0 0 0 3px rgba(85, 144, 226, 0.15);
-      }
+    &:hover {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(85, 144, 226, 0.15);
     }
 
-    :deep(.el-input__inner) {
-      color: var(--word-color);
-      font-size: 15px;
+    &:active {
+      background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
     }
 
-    :deep(.el-select__caret) {
-      color: var(--color-text-secondary);
-      color: color-mix(in srgb, var(--word-color) 70%, transparent);
-      transition: color 0.2s ease;
-    }
-
-    :deep(.el-select__caret:hover) {
+    &__icon {
+      /* 蓝字压浅底必须用 --color-primary-text，理由同上面的卡片图标 */
       color: var(--color-primary-text);
+      font-size: 18px;
+    }
+
+    &__label {
+      flex: 1;
+      font-weight: 600;
+    }
+
+    &__hint {
+      font-size: 12px;
+      color: color-mix(in srgb, var(--word-color) 60%, transparent);
     }
   }
-}
-</style>
-
-<style lang="scss">
-/* 下拉面板被 teleport 到 body，需用非 scoped 样式才能命中 */
-.theme-select-popper.el-popper {
-  /* 跟随主题：浅色=白/半透明，半透明=暗/半透明，配合毛玻璃 */
-  background-color: #fff;
-  background-color: var(--all-backcolor);
-  backdrop-filter: blur(20px);
-  border-radius: var(--radius-item);
-  border: 1px solid var(--color-border);
-  border-color: color-mix(in srgb, var(--word-color) 14%, transparent);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-}
-
-.theme-select-popper .el-popper__arrow {
-  display: none;
-}
-
-.theme-select-popper .el-select-dropdown__item {
-  height: 36px;
-  line-height: 36px;
-  margin: 2px 6px;
-  padding-left: 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  color: var(--word-color);
-  transition: background-color 0.15s ease;
-}
-
-.theme-select-popper .el-select-dropdown__item.hover {
-  background-color: rgba(85, 144, 226, 0.12);
-}
-
-.theme-select-popper .el-select-dropdown__item.selected {
-  color: var(--color-primary-text);
-  font-weight: 500;
-  background-color: rgba(85, 144, 226, 0.14);
 }
 </style>
