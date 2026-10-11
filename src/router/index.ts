@@ -71,6 +71,15 @@ const router = createRouter({
       component: () => import('@/views/SearchView.vue'),
       meta: { pageScroll: true }
     },
+    /* 搜索结果的单篇详情：同一个组件靠 /search/:aid 参数切换，
+       点卡片后原地用 MdArticle 渲染全文（和随机推荐同一套效果），
+       不再跳回笔记主页。 */
+    {
+      path: '/search/:aid',
+      name: 'searchArticle',
+      component: () => import('@/views/SearchView.vue'),
+      meta: { pageScroll: true }
+    },
 
     /* 公开页：不需要登录，任何人都能看（只显示 is_public = 1 的文章） */
     {

@@ -20,6 +20,8 @@ const props = defineProps<{
   error?: string
   /** 没有标题也没有错误时显示的占位文案 */
   emptyText?: string
+  /** 需要高亮的关键词（搜索页用），空则不高亮 */
+  highlight?: string
 }>()
 
 const contentEl = ref<HTMLDivElement | null>(null)
@@ -79,6 +81,9 @@ async function renderMarkdown(md: string) {
       if (/^(https?:)?\/\//.test(src) || src.startsWith('/') || src.startsWith('data:')) return
       img.setAttribute('src', '/' + src.replace(/^\.\//, ''))
     })
+
+    /* 搜索页跳进来时按关键词把正文命中处高亮 */
+    highlightIn(el, props.highlight || '')
   } catch {
     /* CDN 拉不到 lute 之类的情况：退化成保留换行的纯文本。
        虽然丢了标题/列表的样式，但「分段」仍然是对的，不会白屏。 */
@@ -87,11 +92,57 @@ async function renderMarkdown(md: string) {
   }
 }
 
+/* 在已渲染好的正文里按关键词高亮。
+   只包文本节点，不动 HTML 结构，所以不会破坏 Vditor 生成的标签/代码高亮。
+   代码块（pre/code）跳过，免得把语法高亮的 span 切碎。 */
+function highlightIn(root: HTMLElement, q: string) {
+  const ql = (q || '').toLowerCase()
+  if (!ql) return
+
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const p = node.parentElement
+      if (!p) return NodeFilter.FILTER_REJECT
+      const tag = p.tagName.toLowerCase()
+      if (tag === 'script' || tag === 'style' || tag === 'pre' || tag === 'code') {
+        return NodeFilter.FILTER_REJECT
+      }
+      const text = node.nodeValue || ''
+      return text.toLowerCase().includes(ql) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+    }
+  })
+
+  const targets: Text[] = []
+  let n: Node | null
+  while ((n = walker.nextNode())) targets.push(n as Text)
+
+  for (const t of targets) {
+    const text = t.nodeValue || ''
+    const lower = text.toLowerCase()
+    const frag = document.createDocumentFragment()
+    let i = 0
+    while (i < text.length) {
+      const idx = lower.indexOf(ql, i)
+      if (idx === -1) {
+        frag.appendChild(document.createTextNode(text.slice(i)))
+        break
+      }
+      if (idx > i) frag.appendChild(document.createTextNode(text.slice(i, idx)))
+      const mark = document.createElement('mark')
+      mark.className = 'md-hit'
+      mark.textContent = text.slice(idx, idx + q.length)
+      frag.appendChild(mark)
+      i = idx + q.length
+    }
+    t.parentNode?.replaceChild(frag, t)
+  }
+}
+
 const rerender = () => renderMarkdown(props.content || '')
 
-// 元素挂载后先渲染一次；之后正文变了（换文章）再渲染
+// 元素挂载后先渲染一次；之后正文或高亮词变了再渲染
 onMounted(rerender)
-watch(() => props.content, rerender)
+watch(() => [props.content, props.highlight], rerender)
 </script>
 
 <template>
@@ -206,5 +257,14 @@ watch(() => props.content, rerender)
 body[data-theme='semiTransparent'] .md-sheet {
   border-color: rgba(255, 255, 255, 0.18);
   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.38);
+}
+
+/* 搜索页在正文里高亮的关键词：淡黄底，和结果卡片上的 .sp-hit 保持一致。
+   动态插入的 mark 不在 scoped 作用域内，所以写成全局样式。 */
+mark.md-hit {
+  background-color: #ffe9a8;
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
 }
 </style>

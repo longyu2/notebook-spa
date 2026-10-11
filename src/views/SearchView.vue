@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import MdArticle from '@/components/pc/MdArticle.vue'
 
 /* 独立整页路由，跟公开页一样自己挂 data-theme，否则半透明主题的壁纸不会铺开 */
 const theme = localStorage.getItem('theme') || 'light'
@@ -25,6 +26,39 @@ const loading = ref(false)
 const error = ref('')
 
 const inputRef = ref<any>(null)
+
+/* ===== 详情态 =====
+   点卡片不再跳回笔记主页，而是走 /search/:aid，用和随机推荐同一个
+   MdArticle 组件原地渲染全文。列表和详情共用一个路由组件，靠 aid 切换。 */
+const aid = computed(() => {
+  const raw = route.params.aid
+  const v = Array.isArray(raw) ? raw[0] : raw
+  return v ? String(v) : ''
+})
+
+const detail = ref<any>(null)
+const detailLoading = ref(false)
+const detailError = ref('')
+
+async function loadDetail(id: string) {
+  detailLoading.value = true
+  detailError.value = ''
+  detail.value = null
+  try {
+    const res = await axios.get(`${server_url}/article/${id}`)
+    const row = res.data?.[0]
+    if (!row) {
+      detailError.value = '这篇笔记取不到了'
+      return
+    }
+    detail.value = row
+    document.title = `${row.title || '无标题'} - 搜索`
+  } catch (e: any) {
+    detailError.value = '正文加载失败：' + (e?.message || e)
+  } finally {
+    detailLoading.value = false
+  }
+}
 
 /* ===== 关键词高亮 =====
    拆成 [{t, hit}] 交给模板渲染，不用 v-html —— 用户正文里可能有 HTML，
@@ -160,20 +194,28 @@ function submit() {
   router.replace({ path: '/search', query: q ? buildQuery(q, 1, pageSize.value) : {} })
 }
 
-/* 从搜索卡片点进文章：写一个一次性的 openArticleId，
-   ArticleList 加载时会读它并把这篇选中，编辑器随即按 id 拉正文。
-   这样不用把 id 一层层透传过 FolderList → ArticleList。 */
+/* 从搜索卡片点进文章：原地展开全文（走 /search/:aid），
+   不再跳回笔记主页。带上原搜索条件，返回时能回到同一页结果。 */
 function openArticle(row: any) {
-  localStorage.setItem('openArticleId', String(row.Notebookid))
-  router.push('/notebook')
+  router.push({ path: `/search/${row.Notebookid}`, query: route.query })
 }
 
-/* ===== 地址栏 ?q=&page=&size= 是唯一事实来源 ===== */
-function syncFromRoute() {
+/* 详情态「返回搜索结果」：回到列表并保留 q/page/size */
+function backToList() {
+  router.push({ path: '/search', query: route.query })
+}
+
+/* ===== 地址栏是唯一事实来源：?q=&page=&size= 管列表，:aid 管详情 ===== */
+function readQuery() {
   const raw = route.query.q
   const q = (Array.isArray(raw) ? raw[0] : raw) || ''
   const p = Math.max(1, parseInt(route.query.page as string, 10) || 1)
   const s = Math.min(50, Math.max(1, parseInt(route.query.size as string, 10) || 24))
+  return { q, p, s }
+}
+
+function syncFromRoute() {
+  const { q, p, s } = readQuery()
   keyword.value = q
   activeQ.value = q
   pageSize.value = s
@@ -181,18 +223,35 @@ function syncFromRoute() {
   fetchPage(q, p)
 }
 
-onMounted(async () => {
+/* 列表态 / 详情态共用一个组件，靠 :aid 是否存在切换 */
+function sync() {
+  const { q } = readQuery()
+  // 详情态也要让搜索栏带词，正文才能按它高亮
+  keyword.value = q
+  activeQ.value = q
+
+  if (aid.value) {
+    loadDetail(aid.value)
+    return
+  }
+
   document.title = '搜索 - 暮观云笔记'
   syncFromRoute()
-  await nextTick()
-  inputRef.value?.focus?.()
+}
+
+onMounted(async () => {
+  sync()
+  if (!aid.value) {
+    await nextTick()
+    inputRef.value?.focus?.()
+  }
 })
 
-watch(() => route.fullPath, syncFromRoute)
+watch(() => route.fullPath, sync)
 </script>
 
 <template>
-  <div class="search-box-page">
+  <div class="search-box-page" :class="{ 'search-box-page--detail': aid }">
     <header class="sp-head">
       <div class="sp-brand">
         <span class="sp-brand__name">暮观云笔记</span>
@@ -216,73 +275,94 @@ watch(() => route.fullPath, syncFromRoute)
       </el-input>
     </div>
 
-    <!-- 有词才有结果区，没词时给一句引导 -->
-    <div v-if="!activeQ" class="sp-hint">
-      输入关键词后回车，会在你全部笔记的标题和正文里查找。
-    </div>
+    <!-- ===== 详情态：原地用 MdArticle 渲染全文（和随机推荐同一套效果），
+         搜索栏保留，正文按关键词高亮 ===== -->
+    <template v-if="aid">
+      <nav class="sp-bar">
+        <button class="sp-back" @click="backToList">← 返回搜索结果</button>
+        <span v-if="activeQ" class="sp-bar__tip">正文已高亮「{{ activeQ }}」</span>
+      </nav>
 
+      <MdArticle
+        :title="detail ? detail.title || '无标题' : ''"
+        :createtime="detail?.createtime || ''"
+        :content="detail?.content || ''"
+        :loading="detailLoading"
+        :error="detailError"
+        :highlight="activeQ"
+      />
+    </template>
+
+    <!-- ===== 列表态 ===== -->
     <template v-else>
-      <div v-if="loading" class="sp-hint">正在搜索…</div>
-      <div v-else-if="error" class="sp-hint sp-hint--err">{{ error }}</div>
-      <div v-else-if="list.length === 0" class="sp-hint">
-        没有找到包含「{{ activeQ }}」的笔记。
+      <!-- 有词才有结果区，没词时给一句引导 -->
+      <div v-if="!activeQ" class="sp-hint">
+        输入关键词后回车，会在你全部笔记的标题和正文里查找。
       </div>
 
       <template v-else>
-        <div class="sp-count">
-          找到 <b>{{ total }}</b> 篇包含「{{ activeQ }}」的笔记
+        <div v-if="loading" class="sp-hint">正在搜索…</div>
+        <div v-else-if="error" class="sp-hint sp-hint--err">{{ error }}</div>
+        <div v-else-if="list.length === 0" class="sp-hint">
+          没有找到包含「{{ activeQ }}」的笔记。
         </div>
 
-        <div class="sp-grid">
-          <article
-            v-for="row in list"
-            :key="row.Notebookid"
-            class="sp-card"
-            @click="openArticle(row)"
-          >
-            <h2 class="sp-card__title">
-              <span
-                v-for="(p, i) in highlight(row.title || '无标题', activeQ)"
-                :key="i"
-                :class="{ 'sp-hit': p.hit }"
-                >{{ p.t }}</span
-              >
-            </h2>
+        <template v-else>
+          <div class="sp-count">
+            找到 <b>{{ total }}</b> 篇包含「{{ activeQ }}」的笔记
+          </div>
 
-            <p class="sp-card__excerpt">
-              <template v-if="excerpt(row)">
+          <div class="sp-grid">
+            <article
+              v-for="row in list"
+              :key="row.Notebookid"
+              class="sp-card"
+              @click="openArticle(row)"
+            >
+              <h2 class="sp-card__title">
                 <span
-                  v-for="(p, i) in highlight(excerpt(row), activeQ)"
+                  v-for="(p, i) in highlight(row.title || '无标题', activeQ)"
                   :key="i"
                   :class="{ 'sp-hit': p.hit }"
                   >{{ p.t }}</span
                 >
-              </template>
-              <template v-else>（这篇还没有正文）</template>
-            </p>
+              </h2>
 
-            <div class="sp-card__meta">
-              <span>{{ fmtDate(row.createtime) }}</span>
-              <span v-if="row.length" class="sp-card__dot">·</span>
-              <span v-if="row.length">{{ row.length }} 字</span>
-              <span v-if="row.is_public" class="sp-tag sp-tag--pub">已公开</span>
-              <span v-if="row.is_ai_generated" class="sp-tag">AI 生成</span>
-            </div>
-          </article>
-        </div>
+              <p class="sp-card__excerpt">
+                <template v-if="excerpt(row)">
+                  <span
+                    v-for="(p, i) in highlight(excerpt(row), activeQ)"
+                    :key="i"
+                    :class="{ 'sp-hit': p.hit }"
+                    >{{ p.t }}</span
+                  >
+                </template>
+                <template v-else>（这篇还没有正文）</template>
+              </p>
 
-        <el-pagination
-          v-if="total > 0"
-          class="sp-pager"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          :page-size="pageSize"
-          :page-sizes="[12, 24, 48]"
-          :current-page="page"
-          @current-change="onPageChange"
-          @size-change="onSizeChange"
-          background
-        />
+              <div class="sp-card__meta">
+                <span>{{ fmtDate(row.createtime) }}</span>
+                <span v-if="row.length" class="sp-card__dot">·</span>
+                <span v-if="row.length">{{ row.length }} 字</span>
+                <span v-if="row.is_public" class="sp-tag sp-tag--pub">已公开</span>
+                <span v-if="row.is_ai_generated" class="sp-tag">AI 生成</span>
+              </div>
+            </article>
+          </div>
+
+          <el-pagination
+            v-if="total > 0"
+            class="sp-pager"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            :page-size="pageSize"
+            :page-sizes="[12, 24, 48]"
+            :current-page="page"
+            @current-change="onPageChange"
+            @size-change="onSizeChange"
+            background
+          />
+        </template>
       </template>
     </template>
   </div>
@@ -341,6 +421,37 @@ watch(() => route.fullPath, syncFromRoute)
 .sp-search {
   max-width: 620px;
   width: 100%;
+}
+
+/* 详情态的返回条：跟公开页的返回按钮同一套观感 */
+.sp-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sp-back {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px 14px;
+  cursor: pointer;
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--word-color) 88%, transparent);
+  background-color: color-mix(in srgb, var(--word-color) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--word-color) 20%, transparent);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
+    border-color: color-mix(in srgb, var(--word-color) 32%, transparent);
+  }
+}
+
+.sp-bar__tip {
+  font-size: 13px;
+  color: var(--muted);
 }
 
 .sp-count {
@@ -487,5 +598,11 @@ body[data-theme='semiTransparent'] .sp-card {
 
 body[data-theme='semiTransparent'] .sp-head {
   border-bottom-color: rgba(255, 255, 255, 0.18);
+}
+
+/* 详情态收窄到和随机推荐一致的阅读宽度（880px），
+   写在 .search-box-page 之后才盖得住它的 1040px。 */
+.search-box-page--detail {
+  width: min(880px, 92vw);
 }
 </style>
