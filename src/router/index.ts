@@ -63,6 +63,15 @@ const router = createRouter({
       meta: { pageScroll: true }
     },
 
+    /* 搜索：左侧搜索框回车后跳到这里，卡片式展示「全部笔记」的命中结果。
+       需要登录（不在 OPEN_PATHS 里），所以只搜得到自己的文章。 */
+    {
+      path: '/search',
+      name: 'search',
+      component: () => import('@/views/SearchView.vue'),
+      meta: { pageScroll: true }
+    },
+
     /* 公开页：不需要登录，任何人都能看（只显示 is_public = 1 的文章） */
     {
       path: '/public',

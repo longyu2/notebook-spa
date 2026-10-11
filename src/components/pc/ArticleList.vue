@@ -7,6 +7,9 @@ import ArticleContent from './ArticleContent.vue'
 import { computed } from 'vue'
 import MoveToFolder from '@/components/pc/MoveToFolder.vue'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const props = defineProps(['folderId'])
 let isCheckedAll = ref(false) // 定义全选按钮状态的变量
@@ -59,35 +62,68 @@ const CheckedBoxAllChagne = () => {
   })
 }
 
+/* 从搜索页点进来时，目标文章可能不在当前列表里 —— 它可能排在第 100 名开外，
+   也可能当前停在某个文件夹而它不属于这个文件夹。这时单独把它拉出来补在列表
+   最前面，保证左侧有选中项、编辑器也能按 id 加载正文。
+   用 localStorage 传而不是 query 参数，省得把 id 一层层透传过 FolderList。 */
+const takePendingOpenArticle = async () => {
+  const openId = parseInt(localStorage.getItem('openArticleId') || '')
+  localStorage.removeItem('openArticleId') // 一次性的，读完就删
+
+  if (!openId) return 0
+
+  const already = articleList.value.find(
+    (article: { Notebookid: number }) => article.Notebookid === openId
+  )
+  if (already) return openId
+
+  try {
+    const res = await axios.get(`${server_url}/article/${openId}`)
+    const row = res.data?.[0]
+    if (!row) return 0
+
+    row.checked = false
+    row.hovered = false
+    row.length = (row.content || '').length
+    articleList.value.unshift(row)
+    return openId
+  } catch {
+    return 0
+  }
+}
+
 // 根据folderId 获取文章信息并渲染
-const getArticleByFoldeId = (folderId: string) => {
-  axios.get(`${server_url}/articles?folderid=${folderId}`).then((result) => {
-    articles = result.data.data
-    articleLength.value = articles.length
+const getArticleByFoldeId = async (folderId: string) => {
+  const result = await axios.get(`${server_url}/articles?folderid=${folderId}`)
+  articles = result.data.data
+  articleLength.value = articles.length
 
-    //在信息获取完成后，为其添加控制checkbox 的属性,和hover 属性，用来控制，这几项服务器端没有，只有客户端有
-    articles.forEach((element: any) => {
-      element.checked = false
-      element.hovered = false
-    })
-
-    articleList.value = articles.splice(0, 100) //  查询到的信息存储到article数组中
-
-    // 获取上次选中的文章id
-    const lastCheckedArticleId = parseInt(localStorage.getItem('lastCheckedArticleId')!)
-
-    // 如果存在上次选中的文章id，则选中该文章
-    const lastCheckedArticle = articleList.value.find(
-      (article: { Notebookid: number }) => article.Notebookid === lastCheckedArticleId
-    )
-    if (lastCheckedArticle) {
-      articleChecked.value.id = lastCheckedArticleId
-    } else {
-      articleChecked.value.id = articleList.value[0].Notebookid // 选中列表中最新的文章
-    }
-
-    updateCheckIndex()
+  //在信息获取完成后，为其添加控制checkbox 的属性,和hover 属性，用来控制，这几项服务器端没有，只有客户端有
+  articles.forEach((element: any) => {
+    element.checked = false
+    element.hovered = false
   })
+
+  articleList.value = articles.splice(0, 100) //  查询到的信息存储到article数组中
+
+  // 搜索页指定的一次性 id 优先，其次才是上次选中的文章
+  const openId = await takePendingOpenArticle()
+  const lastCheckedArticleId = openId || parseInt(localStorage.getItem('lastCheckedArticleId')!)
+
+  // 如果存在上次选中的文章id，则选中该文章
+  const lastCheckedArticle = articleList.value.find(
+    (article: { Notebookid: number }) => article.Notebookid === lastCheckedArticleId
+  )
+
+  if (lastCheckedArticle) {
+    articleChecked.value.id = lastCheckedArticleId
+  } else if (articleList.value.length > 0) {
+    articleChecked.value.id = articleList.value[0].Notebookid // 选中列表中最新的文章
+  } else {
+    articleChecked.value.id = -9999 // -9999 代表列表已经没有文章，编辑器会被禁用
+  }
+
+  updateCheckIndex()
 }
 // 动态加载
 const scrollChange = (event: any) => {
@@ -119,36 +155,17 @@ const getWordCount = () =>
 // 获取总字数
 getWordCount()
 
-// 搜索
+/* 搜索改成跳到独立的卡片页（复用公开页的卡片样式），覆盖「全部笔记」。
+   以前是把结果替换进左侧列表，问题一堆：最多 100 条、没有摘要、
+   高亮只替第一处、还要把标记写进正文。现在左边只管输入，结果交给 /search。
+   清空输入框再回车 = 取消搜索，回到当前文件夹的列表。 */
 const searchArticle = () => {
-  if (queryStr.value === '') {
+  const q = queryStr.value.trim()
+  if (q === '') {
     getArticleByFoldeId(props.folderId)
-  } else {
-    axios.get(`${server_url}/search/${queryStr.value}`).then((results) => {
-      articleList.value = results.data // 用搜索到的内容代替 articleList
-
-      // 还要对搜索到的部分高亮处理
-      for (let index = 0; index < articleList.value.length; index++) {
-        const element = articleList.value[index]
-
-        // 找到搜索关键字在content 中的索引，然后要将其高亮
-        const searchContentIndex = element.content.indexOf(queryStr.value)
-        const contentStr = element.content.replace(queryStr.value, `<b>${queryStr.value}</b>`)
-
-        const searchTitleIndex = element.title.indexOf(queryStr.value)
-        const titleStr = element.title.replace(queryStr.value, `<b>${queryStr.value}</b>`)
-
-        element.title = titleStr
-
-        // 如果出现在content 的位置大于3，则展示前面四个字符，不大于则直接从  searchIndex 开始展示
-        if (searchContentIndex > 3) {
-          element.content = contentStr.substring(searchContentIndex - 4, contentStr.length)
-        } else {
-          element.content = contentStr.substring(searchContentIndex, contentStr.length)
-        }
-      }
-    })
+    return
   }
+  router.push({ path: '/search', query: { q } })
 }
 
 /*
@@ -326,7 +343,7 @@ const addArticle = () => {
 const contentUpdate = (data: { articleId: any; content: any; title: any }) => {
   // 对articleList 进行遍历，找到Notebookid 与 子组件传来的articleId 相同的那一项，更改其内容
   articleList.value.forEach((element: { Notebookid: any; title: any; content: any }) => {
-    if (element.Notebookid == data.articleId && queryStr.value === '') {
+    if (element.Notebookid == data.articleId) {
       element.title = data.title
       element.content = data.content
     }
@@ -442,6 +459,5 @@ onMounted(() => {
     @content-update="contentUpdate"
     :articleCheckedIndex="articleChecked.index"
     :articleId="articleChecked.id"
-    :queryStr="queryStr"
   ></ArticleContent>
 </template>

@@ -133,7 +133,7 @@ onUnmounted(() => {
   if (tipTimer) clearTimeout(tipTimer)
 })
 
-const props = defineProps(['articleId', 'articleCheckedIndex', 'queryStr'])
+const props = defineProps(['articleId', 'articleCheckedIndex'])
 const emit = defineEmits(['contentUpdate', 'contentHide'])
 
 // 将内容的变化通知父组件，使其修改列表中的显示
@@ -338,17 +338,16 @@ watch(
       // MySQL 的 tinyint(1) 经 axios 回来是 0 / 1，也可能是 null（老数据）
       isAiGenerated.value = !!row.is_ai_generated
       isPublic.value = !!row.is_public
+      titleUpdateLock.value = false
 
-      const highlight = props.queryStr != ''
-      if (highlight) {
-        content.value = content.value.replace(props.queryStr, `***~~${props.queryStr}~~***`)
-        titleUpdateLock.value = true
-      } else {
-        titleUpdateLock.value = false
-      }
+      /* 这里原来会按 queryStr 往正文里插 `***~~词~~***` 高亮标记，并把编辑器 disable 掉。
+         两个问题：① replace 只替第一处；② 标记是写进 content.value 的，
+         一旦触发 save() 就把标记永久存进数据库，正文被污染。
+         搜索已经搬到独立的 /search 卡片页（服务端给摘要、前端高亮），
+         编辑器不再需要这套机制，直接去掉。 */
       // 走队列写入：编辑器还没就绪（lute 没加载完）就等 after 补写，
       // 直接 setValue 会抛异常，正文就再也进不去了。
-      applyToEditor(content.value, highlight)
+      applyToEditor(content.value, false)
     })
   }
 )
