@@ -747,10 +747,143 @@ watch(() => route.fullPath, sync)
   --el-fill-color: rgba(0, 0, 0, 0.04);
 }
 
-/* 半透明主题下卡片浮在壁纸上，白底要压得更实一点才看得清 */
+/* ===== 半透明主题：结果区也走「暗色半透 + 白字」 =====
+   笔记页的面板靠 ArticleContent.setTheme 往 body 上写内联变量（--all-backcolor 等），
+   搜索页是独立路由、直接刷新进来时那些内联变量并不存在，所以这里把结果区的令牌
+   就地钉在元素上 —— 从笔记页点过来和直接打开 /search，观感都一致。
+
+   底色用固定 rgba 而不是 var(--all-backcolor)：后者「从笔记页跳过来」时是
+   rgba(0,0,0,0.1)，「直接刷新」时又回落到浅色的 0.96，同一页两条路径两种观感。
+   0.35 + 背景模糊是为了压住壁纸上半部那片亮天空，白字才不会糊在亮色壁纸上。 */
+body[data-theme='semiTransparent'] .sp-tools,
+body[data-theme='semiTransparent'] .sp-card,
+body[data-theme='semiTransparent'] .sp-pager {
+  /* 卡片里的标题/摘要/元信息/标签全部由这两个令牌派生，改它们就整体跟着走 */
+  --word-color: #fff;
+  --muted: color-mix(in srgb, #fff 72%, transparent);
+
+  background-color: rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* 结果卡片：浅色主题下的白卡在半透主题里像往壁纸上贴了张纸 */
 body[data-theme='semiTransparent'] .sp-card {
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.16);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+
+  &:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+  }
+}
+
+/* 搜索框：笔记页在半透主题下输入框也是半透的（见 articleList.scss 的 .search-box），
+   这里对齐同一套观感。Element 的输入框底色/文字/占位符各有自己的变量，
+   单改 wrapper 的 background 会出现白字压白底，所以整组令牌一起换。 */
+body[data-theme='semiTransparent'] .sp-search {
+  --el-input-bg-color: transparent;
+  --el-input-text-color: #fff;
+  --el-input-border-color: rgba(255, 255, 255, 0.2);
+  --el-input-hover-border-color: rgba(255, 255, 255, 0.35);
+  --el-input-focus-border-color: var(--color-primary);
+  --el-text-color-placeholder: rgba(255, 255, 255, 0.55);
+  --el-text-color-regular: #fff;
+  /* 「搜索」按钮所在的 append 区用的是 --el-fill-color-light，默认是浅灰 */
+  --el-fill-color-light: rgba(255, 255, 255, 0.16);
+
+  :deep(.el-input__wrapper) {
+    background-color: rgba(0, 0, 0, 0.35);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+      0 4px 18px rgba(0, 0, 0, 0.25);
+
+    &.is-focus {
+      box-shadow:
+        0 0 0 1px var(--color-primary) inset,
+        0 0 0 3px rgba(85, 144, 226, 0.25);
+    }
+  }
+
+  :deep(.el-input__inner) {
+    color: #fff;
+    /* 光标和框选也要跟着变亮，否则暗底上找不着插入点 */
+    caret-color: #fff;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.55);
+    }
+  }
+
+  /* 清空图标：默认是深灰，压在暗底上几乎看不见 */
+  :deep(.el-input__suffix .el-input__clear) {
+    color: rgba(255, 255, 255, 0.6);
+
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  :deep(.el-input-group__append) {
+    background-color: rgba(0, 0, 0, 0.35);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: none;
+    box-shadow: none;
+  }
+
+  :deep(.el-button) {
+    color: #fff;
+    background-color: transparent;
+    border-color: transparent;
+
+    &:hover {
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.14);
+      border-color: transparent;
+    }
+  }
+}
+
+/* 工具条（命中数 + 排序控件）：浅色主题下它直接浮在背景上，
+   半透主题里得跟卡片一样给块暗底，否则白字压在亮天空上根本读不了 */
+body[data-theme='semiTransparent'] .sp-tools {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+/* 命中高亮：卡片变暗后原来那块淡黄底太扎眼，白字压浅黄也读不了，
+   换成半透琥珀 —— 和卡片拉开亮度差，白字仍然清楚 */
+body[data-theme='semiTransparent'] .sp-hit {
+  background-color: rgba(239, 159, 39, 0.5);
+  color: #fff;
+}
+
+/* 分页条：Element Plus 的默认令牌是白底深字，得整体换成暗底亮字 */
+body[data-theme='semiTransparent'] .sp-pager {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  /* 亮蓝对齐 main.scss 里半透主题的 --color-primary-text（深蓝压暗底会发闷） */
+  --el-color-primary: #8ab6f0;
+  --el-bg-color: transparent;
+  --el-bg-color-overlay: rgba(0, 0, 0, 0.8);
+  --el-text-color-regular: #fff;
+  --el-text-color-primary: #fff;
+  --el-border-color: rgba(255, 255, 255, 0.2);
+  --el-fill-color: rgba(255, 255, 255, 0.12);
+  /* 每页条数下拉和跳页输入框用的是 --el-fill-color-blank（不是 --el-bg-color），
+     不覆盖的话它俩还是白底，白字压白底等于看不见 */
+  --el-fill-color-blank: rgba(255, 255, 255, 0.08);
+  --el-fill-color-light: rgba(255, 255, 255, 0.16);
+  /* 只有一页时左右翻页键是 disabled，走的是 --el-disabled-*，
+     默认值 #f5f7fa 会在暗底上糊出两块白方块 */
+  --el-disabled-bg-color: rgba(255, 255, 255, 0.06);
+  --el-disabled-text-color: rgba(255, 255, 255, 0.35);
 }
 
 body[data-theme='semiTransparent'] .sp-head {
