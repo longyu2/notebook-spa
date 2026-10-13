@@ -18,10 +18,16 @@ const router = useRouter()
 const pageSize = ref(24)
 
 /* ===== 排序 =====
-   sortField：time = 创建时间，word = 正文字数；order：desc 倒序（默认）/ asc 正序。
+   sortField：createtime = 创建时间，updatetime = 更新时间，word = 正文字数；
+   order：desc 倒序（默认）/ asc 正序。
    和 q/page/size 一样，真正的状态放在地址栏（?sort=&order=），刷新/前进后退都能还原。 */
-const sortField = ref<'time' | 'word'>('time')
+type SortField = 'createtime' | 'updatetime' | 'word'
+const sortField = ref<SortField>('createtime')
 const order = ref<'asc' | 'desc'>('desc')
+
+/* 卡片底部显示的日期：选了「按更新时间」就显示 updatetime，否则显示 createtime，
+   让排序依据和展示的日期对得上，不会出现「按更新时间排却看着创建时间」的错位。 */
+const dateField = computed(() => (sortField.value === 'updatetime' ? 'updatetime' : 'createtime'))
 
 const keyword = ref('') // 输入框里的词
 const activeQ = ref('') // 真正在搜的词（点回车/点搜索按钮后才更新）
@@ -184,8 +190,8 @@ function buildQuery(q: string, p: number, s?: number) {
   if (q) qy.q = q
   if (p > 1) qy.page = String(p)
   if (s && s !== 24) qy.size = String(s)
-  /* 默认排序（时间 + 倒序）不写进地址栏，URL 保持干净；非默认才带上 */
-  if (sortField.value !== 'time') qy.sort = sortField.value
+  /* 默认排序（创建时间 + 倒序）不写进地址栏，URL 保持干净；非默认才带上 */
+  if (sortField.value !== 'createtime') qy.sort = sortField.value
   if (order.value !== 'desc') qy.order = order.value
   return qy
 }
@@ -222,7 +228,7 @@ function backToList() {
 
 /* 排序切换：写地址栏 → watch(route) 统一拉数据。
    排序一变必须回第 1 页 —— 否则会停在一个「按新排序毫无意义」的页码上。 */
-function applySort(nextSort: 'time' | 'word', nextOrder: 'asc' | 'desc') {
+function applySort(nextSort: SortField, nextOrder: 'asc' | 'desc') {
   if (nextSort === sortField.value && nextOrder === order.value) return
 
   sortField.value = nextSort
@@ -231,7 +237,7 @@ function applySort(nextSort: 'time' | 'word', nextOrder: 'asc' | 'desc') {
   router.replace({ path: '/search', query: buildQuery(activeQ.value, 1, pageSize.value) })
 }
 
-function setSortField(f: 'time' | 'word') {
+function setSortField(f: SortField) {
   applySort(f, order.value)
 }
 
@@ -242,20 +248,23 @@ function toggleOrder() {
 
 /* ===== 地址栏是唯一事实来源：?q=&page=&size=&sort=&order= 管列表，:aid 管详情 ===== */
 /* 显式标注返回类型：对象字面量里的属性会被拓宽成 string，
-   不写死的话赋值回 ref<'time'|'word'> 就会报 TS2322 */
+   不写死的话赋值回 ref<SortField> 就会报 TS2322 */
 function readQuery(): {
   q: string
   p: number
   s: number
-  sort: 'time' | 'word'
+  sort: SortField
   ord: 'asc' | 'desc'
 } {
   const raw = route.query.q
   const q = (Array.isArray(raw) ? raw[0] : raw) || ''
   const p = Math.max(1, parseInt(route.query.page as string, 10) || 1)
   const s = Math.min(50, Math.max(1, parseInt(route.query.size as string, 10) || 24))
-  // 非法/缺省值一律回落到默认排序，和后端的收敛规则保持一致
-  const sort = route.query.sort === 'word' ? 'word' : 'time'
+  /* 非法/缺省值一律回落到默认排序，和后端的收敛规则保持一致。
+     兼容旧的 ?sort=time（等于按创建时间）。 */
+  const rawSort = route.query.sort
+  const sort: SortField =
+    rawSort === 'word' ? 'word' : rawSort === 'updatetime' ? 'updatetime' : 'createtime'
   const ord = route.query.order === 'asc' ? 'asc' : 'desc'
   return { q, p, s, sort, ord }
 }
@@ -309,19 +318,60 @@ watch(() => route.fullPath, sync)
       <router-link to="/notebook" class="sp-head__link">← 回到笔记</router-link>
     </header>
 
-    <div class="sp-search">
-      <el-input
-        ref="inputRef"
-        v-model="keyword"
-        size="large"
-        clearable
-        placeholder="搜索全部笔记的标题和正文…"
-        @keyup.enter="submit"
-      >
-        <template #append>
-          <el-button @click="submit">搜索</el-button>
-        </template>
-      </el-input>
+    <div class="sp-searchrow">
+      <div class="sp-search">
+        <el-input
+          ref="inputRef"
+          v-model="keyword"
+          size="large"
+          clearable
+          placeholder="搜索全部笔记的标题和正文…"
+          @keyup.enter="submit"
+        >
+          <template #append>
+            <el-button @click="submit">搜索</el-button>
+          </template>
+        </el-input>
+      </div>
+
+      <!-- 小字排序切换：创建时间 / 更新时间 / 字数，写在搜索栏右侧。
+           写进地址栏（?sort=&order=），刷新/前进后退都能还原。 -->
+      <div class="sp-sortbar">
+        <button
+          type="button"
+          class="sp-sortbar__item"
+          :class="{ 'is-on': sortField === 'createtime' }"
+          @click="setSortField('createtime')"
+        >
+          创建时间
+        </button>
+        <span class="sp-sortbar__sep">/</span>
+        <button
+          type="button"
+          class="sp-sortbar__item"
+          :class="{ 'is-on': sortField === 'updatetime' }"
+          @click="setSortField('updatetime')"
+        >
+          更新时间
+        </button>
+        <span class="sp-sortbar__sep">/</span>
+        <button
+          type="button"
+          class="sp-sortbar__item"
+          :class="{ 'is-on': sortField === 'word' }"
+          @click="setSortField('word')"
+        >
+          字数
+        </button>
+        <button
+          type="button"
+          class="sp-sortbar__dir"
+          :title="order === 'desc' ? '当前倒序，点击切正序' : '当前正序，点击切倒序'"
+          @click="toggleOrder"
+        >
+          {{ order === 'desc' ? '↓' : '↑' }}
+        </button>
+      </div>
     </div>
 
     <!-- ===== 详情态：原地用 MdArticle 渲染全文（和随机推荐同一套效果），
@@ -361,35 +411,6 @@ watch(() => route.fullPath, sync)
             <div class="sp-count">
               找到 <b>{{ total }}</b> 篇包含「{{ activeQ }}」的笔记
             </div>
-
-            <!-- 排序：字段（时间/字数）× 方向（倒序/正序），和 q/page/size 一样写进地址栏 -->
-            <div class="sp-sort">
-              <span class="sp-sort__label">排序</span>
-              <div class="sp-seg">
-                <button
-                  type="button"
-                  :class="{ 'is-on': sortField === 'time' }"
-                  @click="setSortField('time')"
-                >
-                  按时间
-                </button>
-                <button
-                  type="button"
-                  :class="{ 'is-on': sortField === 'word' }"
-                  @click="setSortField('word')"
-                >
-                  按字数
-                </button>
-              </div>
-              <button
-                type="button"
-                class="sp-dir"
-                :title="order === 'desc' ? '当前倒序，点击切正序' : '当前正序，点击切倒序'"
-                @click="toggleOrder"
-              >
-                {{ order === 'desc' ? '倒序 ↓' : '正序 ↑' }}
-              </button>
-            </div>
           </div>
 
           <div class="sp-grid">
@@ -421,7 +442,7 @@ watch(() => route.fullPath, sync)
               </p>
 
               <div class="sp-card__meta">
-                <span>{{ fmtDate(row.createtime) }}</span>
+                <span>{{ fmtDate(row[dateField]) }}</span>
                 <span v-if="row.length" class="sp-card__dot">·</span>
                 <span v-if="row.length">{{ row.length }} 字</span>
                 <span v-if="row.is_public" class="sp-tag sp-tag--pub">已公开</span>
@@ -498,9 +519,73 @@ watch(() => route.fullPath, sync)
   }
 }
 
+/* 搜索栏 + 右侧小字排序切换同一行 */
+.sp-searchrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
 .sp-search {
   max-width: 620px;
   width: 100%;
+  flex: 1 1 320px;
+}
+
+/* 小字排序切换：创建时间 / 更新时间 / 字数 + 方向 */
+.sp-sortbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+
+  &__item {
+    font-family: inherit;
+    font-size: 12.5px;
+    padding: 2px 2px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--muted);
+    transition: color 0.18s ease;
+
+    &:hover {
+      color: color-mix(in srgb, var(--word-color) 85%, transparent);
+    }
+
+    /* 选中态走蓝色系（项目约定：不要琥珀暖黄） */
+    &.is-on {
+      color: var(--color-primary-text);
+      font-weight: 700;
+    }
+  }
+
+  &__sep {
+    opacity: 0.4;
+  }
+
+  &__dir {
+    font-family: inherit;
+    font-size: 12.5px;
+    margin-left: 4px;
+    padding: 2px 8px;
+    cursor: pointer;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--word-color) 85%, transparent);
+    background-color: color-mix(in srgb, var(--word-color) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--word-color) 18%, transparent);
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease;
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
+      border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+    }
+  }
 }
 
 /* 详情态的返回条：跟公开页的返回按钮同一套观感 */
@@ -544,81 +629,13 @@ watch(() => route.fullPath, sync)
   }
 }
 
-/* 结果区顶部一行：左边命中数，右边排序控件 */
+/* 结果区顶部：命中数（排序控件已上移到搜索栏右侧） */
 .sp-tools {
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 10px 16px;
-}
-
-.sp-sort {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-
-  &__label {
-    color: var(--muted);
-  }
-}
-
-/* 分段控件：按时间 / 按字数。手写而不是 el-radio-group ——
-   和本页 .sp-back 同一套观感，也免得跟 element-plus 的版本差异较劲 */
-.sp-seg {
-  display: inline-flex;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--word-color) 20%, transparent);
-  background-color: color-mix(in srgb, var(--word-color) 5%, transparent);
-
-  button {
-    font-family: inherit;
-    font-size: 13px;
-    padding: 5px 14px;
-    cursor: pointer;
-    border: none;
-    background: transparent;
-    color: color-mix(in srgb, var(--word-color) 80%, transparent);
-    transition:
-      background-color 0.2s ease,
-      color 0.2s ease;
-
-    & + button {
-      border-left: 1px solid color-mix(in srgb, var(--word-color) 14%, transparent);
-    }
-
-    &:hover {
-      background-color: color-mix(in srgb, var(--word-color) 10%, transparent);
-    }
-
-    &.is-on {
-      color: #fff;
-      background-color: var(--color-primary);
-      font-weight: 600;
-    }
-  }
-}
-
-/* 方向开关：倒序 ↓ / 正序 ↑ */
-.sp-dir {
-  font-family: inherit;
-  font-size: 13px;
-  padding: 5px 14px;
-  cursor: pointer;
-  border-radius: 999px;
-  color: color-mix(in srgb, var(--word-color) 88%, transparent);
-  background-color: color-mix(in srgb, var(--word-color) 7%, transparent);
-  border: 1px solid color-mix(in srgb, var(--word-color) 20%, transparent);
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
-
-  &:hover {
-    background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
-    border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
-  }
 }
 
 .sp-hint {
@@ -888,6 +905,34 @@ body[data-theme='semiTransparent'] .sp-pager {
 
 body[data-theme='semiTransparent'] .sp-head {
   border-bottom-color: rgba(255, 255, 255, 0.18);
+}
+
+/* 排序小字在半透主题下浮在壁纸上：整行提亮，选中态用亮蓝
+   （深蓝压暗底会发闷，对齐 main.scss 里半透主题的 --color-primary-text） */
+body[data-theme='semiTransparent'] .sp-sortbar {
+  color: rgba(255, 255, 255, 0.7);
+
+  .sp-sortbar__item {
+    color: rgba(255, 255, 255, 0.7);
+
+    &:hover {
+      color: #fff;
+    }
+
+    &.is-on {
+      color: #8ab6f0;
+    }
+  }
+
+  .sp-sortbar__sep {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .sp-sortbar__dir {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.24);
+  }
 }
 
 /* 详情态收窄到和随机推荐一致的阅读宽度（880px），
