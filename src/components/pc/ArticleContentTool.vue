@@ -5,10 +5,12 @@ import AiAssistant from '@/components/pc/AiAssistant.vue'
 // AI 面板不直接碰编辑器：正文靠这个回调取，回写靠 apply 事件抛回 ArticleContent.vue
 defineProps<{
   getContext: () => { title: string; content: string; selection: string }
+  readingMode?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'apply', payload: { text: string; mode: 'replaceAll' | 'replaceSelection' | 'insert' }): void
+  (e: 'toggle-reading'): void
 }>()
 
 /* 主题实际只有两种：semiTransparent（半透明，铺壁纸 + 暗面板）和浅色（走 body 上的默认令牌）。
@@ -36,6 +38,32 @@ function toggleTheme() {
 
 <template>
   <div id="right">
+    <!-- 阅览 / 编辑 模式切换：阅览用只读渲染，编辑进 Vditor -->
+    <div class="mode-card">
+      <div class="mode-card__header">
+        <el-icon class="mode-card__icon">
+          <View v-if="readingMode" />
+          <EditPen v-else />
+        </el-icon>
+        <span class="mode-card__title">{{ readingMode ? '阅览模式' : '编辑模式' }}</span>
+      </div>
+
+      <button
+        type="button"
+        class="mode-btn"
+        :class="{ 'mode-btn--on': readingMode }"
+        :title="readingMode ? '当前只读阅览，点击进入编辑' : '当前可编辑，点击切换为只读阅览'"
+        @click="emit('toggle-reading')"
+      >
+        <el-icon class="mode-btn__icon">
+          <View v-if="readingMode" />
+          <EditPen v-else />
+        </el-icon>
+        <span class="mode-btn__label">{{ readingMode ? '阅览中' : '编辑中' }}</span>
+        <span class="mode-btn__hint">点击切换</span>
+      </button>
+    </div>
+
     <div class="theme-card">
       <div class="theme-card__header">
         <el-icon class="theme-card__icon"><MagicStick /></el-icon>
@@ -85,6 +113,83 @@ function toggleTheme() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+
+  /* 阅览/编辑模式卡：和 .theme-card 同一套观感 */
+  .mode-card {
+    flex-shrink: 0;
+    background-color: color-mix(in srgb, var(--word-color) 5%, transparent);
+    border: 1px solid var(--color-border);
+    border-color: color-mix(in srgb, var(--word-color) 18%, transparent);
+    border-radius: var(--radius-panel);
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    &__header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    &__icon {
+      color: var(--color-primary-text);
+      font-size: 22px;
+    }
+
+    &__title {
+      color: var(--word-color);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  .mode-btn {
+    width: 100%;
+    font-family: inherit;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    text-align: left;
+    border-radius: var(--radius-item);
+    color: var(--word-color);
+    background-color: var(--all-backcolor);
+    border: 1px solid color-mix(in srgb, var(--word-color) 24%, transparent);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      background-color 0.2s ease;
+
+    &:hover {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(85, 144, 226, 0.15);
+    }
+
+    /* 阅览中：蓝色系高亮（项目约定不要暖黄） */
+    &--on {
+      background-color: color-mix(in srgb, var(--color-primary) 14%, transparent);
+      border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+    }
+
+    &__icon {
+      color: var(--color-primary-text);
+      font-size: 18px;
+    }
+
+    &__label {
+      flex: 1;
+      font-weight: 600;
+    }
+
+    &__hint {
+      font-size: 12px;
+      color: color-mix(in srgb, var(--word-color) 60%, transparent);
+    }
+  }
 
   .theme-card {
     flex-shrink: 0;
