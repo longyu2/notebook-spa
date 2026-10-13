@@ -146,6 +146,9 @@ const byIdSelContent = (event: any, Notebookid: any) => {
 }
 
 const queryStr = ref('') // queryStr 用来查询
+/* 搜索排序：跟着搜索跳去卡片页，用 ?sort= 带上。
+   默认按创建时间（不写进 URL），切到更新时间才带 sort=updatetime。 */
+const searchSort = ref<'createtime' | 'updatetime'>('createtime')
 const allWordCount = ref(0)
 const getWordCount = () =>
   axios
@@ -165,7 +168,10 @@ const searchArticle = () => {
     getArticleByFoldeId(props.folderId)
     return
   }
-  router.push({ path: '/search', query: { q } })
+  /* 排序跟着一起带过去：默认创建时间不写进 URL，非默认才带 sort=updatetime */
+  const query: Record<string, string> = { q }
+  if (searchSort.value === 'updatetime') query.sort = 'updatetime'
+  router.push({ path: '/search', query })
 }
 
 /*
@@ -373,6 +379,28 @@ onMounted(() => {
             <el-icon class="search-icon" @click="searchArticle"><Search /></el-icon>
           </template>
         </el-input>
+
+        <!-- 搜索排序小字：决定搜索结果按创建时间还是更新时间排（跳卡片页时带上） -->
+        <div class="search-sort">
+          <span class="search-sort__label">搜索排序</span>
+          <button
+            type="button"
+            class="search-sort__item"
+            :class="{ 'is-on': searchSort === 'createtime' }"
+            @click="searchSort = 'createtime'"
+          >
+            创建时间
+          </button>
+          <span class="search-sort__sep">/</span>
+          <button
+            type="button"
+            class="search-sort__item"
+            :class="{ 'is-on': searchSort === 'updatetime' }"
+            @click="searchSort = 'updatetime'"
+          >
+            更新时间
+          </button>
+        </div>
       </div>
 
       <nav class="topleft-middle">

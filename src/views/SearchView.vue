@@ -318,60 +318,19 @@ watch(() => route.fullPath, sync)
       <router-link to="/notebook" class="sp-head__link">← 回到笔记</router-link>
     </header>
 
-    <div class="sp-searchrow">
-      <div class="sp-search">
-        <el-input
-          ref="inputRef"
-          v-model="keyword"
-          size="large"
-          clearable
-          placeholder="搜索全部笔记的标题和正文…"
-          @keyup.enter="submit"
-        >
-          <template #append>
-            <el-button @click="submit">搜索</el-button>
-          </template>
-        </el-input>
-      </div>
-
-      <!-- 小字排序切换：创建时间 / 更新时间 / 字数，写在搜索栏右侧。
-           写进地址栏（?sort=&order=），刷新/前进后退都能还原。 -->
-      <div class="sp-sortbar">
-        <button
-          type="button"
-          class="sp-sortbar__item"
-          :class="{ 'is-on': sortField === 'createtime' }"
-          @click="setSortField('createtime')"
-        >
-          创建时间
-        </button>
-        <span class="sp-sortbar__sep">/</span>
-        <button
-          type="button"
-          class="sp-sortbar__item"
-          :class="{ 'is-on': sortField === 'updatetime' }"
-          @click="setSortField('updatetime')"
-        >
-          更新时间
-        </button>
-        <span class="sp-sortbar__sep">/</span>
-        <button
-          type="button"
-          class="sp-sortbar__item"
-          :class="{ 'is-on': sortField === 'word' }"
-          @click="setSortField('word')"
-        >
-          字数
-        </button>
-        <button
-          type="button"
-          class="sp-sortbar__dir"
-          :title="order === 'desc' ? '当前倒序，点击切正序' : '当前正序，点击切倒序'"
-          @click="toggleOrder"
-        >
-          {{ order === 'desc' ? '↓' : '↑' }}
-        </button>
-      </div>
+    <div class="sp-search">
+      <el-input
+        ref="inputRef"
+        v-model="keyword"
+        size="large"
+        clearable
+        placeholder="搜索全部笔记的标题和正文…"
+        @keyup.enter="submit"
+      >
+        <template #append>
+          <el-button @click="submit">搜索</el-button>
+        </template>
+      </el-input>
     </div>
 
     <!-- ===== 详情态：原地用 MdArticle 渲染全文（和随机推荐同一套效果），
@@ -410,6 +369,43 @@ watch(() => route.fullPath, sync)
           <div class="sp-tools">
             <div class="sp-count">
               找到 <b>{{ total }}</b> 篇包含「{{ activeQ }}」的笔记
+            </div>
+
+            <div class="sp-sortbar">
+              <button
+                type="button"
+                class="sp-sortbar__item"
+                :class="{ 'is-on': sortField === 'createtime' }"
+                @click="setSortField('createtime')"
+              >
+                创建时间
+              </button>
+              <span class="sp-sortbar__sep">/</span>
+              <button
+                type="button"
+                class="sp-sortbar__item"
+                :class="{ 'is-on': sortField === 'updatetime' }"
+                @click="setSortField('updatetime')"
+              >
+                更新时间
+              </button>
+              <span class="sp-sortbar__sep">/</span>
+              <button
+                type="button"
+                class="sp-sortbar__item"
+                :class="{ 'is-on': sortField === 'word' }"
+                @click="setSortField('word')"
+              >
+                字数
+              </button>
+              <button
+                type="button"
+                class="sp-sortbar__dir"
+                :title="order === 'desc' ? '当前倒序，点击切正序' : '当前正序，点击切倒序'"
+                @click="toggleOrder"
+              >
+                {{ order === 'desc' ? '↓' : '↑' }}
+              </button>
             </div>
           </div>
 

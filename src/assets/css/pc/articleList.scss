@@ -51,10 +51,11 @@ $slide: 16px;
         box-sizing: border-box;
         margin: 16px;
         width: 88%;
-        height: 30px;
+        /* 原来写死 height: 30px + 横向 flex；现在下面多了一行排序小字，
+           改成纵向布局并去掉固定高，否则小字会把输入框挤变形 */
         display: flex;
-        justify-content: space-between;
-        align-items: center;
+        flex-direction: column;
+        gap: 6px;
 
         /* 跟随主题，避免半透模式下出现白色输入框 */
         .el-input__wrapper {
@@ -76,6 +77,45 @@ $slide: 16px;
         }
         .search-icon {
           cursor: pointer;
+        }
+      }
+
+      /* 搜索排序小字：创建时间 / 更新时间，决定结果按哪个时间排 */
+      .search-sort {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        line-height: 1.4;
+        color: color-mix(in srgb, var(--word-color) 55%, transparent);
+
+        &__label {
+          margin-right: 2px;
+        }
+
+        &__item {
+          font-family: inherit;
+          font-size: 12px;
+          padding: 0;
+          cursor: pointer;
+          border: none;
+          background: none;
+          color: color-mix(in srgb, var(--word-color) 55%, transparent);
+          transition: color 0.18s ease;
+
+          &:hover {
+            color: color-mix(in srgb, var(--word-color) 85%, transparent);
+          }
+
+          /* 选中态走蓝色系（项目约定：不要琥珀暖黄） */
+          &.is-on {
+            color: var(--color-primary-text);
+            font-weight: 700;
+          }
+        }
+
+        &__sep {
+          opacity: 0.45;
         }
       }
 
