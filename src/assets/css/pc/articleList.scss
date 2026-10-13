@@ -267,6 +267,17 @@ $slide: 16px;
             display: flex;
             justify-content: flex-start;
             align-items: center;
+
+            /* 日期靠左、字数靠右 —— 时分秒已经挪到右侧编辑器头部了 */
+            .p_3__date {
+              display: inline-flex;
+              align-items: center;
+            }
+
+            .p_3__words {
+              margin-left: auto;
+              color: color-mix(in srgb, var(--word-color) 55%, transparent);
+            }
           }
         }
         .del-icon-box {

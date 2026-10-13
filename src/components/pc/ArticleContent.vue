@@ -22,6 +22,10 @@ let titleUpdateLock = ref(false)
 
 let titlePlaceholder = ref('请输入标题')
 
+/* 当前文章的完整时间（含时分秒）。列表卡片上只到「天」，
+   时分秒挪到编辑器标题下方显示。 */
+let articleTime = ref('')
+
 let vditorHeight = Math.floor(window.innerHeight * 0.9)
 
 const vditor = ref<Vditor | null>(null)
@@ -335,6 +339,9 @@ watch(
 
       title.value = row.title
       content.value = row.content
+      /* 列表卡片的时间只显示到「天」了，完整时间（含时分秒）挪到这里显示；
+         有更新时间就显示更新时间，否则退回创建时间。 */
+      articleTime.value = row.updatetime || row.createtime || ''
       // MySQL 的 tinyint(1) 经 axios 回来是 0 / 1，也可能是 null（老数据）
       isAiGenerated.value = !!row.is_ai_generated
       isPublic.value = !!row.is_public
@@ -477,6 +484,10 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
         :value="title"
         @input="onInput"
       />
+
+      <!-- 完整时间（含时分秒）：列表卡片只显示到「天」，这里补全 -->
+      <div v-if="hasArticle && articleTime" class="article-time">{{ articleTime }}</div>
+
       <div id="vditor-box">
         <div id="vditor" class="vditor"></div>
       </div>

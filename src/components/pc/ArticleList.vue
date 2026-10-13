@@ -146,9 +146,19 @@ const byIdSelContent = (event: any, Notebookid: any) => {
 }
 
 const queryStr = ref('') // queryStr 用来查询
-/* 搜索排序：跟着搜索跳去卡片页，用 ?sort= 带上。
-   默认按创建时间（不写进 URL），切到更新时间才带 sort=updatetime。 */
-const searchSort = ref<'createtime' | 'updatetime'>('createtime')
+
+// 列表卡片/排序用的时间只显示到「天」，时分秒挪到右侧编辑器头部
+const fmtDay = (s: string) => {
+  if (!s) return ''
+  const str = String(s)
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : str
+}
+
+/* 列表排序：创建时间 / 更新时间 / 字数（默认创建时间）。
+   决定两件事：① 列表顺序 ② 卡片上显示的日期（按创建就显创建，按更新就显更新）。
+   搜索时同样带进 /search 的 query（默认创建时间不写进 URL）。 */
+const listSort = ref<'createtime' | 'updatetime' | 'word'>('createtime')
 const allWordCount = ref(0)
 const getWordCount = () =>
   axios
@@ -168,10 +178,43 @@ const searchArticle = () => {
     getArticleByFoldeId(props.folderId)
     return
   }
-  /* 排序跟着一起带过去：默认创建时间不写进 URL，非默认才带 sort=updatetime */
+  /* 排序跟着一起带过去：默认创建时间不写进 URL，非默认才带 */
   const query: Record<string, string> = { q }
-  if (searchSort.value === 'updatetime') query.sort = 'updatetime'
+  if (listSort.value !== 'createtime') query.sort = listSort.value
   router.push({ path: '/search', query })
+}
+
+/* 卡片上显示的日期跟着排序字段走：按更新时间排就显示更新时间，其余显示创建时间。
+   时分秒不在这里显示（挪到右侧编辑器头部），所以只取到「天」。 */
+const cardDate = (item: any) => {
+  const s = listSort.value === 'updatetime' ? item.updatetime : item.createtime
+  return fmtDay(s)
+}
+
+/* 切换排序：本地给当前列表排一遍（不重新请求，列表本来就全量在手） */
+const sortArticleList = () => {
+  const key = listSort.value
+  const cmp = (a: any, b: any) => {
+    let va: any
+    let vb: any
+    if (key === 'word') {
+      va = a.length || 0
+      vb = b.length || 0
+    } else {
+      va = a[key] || ''
+      vb = b[key] || ''
+    }
+    if (va < vb) return 1 // 倒序：大的在前
+    if (va > vb) return -1
+    return (b.Notebookid || 0) - (a.Notebookid || 0)
+  }
+  articleList.value = [...articleList.value].sort(cmp)
+}
+
+const setListSort = (s: 'createtime' | 'updatetime' | 'word') => {
+  if (listSort.value === s) return
+  listSort.value = s
+  sortArticleList()
 }
 
 /*
@@ -380,14 +423,14 @@ onMounted(() => {
           </template>
         </el-input>
 
-        <!-- 搜索排序小字：决定搜索结果按创建时间还是更新时间排（跳卡片页时带上） -->
+        <!-- 排序小字：决定列表顺序，也决定卡片上显示哪个时间（跳搜索页时一并带上） -->
         <div class="search-sort">
-          <span class="search-sort__label">搜索排序</span>
+          <span class="search-sort__label">排序</span>
           <button
             type="button"
             class="search-sort__item"
-            :class="{ 'is-on': searchSort === 'createtime' }"
-            @click="searchSort = 'createtime'"
+            :class="{ 'is-on': listSort === 'createtime' }"
+            @click="setListSort('createtime')"
           >
             创建时间
           </button>
@@ -395,10 +438,19 @@ onMounted(() => {
           <button
             type="button"
             class="search-sort__item"
-            :class="{ 'is-on': searchSort === 'updatetime' }"
-            @click="searchSort = 'updatetime'"
+            :class="{ 'is-on': listSort === 'updatetime' }"
+            @click="setListSort('updatetime')"
           >
             更新时间
+          </button>
+          <span class="search-sort__sep">/</span>
+          <button
+            type="button"
+            class="search-sort__item"
+            :class="{ 'is-on': listSort === 'word' }"
+            @click="setListSort('word')"
+          >
+            字数
           </button>
         </div>
       </div>
@@ -456,10 +508,16 @@ onMounted(() => {
             <!-- 按可见字符数截断（visibleSlice），标签不占长度，搜索前后显示长度一致 -->
             <p class="p_2" v-html="visibleSlice(item.content, 14)"></p>
             <p class="p_3" id="p_3">
-              {{ item.createtime }}
-              <el-icon style="margin-left: 5px"
-                ><Edit @click="editCreatetime(item.Notebookid)"
-              /></el-icon>
+              <span class="p_3__date">
+                {{ cardDate(item) }}
+                <el-icon style="margin-left: 5px"
+                  ><Edit @click="editCreatetime(item.Notebookid)"
+                /></el-icon>
+              </span>
+              <!-- 时分秒挪到了右侧编辑器头部，这里空出来的位置显示字数。
+                   注意用 item.length（后端给的真实字数），不是 item.content.length
+                   —— 列表接口的 content 只截了前 16 字。 -->
+              <span class="p_3__words">{{ item.length || 0 }} 字</span>
             </p>
           </div>
 

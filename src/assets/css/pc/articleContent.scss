@@ -101,6 +101,16 @@ $box-height: 99vh;
         background-color: rgba(0, 0, 0, 0.03);
         color: var(--word-color);
       }
+
+      /* 标题下方的完整时间（含时分秒）—— 列表卡片上只到「天」，
+         时分秒挪到这里显示。颜色跟页面一致，别写死。 */
+      .article-time {
+        padding: 2px 8px 0;
+        font-size: 12.5px;
+        line-height: 1.6;
+        color: color-mix(in srgb, var(--word-color) 55%, transparent);
+      }
+
       #vditor-box {
         width: 100%;
         height: 90vh;
