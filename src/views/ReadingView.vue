@@ -445,7 +445,18 @@ watch(() => route.fullPath, sync)
         <!-- 列表态 -->
         <template v-else>
           <!-- 搜索栏：范围可选「全站 / 当前文件夹」，回车即搜，不跳转 -->
+          <!-- 范围下拉独立成一项（不放进 prepend，避免吃不到宽度溢出到组外） -->
           <div class="rd-searchrow">
+            <el-select
+              v-model="scope"
+              class="rd-scope"
+              size="large"
+              @change="setScope(scope)"
+            >
+              <el-option label="全站" value="all" />
+              <el-option label="当前文件夹" value="folder" />
+            </el-select>
+
             <el-input
               v-model="keyword"
               class="rd-search"
@@ -457,12 +468,6 @@ watch(() => route.fullPath, sync)
               @keyup.enter="submitSearch"
               @clear="clearSearch"
             >
-              <template #prepend>
-                <el-select v-model="scope" class="rd-scope" @change="setScope(scope)">
-                  <el-option label="全站" value="all" />
-                  <el-option label="当前文件夹" value="folder" />
-                </el-select>
-              </template>
               <template #append>
                 <el-button @click="submitSearch">搜索</el-button>
               </template>
@@ -745,28 +750,23 @@ watch(() => route.fullPath, sync)
   min-width: 0;
 }
 
-/* 搜索栏：范围下拉在左（prepend），输入框居中，搜索按钮在右（append） */
+/* 搜索栏：范围下拉在左，输入框（带搜索按钮）在右，两个独立控件并排 */
 .rd-searchrow {
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .rd-search {
-  max-width: 620px;
+  max-width: 560px;
   width: 100%;
-
-  /* 范围下拉嵌在 prepend 里：去掉自己的边框和阴影，融进输入组 */
-  :deep(.el-input-group__prepend) {
-    padding: 0;
-    background-color: transparent;
-    box-shadow: none;
-    border: none;
-  }
+  flex: 0 1 auto;
 }
 
-/* 范围下拉：宽度够放「当前文件夹」四个字，样式跟输入框协调 */
+/* 范围下拉：宽度够放「当前文件夹」四个字，与输入框同高（size=large = 40px） */
 .rd-scope {
-  width: 116px;
+  width: 118px;
+  flex: 0 0 auto;
 
   :deep(.el-input__wrapper) {
     background-color: color-mix(in srgb, var(--word-color) 6%, transparent);
