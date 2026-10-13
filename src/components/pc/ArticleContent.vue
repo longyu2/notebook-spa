@@ -9,7 +9,6 @@ import Vditor from 'vditor'
 import 'vditor/src/assets/less/index.less'
 import { ElMessage } from 'element-plus'
 import ArticleContentTool from '@/components/pc/ArticleContentTool.vue'
-import MdArticle from '@/components/pc/MdArticle.vue'
 
 // 文件上传
 const token = localStorage.getItem('token')
@@ -26,17 +25,6 @@ let titlePlaceholder = ref('请输入标题')
 /* 当前文章的完整时间（含时分秒）。列表卡片上只到「天」，
    时分秒挪到编辑器标题下方显示。 */
 let articleTime = ref('')
-
-/* ===== 阅览模式 =====
-   切到「阅览」时用只读的 MdArticle 渲染（和随机推荐/公开页同一套），
-   不进入编辑器编辑。状态存 localStorage，刷新/切文章都保持。
-   注意：不能因阅览就破坏编辑器实例 —— 用 v-show 藏起来，
-   否则切回来时 Vditor 的 DOM 被卸载、实例作废，正文就丢了。 */
-const readingMode = ref(localStorage.getItem('readingMode') === '1')
-function toggleReadingMode() {
-  readingMode.value = !readingMode.value
-  localStorage.setItem('readingMode', readingMode.value ? '1' : '0')
-}
 
 let vditorHeight = Math.floor(window.innerHeight * 0.9)
 
@@ -464,6 +452,8 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
 
         <router-link to="random">随机推荐</router-link>
 
+        <router-link to="reading">阅览模式</router-link>
+
         <router-link to="public">公开页</router-link>
         <el-upload
           v-model:file-list="fileList"
@@ -492,7 +482,7 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
       <input
         id="input-title"
         :placeholder="titlePlaceholder"
-        :disabled="titleUpdateLock || readingMode"
+        :disabled="titleUpdateLock"
         :value="title"
         @input="onInput"
       />
@@ -500,30 +490,12 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
       <!-- 完整时间（含时分秒）：列表卡片只显示到「天」，这里补全 -->
       <div v-if="hasArticle && articleTime" class="article-time">{{ articleTime }}</div>
 
-      <!-- 阅览模式：只读渲染（和随机推荐/公开页同一套 MdArticle），不进入编辑器 -->
-      <div v-if="hasArticle && readingMode" id="reading-box">
-        <MdArticle
-          :title="title"
-          :createtime="articleTime"
-          :content="content"
-          :loading="false"
-          empty-text="（这篇还没有正文）"
-        />
-      </div>
-
-      <!-- 编辑模式：原来的 Vditor。用 v-show 而不是 v-if ——
-           阅览时也要保活编辑器实例，否则切回来正文全丢。 -->
-      <div v-show="!readingMode" id="vditor-box">
+      <div id="vditor-box">
         <div id="vditor" class="vditor"></div>
       </div>
     </div>
 
-    <ArticleContentTool
-      :get-context="getAiContext"
-      :reading-mode="readingMode"
-      @apply="applyAiResult"
-      @toggle-reading="toggleReadingMode"
-    />
+    <ArticleContentTool :get-context="getAiContext" @apply="applyAiResult" />
   </div>
 </template>
 

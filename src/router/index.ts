@@ -93,6 +93,23 @@ const router = createRouter({
       name: 'publicArticle',
       component: PublicBlog,
       meta: { pageScroll: true }
+    },
+
+    /* 阅览模式：替代主页的只读整页 —— 左边文件夹 + 文章列表，右边只读渲染全文。
+       和搜索页的唯一差别是「不筛关键词」，其余（卡片、排序、分页、详情）同一套。
+       需要登录（不在 OPEN_PATHS 里）。
+       详情态 /reading/:aid 复用同一个组件，靠 :aid 参数切换。 */
+    {
+      path: '/reading',
+      name: 'reading',
+      component: () => import('@/views/ReadingView.vue'),
+      meta: { pageScroll: true }
+    },
+    {
+      path: '/reading/:aid',
+      name: 'readingArticle',
+      component: () => import('@/views/ReadingView.vue'),
+      meta: { pageScroll: true }
     }
   ]
 })

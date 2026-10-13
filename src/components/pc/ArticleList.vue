@@ -155,10 +155,11 @@ const fmtDay = (s: string) => {
   return m ? `${m[1]}-${m[2]}-${m[3]}` : str
 }
 
-/* 列表排序：创建时间 / 更新时间 / 字数（默认创建时间）。
+/* 列表排序：创建时间 / 更新时间 / 字数（默认创建时间），配合正序/倒序（默认倒序）。
    决定两件事：① 列表顺序 ② 卡片上显示的日期（按创建就显创建，按更新就显更新）。
-   搜索时同样带进 /search 的 query（默认创建时间不写进 URL）。 */
+   搜索时同样带进 /search 的 query（默认「创建时间+倒序」不写进 URL）。 */
 const listSort = ref<'createtime' | 'updatetime' | 'word'>('createtime')
+const listOrder = ref<'desc' | 'asc'>('desc')
 const allWordCount = ref(0)
 const getWordCount = () =>
   axios
@@ -178,9 +179,10 @@ const searchArticle = () => {
     getArticleByFoldeId(props.folderId)
     return
   }
-  /* 排序跟着一起带过去：默认创建时间不写进 URL，非默认才带 */
+  /* 排序跟着一起带过去：默认（创建时间 + 倒序）不写进 URL，非默认才带 */
   const query: Record<string, string> = { q }
   if (listSort.value !== 'createtime') query.sort = listSort.value
+  if (listOrder.value !== 'desc') query.order = listOrder.value
   router.push({ path: '/search', query })
 }
 
@@ -191,9 +193,11 @@ const cardDate = (item: any) => {
   return fmtDay(s)
 }
 
-/* 切换排序：本地给当前列表排一遍（不重新请求，列表本来就全量在手） */
+/* 切换排序：本地给当前列表排一遍（不重新请求，列表本来就全量在手）。
+   第二排序键固定 Notebookid 倒序，避免同值的项顺序随机、看着乱跳。 */
 const sortArticleList = () => {
   const key = listSort.value
+  const dir = listOrder.value === 'asc' ? 1 : -1
   const cmp = (a: any, b: any) => {
     let va: any
     let vb: any
@@ -204,9 +208,9 @@ const sortArticleList = () => {
       va = a[key] || ''
       vb = b[key] || ''
     }
-    if (va < vb) return 1 // 倒序：大的在前
-    if (va > vb) return -1
-    return (b.Notebookid || 0) - (a.Notebookid || 0)
+    if (va < vb) return -1 * dir
+    if (va > vb) return 1 * dir
+    return -1 * dir // 同值时按 id 同方向排，保证稳定
   }
   articleList.value = [...articleList.value].sort(cmp)
 }
@@ -214,6 +218,12 @@ const sortArticleList = () => {
 const setListSort = (s: 'createtime' | 'updatetime' | 'word') => {
   if (listSort.value === s) return
   listSort.value = s
+  sortArticleList()
+}
+
+/* 正序 / 倒序：方向对时间、字数都是同一套含义，来回切即可 */
+const toggleListOrder = () => {
+  listOrder.value = listOrder.value === 'desc' ? 'asc' : 'desc'
   sortArticleList()
 }
 
@@ -451,6 +461,15 @@ onMounted(() => {
             @click="setListSort('word')"
           >
             字数
+          </button>
+
+          <button
+            type="button"
+            class="search-sort__dir"
+            :title="listOrder === 'desc' ? '当前倒序，点击切正序' : '当前正序，点击切倒序'"
+            @click="toggleListOrder"
+          >
+            {{ listOrder === 'desc' ? '倒序 ↓' : '正序 ↑' }}
           </button>
         </div>
       </div>

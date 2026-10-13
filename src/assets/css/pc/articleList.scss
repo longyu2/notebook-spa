@@ -117,6 +117,29 @@ $slide: 16px;
         &__sep {
           opacity: 0.45;
         }
+
+        /* 正序 / 倒序：小药丸，和选中态的小字区分开 */
+        &__dir {
+          font-family: inherit;
+          font-size: 12px;
+          margin-left: 6px;
+          padding: 1px 8px;
+          cursor: pointer;
+          border-radius: 999px;
+          color: color-mix(in srgb, var(--word-color) 70%, transparent);
+          background-color: color-mix(in srgb, var(--word-color) 7%, transparent);
+          border: 1px solid color-mix(in srgb, var(--word-color) 18%, transparent);
+          transition:
+            background-color 0.18s ease,
+            border-color 0.18s ease,
+            color 0.18s ease;
+
+          &:hover {
+            color: color-mix(in srgb, var(--word-color) 92%, transparent);
+            background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
+            border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+          }
+        }
       }
 
       .topleft-middle {
