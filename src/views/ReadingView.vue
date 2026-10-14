@@ -28,10 +28,6 @@ type SortField = 'createtime' | 'updatetime' | 'word'
 const sortField = ref<SortField>('createtime')
 const order = ref<'asc' | 'desc'>('desc')
 
-/* 卡片底部显示的日期跟随排序字段：按更新时间排就显示更新时间，
-   否则显示创建时间，避免「按更新时间排却看着创建时间」的错位。 */
-const dateField = computed(() => (sortField.value === 'updatetime' ? 'updatetime' : 'createtime'))
-
 /* ===== 文件夹 =====
    folderid：-2 全部笔记（默认）/ -1 未分类 / 其他为具体文件夹 id，
    与后端 ListCards 的收敛规则一致。 */
@@ -156,6 +152,24 @@ function fmtDate(s: string) {
   if (isNaN(d.getTime())) return String(s).slice(0, 10)
   const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
+/* 卡片同时展示「创建 / 更新」两个时间：只到天，日期后带时分 */
+function fmtDateTime(s: string) {
+  if (!s) return ''
+  const d = new Date(s)
+  if (isNaN(d.getTime())) return String(s).slice(0, 16)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${fmtDate(s)} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+/* 创建时间和更新时间是同一天时，更新时间只补时分，避免卡片过长 */
+function fmtUpdated(row: any) {
+  const c = fmtDate(row?.createtime)
+  const u = fmtDateTime(row?.updatetime)
+  if (!u) return ''
+  if (c && u.startsWith(c)) return u.slice(c.length).trim()
+  return u
 }
 
 /* ===== 拉文件夹（只读用，不需要新建/删除那套） ===== */
@@ -569,7 +583,16 @@ watch(() => route.fullPath, sync)
                 </p>
 
                 <div class="rd-card__meta">
-                  <span>{{ fmtDate(row[dateField]) }}</span>
+                  <span class="rd-card__time" title="创建时间">
+                    <span class="rd-card__time-k">创建</span> {{ fmtDateTime(row.createtime) }}
+                  </span>
+                  <span
+                    v-if="row.updatetime"
+                    class="rd-card__time rd-card__time--upd"
+                    title="更新时间"
+                  >
+                    <span class="rd-card__time-k">更新</span> {{ fmtUpdated(row) }}
+                  </span>
                   <span v-if="row.length" class="rd-card__dot">·</span>
                   <span v-if="row.length">{{ row.length }} 字</span>
                   <span v-if="row.is_public" class="rd-tag rd-tag--pub">已公开</span>
@@ -968,13 +991,34 @@ watch(() => route.fullPath, sync)
   &__meta {
     display: flex;
     align-items: center;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 4px 6px;
     font-size: 12.5px;
     color: var(--muted);
   }
 
   &__dot {
     opacity: 0.6;
+  }
+
+  /* 创建 / 更新两个时间：都只到天 + 时分，第二个用更淡的色弱化。
+     两个时间都展示，避免「按更新时间排却只看到创建时间」的错位。 */
+  &__time {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.92;
+
+    /* 「创建 / 更新」小标签：比时间值再淡一档，做视觉分组 */
+    &-k {
+      opacity: 0.62;
+    }
+  }
+
+  &__time--upd {
+    opacity: 0.72;
   }
 }
 
@@ -1280,7 +1324,18 @@ body[data-theme='semiTransparent'] .rd-back {
   }
 }
 
+/* 详情态顶部条：半透明主题下它是直接压在壁纸上的（后面没有白纸），
+   白字遇到壁纸亮区就读不出来 —— 给它加一层暗色半透底，白字才稳。 */
+body[data-theme='semiTransparent'] .rd-bar {
+  padding: 8px 14px;
+  border-radius: var(--radius-panel, 8px);
+  background-color: rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+}
+
 body[data-theme='semiTransparent'] .rd-bar__tip {
-  color: rgba(255, 255, 255, 0.72);
+  color: rgba(255, 255, 255, 0.78);
 }
 </style>
