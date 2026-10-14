@@ -175,10 +175,11 @@ watch(() => [props.content, props.highlight], rerender)
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
 
-  /* 本卡片固定「白纸黑字」阅读版式。
-     全局 main.scss 有 `.vditor-reset { color: var(--word-color) !important }`，
-     而 --word-color 从半透明主题的笔记页带过来时是白色，白字压白卡片会直接看不见 ——
-     所以在容器上把它钉成深色，--muted 由它派生。 */
+  /* 正文版式跟随主题：
+     浅色 → 「白纸黑字」，把 --word-color 钉成深色。
+     （全局 main.scss 有 `.vditor-reset { color: var(--word-color) !important }`，
+      而半透明主题下 body 上的 --word-color 是白色，不钉住就是白字压白卡片。）
+     半透明 → 见下方 body[data-theme] 覆盖块，整张卡片换成暗色半透 + 白字。 */
   --word-color: #1f1f1f;
   --muted: color-mix(in srgb, var(--word-color) 52%, transparent);
 
@@ -251,20 +252,61 @@ watch(() => [props.content, props.highlight], rerender)
 }
 </style>
 
-<!-- 半透明主题下背景是壁纸，给白纸加一点悬浮感，避免糊在图上。
-     这条要作用在卡片根元素上，所以不能写在 scoped 里。 -->
+<!-- 半透明主题下：整张卡片改成「暗色半透面板 + 白字」，跟随主题。
+     这几条要作用在卡片根元素 / 其子元素上，scoped 里的 :deep 拿不到 el-card 的根，
+     所以写成全局样式，并靠 body 上的 data-theme 属性切档。
+     --word-color 翻成白色后，.md-title / .md-content 会自动变白（正文由 .vditor-reset 用
+     var(--word-color) !important 上色），--muted 也由它派生。 -->
 <style>
 body[data-theme='semiTransparent'] .md-sheet {
   border-color: rgba(255, 255, 255, 0.18);
   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.38);
+
+  /* 暗色半透底（和阅览模式的卡片、搜索卡片同一套观感） */
+  background-color: rgba(0, 0, 0, 0.35);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+
+  --word-color: #fff;
+  --muted: color-mix(in srgb, #fff 62%, transparent);
 }
 
-/* 搜索页在正文里高亮的关键词：淡黄底，和结果卡片上的 .sp-hit 保持一致。
-   动态插入的 mark 不在 scoped 作用域内，所以写成全局样式。 */
+body[data-theme='semiTransparent'] .md-title {
+  color: #fff;
+}
+
+body[data-theme='semiTransparent'] .md-hr {
+  border-top-color: rgba(255, 255, 255, 0.16);
+}
+
+/* 正文里的链接：暗底上品牌蓝偏闷，用亮蓝版 */
+body[data-theme='semiTransparent'] .md-content a {
+  color: var(--color-primary-text, #8ab6f0);
+}
+
+/* 行内代码 / 引用块等浅色底元素：暗面板上要换成白色半透明，否则白底黑字变「白块」 */
+body[data-theme='semiTransparent'] .md-content .vditor-reset code {
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+body[data-theme='semiTransparent'] .md-content .vditor-reset blockquote {
+  border-left-color: rgba(255, 255, 255, 0.28);
+  background-color: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.86);
+}
+
+/* 搜索页在正文里高亮的关键词。动态插入的 mark 不在 scoped 作用域内，写成全局样式。 */
 mark.md-hit {
   background-color: #ffe9a8;
   color: inherit;
   border-radius: 3px;
   padding: 0 1px;
+}
+
+/* 半透主题下淡黄底太扎眼，换半透琥珀 + 白字 */
+body[data-theme='semiTransparent'] mark.md-hit {
+  background-color: rgba(239, 159, 39, 0.5);
+  color: #fff;
 }
 </style>

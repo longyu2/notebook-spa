@@ -3,6 +3,8 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import MdArticle from '@/components/pc/MdArticle.vue'
+import ThemeToggle from '@/components/pc/ThemeToggle.vue'
+import { initTheme } from '@/assets/js/theme'
 
 /* ===== 阅览模式：替代主页的只读整页 =====
    左边文件夹列表 + 文章列表，右边只读渲染全文。
@@ -13,8 +15,8 @@ import MdArticle from '@/components/pc/MdArticle.vue'
    （那个组件还挂着 ArticleList + ArticleContent，一进来就是编辑器）。
    这里自带一份轻量文件树 + 卡片列表，只读、不落任何编辑入口。 */
 
-const theme = localStorage.getItem('theme') || 'light'
-document.body.setAttribute('data-theme', theme)
+/* 主题（整页独立路由，得自己把当前主题挂到 body 上） */
+initTheme()
 
 const server_url = localStorage.getItem('server_url')
 
@@ -396,6 +398,7 @@ watch(() => route.fullPath, sync)
         <router-link to="/notebook" class="rd-head__link">编辑模式 →</router-link>
         <router-link to="/search" class="rd-head__link">搜索</router-link>
         <router-link to="/public" class="rd-head__link">公开页</router-link>
+        <ThemeToggle class="rd-head__theme" />
       </nav>
     </header>
 
@@ -663,8 +666,13 @@ watch(() => route.fullPath, sync)
 
 .rd-head__nav {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 16px;
+}
+
+/* 主题开关是药丸按钮，和文字链接对齐要单独给点间距 */
+.rd-head__theme {
+  margin-left: 4px;
 }
 
 .rd-head__link {

@@ -3,10 +3,12 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import MdArticle from '@/components/pc/MdArticle.vue'
+import ThemeToggle from '@/components/pc/ThemeToggle.vue'
+import { initTheme } from '@/assets/js/theme'
 
-/* 独立整页路由，跟公开页一样自己挂 data-theme，否则半透明主题的壁纸不会铺开 */
-const theme = localStorage.getItem('theme') || 'light'
-document.body.setAttribute('data-theme', theme)
+/* 独立整页路由，跟公开页一样自己挂 data-theme，否则半透明主题的壁纸不会铺开。
+   主题开关在顶栏，任何模式都能切。 */
+initTheme()
 
 /* 登录后才进得来（路由守卫拦着），所以 server_url 一定写好了。
    但按项目惯例还是现读 localStorage，不用模块顶层常量。 */
@@ -315,7 +317,10 @@ watch(() => route.fullPath, sync)
         <span class="sp-brand__name">暮观云笔记</span>
         <span class="sp-brand__sub">搜索</span>
       </div>
-      <router-link to="/notebook" class="sp-head__link">← 回到笔记</router-link>
+      <div class="sp-head__right">
+        <router-link to="/notebook" class="sp-head__link">← 回到笔记</router-link>
+        <ThemeToggle />
+      </div>
     </header>
 
     <div class="sp-search">
@@ -480,11 +485,20 @@ watch(() => route.fullPath, sync)
 
 .sp-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding-bottom: 14px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* 右侧：回到笔记 + 主题开关并排 */
+.sp-head__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .sp-brand {

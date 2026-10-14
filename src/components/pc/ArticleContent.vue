@@ -4,6 +4,7 @@ import axios from 'axios'
 const server_url = localStorage.getItem('server_url')
 
 import { saveArticle } from '@/assets/js/ArticlesTools'
+import { initTheme } from '@/assets/js/theme'
 import type { UploadProps, UploadUserFile } from 'element-plus'
 import Vditor from 'vditor'
 import 'vditor/src/assets/less/index.less'
@@ -107,30 +108,11 @@ const initEditor = async (initValue: string) => {
   })
 }
 
-// vditor源文件没改，刷新后可以自动回默认样式，透明样式在js代码里面改
-const setTheme = (theme: string) => {
-  const el = document.body.querySelector('.vditor') as HTMLElement
-  // 把当前主题标记到 body 上，供 css 里区分选中态等主题相关的样式
-  document.body.setAttribute('data-theme', theme)
-  if (theme === 'semiTransparent') {
-    document.body.style.setProperty('--word-color', 'white')
-    document.body.style.setProperty('--all-backcolor', 'rgba(0, 0, 0, 0.1)')
-
-    el.style.setProperty('--panel-background-color', 'rgba(0, 0, 0, 0.1)')
-    el.style.setProperty('--toolbar-background-color', 'rgba(0, 0, 0, 0.3)')
-    el.style.setProperty('--textarea-background-color', 'rgba(0, 0, 0, 0.2)')
-  } else if (theme === 'light') {
-    //
-  } else if (theme === 'dark') {
-    //
-  } else if (theme === 'no') {
-    console.error('未知主题')
-  }
-}
-
 onMounted(async () => {
   await initEditor('')
-  setTheme(localStorage.getItem('theme') || 'no')
+  /* 主题统一走 assets/js/theme.ts（阅览模式等独立页用的是同一个模块，行为一致）。
+     必须在 initEditor 之后调 —— 半透明主题要往 .vditor 元素上挂内联变量。 */
+  initTheme()
 })
 
 onUnmounted(() => {

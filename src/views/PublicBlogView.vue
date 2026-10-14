@@ -3,6 +3,8 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import MdArticle from '@/components/pc/MdArticle.vue'
+import ThemeToggle from '@/components/pc/ThemeToggle.vue'
+import { initTheme } from '@/assets/js/theme'
 
 /* ===== 这个页面是给「没登录的人」看的 =====
    所以不能依赖登录后才写入的 localStorage.server_url：
@@ -14,9 +16,9 @@ const server_url = localStorage.getItem('server_url') || `${location.origin}/v1`
 const route = useRoute()
 const router = useRouter()
 
-/* 独立路由，data-theme 得自己挂，否则半透明主题的壁纸不会铺开 */
-const theme = localStorage.getItem('theme') || 'light'
-document.body.setAttribute('data-theme', theme)
+/* 独立路由，data-theme 得自己挂，否则半透明主题的壁纸不会铺开。
+   主题开关在顶栏，访客也能切。 */
+initTheme()
 
 const loggedIn = computed(() => localStorage.getItem('token') != null)
 
@@ -126,8 +128,11 @@ watch(aid, sync)
         <span class="pub-brand__name">暮观云笔记</span>
         <span class="pub-brand__sub">公开文章</span>
       </div>
-      <router-link v-if="!loggedIn" to="/login" class="pub-head__link">登录</router-link>
-      <router-link v-else to="/notebook" class="pub-head__link">回到笔记</router-link>
+      <div class="pub-head__right">
+        <router-link v-if="!loggedIn" to="/login" class="pub-head__link">登录</router-link>
+        <router-link v-else to="/notebook" class="pub-head__link">回到笔记</router-link>
+        <ThemeToggle />
+      </div>
     </header>
 
     <!-- ===== 详情 ===== -->
@@ -189,11 +194,20 @@ watch(aid, sync)
 
   &-head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 16px;
     padding-bottom: 14px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+    /* 右侧：登录/回到笔记 + 主题开关并排 */
+    &__right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
   }
 
   &-brand {

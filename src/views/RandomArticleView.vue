@@ -3,14 +3,15 @@ import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import MdArticle from '@/components/pc/MdArticle.vue'
+import ThemeToggle from '@/components/pc/ThemeToggle.vue'
+import { initTheme } from '@/assets/js/theme'
 
 const server_url = localStorage.getItem('server_url')
 
 /* ===== 主题 =====
-   本页是独立路由，ArticleContent.vue 的 setTheme 不会执行，data-theme 得自己挂，
-   否则半透明主题下背景壁纸不会铺开（body[data-theme='semiTransparent'] 里那条规则）。 */
-const theme = localStorage.getItem('theme') || 'light'
-document.body.setAttribute('data-theme', theme)
+   本页是独立路由，data-theme 得自己挂，否则半透明主题下背景壁纸不会铺开
+   （body[data-theme='semiTransparent'] 里那条规则）。主题开关在顶栏。 */
+initTheme()
 
 const loading = ref(true)
 const error = ref('')
@@ -162,6 +163,8 @@ onMounted(async () => {
       </span>
 
       <div class="random-actions">
+        <ThemeToggle class="random-theme" />
+
         <el-button
           v-if="title"
           class="random-public"

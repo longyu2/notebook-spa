@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import AiAssistant from '@/components/pc/AiAssistant.vue'
+import { getTheme, toggleTheme } from '@/assets/js/theme'
 
 // AI 面板不直接碰编辑器：正文靠这个回调取，回写靠 apply 事件抛回 ArticleContent.vue
 defineProps<{
@@ -11,27 +12,14 @@ const emit = defineEmits<{
   (e: 'apply', payload: { text: string; mode: 'replaceAll' | 'replaceSelection' | 'insert' }): void
 }>()
 
-/* 主题实际只有两种：semiTransparent（半透明，铺壁纸 + 暗面板）和浅色（走 body 上的默认令牌）。
-   localStorage 里可能残留 light / no 这类历史值，只有 semiTransparent 才算半透明，
-   其余一律当浅色 —— 比原来 el-select 直接绑原始字符串更稳（否则下拉会显示空白）。 */
-const theme = ref(localStorage.getItem('theme') === 'semiTransparent' ? 'semiTransparent' : 'dark')
+/* 主题两态：semiTransparent（半透明，铺壁纸 + 暗面板）和浅色（走 body 上的默认令牌）。
+   历史残留的 light / no / dark 都归到浅色档 —— 见 assets/js/theme.ts 的 normalizeTheme。 */
+const theme = getTheme()
 
-const themeLabel = computed(() => (theme.value === 'semiTransparent' ? '半透明' : '浅色'))
+const themeLabel = computed(() => (theme === 'semiTransparent' ? '半透明' : '浅色'))
 
-/* 按钮 title 里的目标主题。注意别在模板里写 theme.value ——
-   script setup 的 ref 在模板中已自动解包，theme.value 会取到 undefined */
-const nextThemeLabel = computed(() => (theme.value === 'semiTransparent' ? '浅色' : '半透明'))
-
-/* 只有两个值，一次点击就能切到位，不用再展开下拉 */
-function toggleTheme() {
-  theme.value = theme.value === 'semiTransparent' ? 'dark' : 'semiTransparent'
-  localStorage.setItem('theme', theme.value)
-  console.log('主题已更改为：' + theme.value)
-
-  /* 主题是往 body / vditor 上挂内联变量（见 ArticleContent.vue 的 setTheme），
-     没有响应式链路，沿用原来的整页刷新最省事也最稳 */
-  location.reload()
-}
+/* 按钮 title 里的目标主题 */
+const nextThemeLabel = computed(() => (theme === 'semiTransparent' ? '浅色' : '半透明'))
 </script>
 
 <template>
