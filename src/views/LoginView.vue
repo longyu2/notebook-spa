@@ -1,10 +1,27 @@
 <script setup lang="ts">
 import { server_url } from '@/assets/constants/index'
 import { ElMessage } from 'element-plus'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 const server_url_storage = ref(server_url)
+
+/* 当前站点的同源后端：线上 nginx 把 :9995/v1/ 反代到后端 :9994，
+   所以不管从哪个域名/端口打开这一页，同源地址都是真实可用的。
+   :9999 只监听本机、没有对外暴露，:9995 是 http 没有 TLS —— 都不再作为外部地址。 */
+const sameOrigin = `${window.location.origin}/v1`
+
+const serverOptions = computed(() => {
+  const list = [
+    { label: '当前站点（同源）', value: sameOrigin },
+    { label: '4790 外部', value: 'http://misaka-mikoto.cn:9995/v1' },
+    { label: '4790 本地', value: 'http://192.168.1.3:9994/v1' },
+    { label: '本地', value: 'http://localhost:9999/v1' }
+  ]
+  // 同源地址可能和某条写死的地址相同，按 value 去重，保留排在前面的标签
+  const seen = new Set<string>()
+  return list.filter((o) => (seen.has(o.value) ? false : (seen.add(o.value), true)))
+})
 
 const router = useRouter()
 let username = ref('')
@@ -68,10 +85,12 @@ const login_click = async () => {
         >
           <p>服务器地址：</p>
           <el-select v-model="server_url_storage" @change="updateServerUrl">
-            <el-option value="http://b.misaka-mikoto.cn:9999/v1">美国</el-option>
-            <el-option value="http://localhost:9999/v1">本地</el-option>
-            <el-option value="http://192.168.1.3:9994/v1">4790本地</el-option>
-            <el-option value="https://misaka-mikoto.cn:9995/v1">4790外部</el-option>
+            <el-option
+              v-for="opt in serverOptions"
+              :key="opt.value"
+              :label="opt.label"
+              :value="opt.value"
+            />
           </el-select>
         </div>
 

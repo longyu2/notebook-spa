@@ -2,6 +2,10 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 
+// 后端地址归一（副作用）：无论从哪个路由进来，都先把 localStorage.server_url
+// 里的历史坏值（未暴露的 :9999 / 无 TLS 的 https:9995）换成可达的同源地址
+import '@/assets/constants/server_url'
+
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 
