@@ -120,13 +120,13 @@
   accent-color: #5590e2;
 }
 
-/* 右下角新建按钮：固定 48px，别再用 20vw 跟着屏幕缩放 */
+/* 右下角新建按钮 */
 .phone-box .img-add-btn {
   position: fixed;
-  right: 16px;
-  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  width: 52px;
-  height: 52px;
+  right: 20px;
+  bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
