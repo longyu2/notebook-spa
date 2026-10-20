@@ -250,6 +250,43 @@ watch(() => [props.content, props.highlight], rerender)
     font-family: inherit;
   }
 }
+
+/* ===== 手机端 =====
+   36px 的左右内边距在 390px 宽的屏上要吃掉近 1/5 的正文宽度，
+   正文缩到 290px 左右读起来很挤；标题字号也收一档。 */
+@media (max-width: 860px) {
+  .md-sheet {
+    border-radius: 10px;
+
+    :deep(.el-card__body) {
+      padding: 20px 18px;
+    }
+  }
+
+  .md-title {
+    font-size: 21px;
+    line-height: 1.4;
+  }
+
+  .md-meta {
+    font-size: 12.5px;
+    flex-wrap: wrap;
+  }
+
+  .md-hr {
+    margin: 14px 0 16px;
+  }
+
+  .md-content {
+    font-size: 15.5px;
+    line-height: 1.85;
+  }
+
+  .md-hint {
+    min-height: 120px;
+    font-size: 14px;
+  }
+}
 </style>
 
 <!-- 半透明主题下：整张卡片改成「暗色半透面板 + 白字」，跟随主题。

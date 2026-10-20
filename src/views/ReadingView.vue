@@ -1074,9 +1074,14 @@ watch(() => route.fullPath, sync)
   --el-fill-color: rgba(0, 0, 0, 0.04);
 }
 
-/* 详情态收窄到和随机推荐/搜索详情一致的阅读宽度（880px） */
-.rd-body:has(.rd-main .rd-bar) {
-  grid-template-columns: 212px minmax(0, 1fr);
+/* 详情态收窄到和随机推荐/搜索详情一致的阅读宽度（880px）。
+   ⚠️ 必须限定在宽屏：这条规则的 :has() 特异性高于窄屏那条
+   「grid-template-columns: minmax(0,1fr)」，不限定就会在手机上
+   强行排成 212px + 剩余，把正文挤成一条 130px 宽的竖排。 */
+@media (min-width: 861px) {
+  .rd-body:has(.rd-main .rd-bar) {
+    grid-template-columns: 212px minmax(0, 1fr);
+  }
 }
 
 /* ===== 半透明主题：和搜索页同一套「暗色半透 + 白字」 =====
@@ -1169,6 +1174,14 @@ body[data-theme='semiTransparent'] .rd-pager {
 
 body[data-theme='semiTransparent'] .rd-head {
   border-bottom-color: rgba(255, 255, 255, 0.18);
+}
+
+/* .reading-page 在浅色下把 --word-color 钉成深色（防止白字压白卡片），
+   半透明主题必须翻回白色 —— 否则顶栏品牌名、主题开关、排序小字全是
+   「深字压深底」，在手机端的深色底上直接看不见。 */
+body[data-theme='semiTransparent'] .reading-page {
+  --word-color: #fff;
+  --muted: color-mix(in srgb, #fff 62%, transparent);
 }
 
 body[data-theme='semiTransparent'] .rd-folder {
@@ -1345,5 +1358,168 @@ body[data-theme='semiTransparent'] .rd-bar {
 
 body[data-theme='semiTransparent'] .rd-bar__tip {
   color: rgba(255, 255, 255, 0.78);
+}
+
+/* ===== 手机端（≤860px）=====
+   窄屏不再「左栏 + 右栏」并排，改成上下：文件夹收成一行可横滑的胶囊，
+   文章列表/正文拿满宽度；详情态直接把文件夹栏收起（已经选过了，白占地方）。 */
+@media (max-width: 860px) {
+  .reading-page {
+    width: 100%;
+    /* 默认是 content-box，width:100% 再加左右 padding 会顶出 24px 横向滚动 */
+    box-sizing: border-box;
+    margin: 0;
+    padding: 12px 12px 44px;
+    gap: 14px;
+  }
+
+  /* 顶栏：品牌不许折行，导航整条换到第二行、横向可滑 */
+  .rd-head {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+
+  .rd-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+
+    &__name {
+      font-size: 18px;
+      white-space: nowrap;
+    }
+
+    /* 「阅览模式」这个副标题在手机上只挤位置 */
+    &__sub {
+      display: none;
+    }
+  }
+
+  .rd-head__nav {
+    width: 100%;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+
+    > * {
+      flex: 0 0 auto;
+    }
+  }
+
+  .rd-head__theme {
+    margin-left: 0;
+  }
+
+  .rd-side {
+    position: static;
+    gap: 6px;
+
+    &__head {
+      display: none;
+    }
+  }
+
+  /* 文件夹卡片 → 横滑胶囊，只占一行，不再吃掉整个首屏 */
+  .rd-folders {
+    flex-direction: row;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 2px 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .rd-folder {
+    flex: 0 0 auto;
+    padding: 8px 13px;
+    font-size: 13px;
+    border-radius: 999px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+
+    &__name {
+      max-width: 42vw;
+    }
+  }
+
+  .reading-page--detail .rd-side {
+    display: none;
+  }
+
+  .rd-main {
+    gap: 12px;
+  }
+
+  .rd-searchrow {
+    gap: 8px;
+  }
+
+  /* 输入框在 flex 行里 width:100% 会让整行超出容器（min-width:auto 挡着不肯缩），
+     手机端改成「吃掉剩余宽度」并允许收缩。 */
+  .rd-search {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+  }
+
+  .rd-scope {
+    width: 96px;
+  }
+
+  .rd-tools {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .rd-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .rd-card {
+    padding: 16px;
+    gap: 8px;
+
+    &__title {
+      font-size: 16px;
+    }
+
+    &__excerpt {
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+    }
+  }
+
+  .rd-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .rd-bar__tip {
+    font-size: 12px;
+  }
+
+  /* 分页：手机上放不下「每页条数 + 跳页」，只留总数/页码/上下页 */
+  .rd-pager {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    gap: 4px;
+
+    :deep(.el-pagination__sizes),
+    :deep(.el-pagination__jump) {
+      display: none;
+    }
+
+    :deep(.el-pager li) {
+      min-width: 26px;
+      height: 26px;
+      line-height: 26px;
+      font-size: 12.5px;
+    }
+  }
 }
 </style>

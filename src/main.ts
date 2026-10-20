@@ -8,6 +8,9 @@ import '@/assets/constants/server_url'
 
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
+/* Element Plus 默认是英文：分页器会显示「Total 2」「Goto」，和全中文界面很割裂。
+   挂上中文语言包，分页器/日期选择器/表格这些内置文案才是中文。 */
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 
 import '@/assets/css/pc.scss'
 import '@/assets/css/phone.scss'
@@ -38,7 +41,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
 
-app.use(ElementPlus)
+app.use(ElementPlus, { locale: zhCn })
 app.use(router)
 
 app.use(Vant)

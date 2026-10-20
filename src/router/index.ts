@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { _isMobile } from '@/assets/constants/tool'
 
 const Login = () => import('@/views/LoginView.vue')
 const Regist = () => import('@/views/RegistView.vue')
@@ -48,7 +49,10 @@ const router = createRouter({
     {
       path: '/notebook_phone',
       name: 'phone',
-      component: NoteBookPhoneView
+      component: NoteBookPhoneView,
+      /* 手机端改成单列卡片 + 文档级滚动（顶栏文件夹条吸顶），
+         不再靠 #left 内部滚 —— body 默认 overflow:hidden，不声明就滚不动。 */
+      meta: { pageScroll: true }
     },
     {
       path: '/disk',
@@ -118,6 +122,13 @@ const router = createRouter({
 const OPEN_PATHS = ['/login', '/regist', '/disk', '/public']
 
 router.beforeEach((to, from) => {
+  /* 手机 UA 访问 /notebook 时在路由层直接换到手机版：
+     原来是在 NoteBookView 的 setup 里 push，那时电脑端三栏已经挂载并渲染了一帧，
+     既闪一下屏，又会在「只存了 token 没存 user」这类情况下报错。 */
+  if (to.path === '/notebook' && _isMobile()) {
+    return { name: 'phone' }
+  }
+
   const open = OPEN_PATHS.some(
     (p) => to.path === p || to.path.startsWith(p + '/')
   )

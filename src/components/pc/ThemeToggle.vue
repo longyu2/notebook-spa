@@ -32,6 +32,7 @@ const nextLabel = computed(() => (theme === 'semiTransparent' ? '浅色' : '半�
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
   padding: 6px 12px;
   font-family: inherit;
   font-size: 13px;
@@ -53,6 +54,15 @@ const nextLabel = computed(() => (theme === 'semiTransparent' ? '浅色' : '半�
 
   &__icon {
     font-size: 14px;
+  }
+}
+
+/* 手机端把点击区抬到 36px 高，手指才点得准 */
+@media (max-width: 860px) {
+  .theme-toggle {
+    min-height: 36px;
+    padding: 9px 12px;
+    font-size: 12.5px;
   }
 }
 </style>

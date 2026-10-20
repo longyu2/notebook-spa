@@ -353,4 +353,81 @@ body[data-theme='semiTransparent'] .pub-card {
 body[data-theme='semiTransparent'] .pub-head {
   border-bottom-color: rgba(255, 255, 255, 0.18);
 }
+
+/* 容器在浅色下把 --word-color 钉成深色，半透明主题要翻回白色，
+   否则顶栏品牌名 / 主题开关 / 空状态提示都是深字压深底。 */
+body[data-theme='semiTransparent'] .pub-box {
+  --word-color: #fff;
+  --muted: color-mix(in srgb, #fff 62%, transparent);
+}
+
+/* ===== 手机端（≤860px）===== */
+@media (max-width: 860px) {
+  .pub-box {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 12px 12px 44px;
+    gap: 14px;
+  }
+
+  .pub-head {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+
+    &__right {
+      width: 100%;
+      justify-content: space-between;
+      gap: 12px;
+    }
+  }
+
+  .pub-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+
+    &__name {
+      font-size: 18px;
+      white-space: nowrap;
+    }
+
+    &__sub {
+      display: none;
+    }
+  }
+
+  .pub-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .pub-card {
+    padding: 16px;
+    gap: 8px;
+
+    &__title {
+      font-size: 16px;
+    }
+
+    &__excerpt {
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+    }
+  }
+
+  .pub-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pub-hint {
+    min-height: 120px;
+    font-size: 14px;
+    padding: 0 8px;
+  }
+}
 </style>

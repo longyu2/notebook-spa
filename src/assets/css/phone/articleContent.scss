@@ -1,42 +1,111 @@
-$black-border: 1px solid black;
-$radius: 10px;
-$box-height: 95vh;
+/* 手机端编辑浮层
+   原来 position:absolute + height:100vh：absolute 相对 .phone-box（没有定位）算，
+   内容一长就跟文档滚动错位；标题 5vh、正文 90vh 又是死高度，
+   小屏（SE 类 568px 高）正文区直接被压到几乎看不见。
+   改成 fixed 铺满视口 + flex 自适应，正文自己撑满剩余空间。 */
 
-@media screen and (max-width: 500px) {
-  .van-cell__value {
-    text-align: left;
+.phone-box .van-cell__value {
+  text-align: left;
+}
+
+.phone-box .article-content-box {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  box-sizing: border-box;
+  padding: calc(8px + env(safe-area-inset-top, 0px)) 16px
+    calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  background-color: #fff;
+
+  /* 返回箭头：做成 40px 的圆形点击区，别再用 7vw 的裸图标 */
+  .return-icon {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    padding: 10px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    color: #1f1f1f;
+    background-color: rgba(0, 0, 0, 0.04);
   }
 
-  .article-content-box {
-    box-sizing: border-box;
-    padding: 3vw;
-    background-color: #fff;
-    width: 100%;
-    height: 100vh;
-    position: absolute;
-    top: 0vh;
-    z-index: 3;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+  .input-text-title {
+    flex: 0 0 auto;
+    padding: 10px 0 6px;
+    font-size: 22px;
+    line-height: 1.4;
+    font-weight: 600;
+    border: 0;
+    background-color: transparent;
 
-    .input-text-title {
-      font-size: 24px;
-      font-weight: 600;
-      border: 0px;
-      height: 5vh;
+    /* van-field 自带的下划线和内边距在整页浮层里很碍眼 */
+    &::after {
+      display: none;
     }
-    .input-text-content {
-      font-size: 16px;
-      width: 95vw;
-      height: 90vh;
-      border: 0px;
+  }
+
+  .word-count {
+    flex: 0 0 auto;
+    padding: 0 0 8px;
+    font-size: 12.5px;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.42);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .input-text-content {
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    padding: 0;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #1f1f1f;
+    border: 0;
+    outline: none;
+    resize: none;
+    background-color: transparent;
+    -webkit-overflow-scrolling: touch;
+
+    /* iOS 上输入框聚焦时别被键盘顶出视口 */
+    scroll-margin-bottom: 24px;
+  }
+}
+
+/* 半透明主题下的编辑浮层：深色纸 + 白字 */
+body[data-theme='semiTransparent'] .phone-box .article-content-box {
+  background-color: #1d2025;
+
+  .return-icon {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .input-text-title {
+    color: #fff;
+
+    /* van-field 的占位符也跟着亮 */
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
     }
-    .word-count {
-      padding: 1vw 4vw;
-      font-size: 14px;
-      font-weight: 400;
-      color: rgba($color: #000000, $alpha: 0.4);
+  }
+
+  .word-count {
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .input-text-content {
+    color: #fff;
+    background-color: transparent;
+
+    &::placeholder {
+      color: rgba(255, 255, 255, 0.4);
     }
   }
 }

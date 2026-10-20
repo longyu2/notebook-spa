@@ -540,7 +540,8 @@ watch(() => route.fullPath, sync)
 .sp-search {
   max-width: 620px;
   width: 100%;
-  flex: 1 1 320px;
+  /* ⚠️ 别写 flex: 1 1 320px —— 父级 .search-box-page 是 column 方向，
+     flex-basis 会变成「高度 320px」，搜索框下方凭空多出一大片空白。 */
 }
 
 /* 小字排序切换：创建时间 / 更新时间 / 字数 + 方向 */
@@ -917,6 +918,13 @@ body[data-theme='semiTransparent'] .sp-head {
   border-bottom-color: rgba(255, 255, 255, 0.18);
 }
 
+/* 容器在浅色下把 --word-color 钉成深色，半透明主题要翻回白色，
+   否则顶栏品牌名 / 主题开关 / 命中数都是深字压深底（手机深色底上尤其看不见）。 */
+body[data-theme='semiTransparent'] .search-box-page {
+  --word-color: #fff;
+  --muted: color-mix(in srgb, #fff 62%, transparent);
+}
+
 /* 排序小字在半透主题下浮在壁纸上：整行提亮，选中态用亮蓝
    （深蓝压暗底会发闷，对齐 main.scss 里半透主题的 --color-primary-text） */
 body[data-theme='semiTransparent'] .sp-sortbar {
@@ -949,5 +957,106 @@ body[data-theme='semiTransparent'] .sp-sortbar {
    写在 .search-box-page 之后才盖得住它的 1040px。 */
 .search-box-page--detail {
   width: min(880px, 92vw);
+}
+
+/* ===== 手机端（≤860px）===== */
+@media (max-width: 860px) {
+  .search-box-page {
+    width: 100%;
+    /* content-box 下 width:100% + 左右 padding 会顶出横向滚动条 */
+    box-sizing: border-box;
+    margin: 0;
+    padding: 12px 12px 44px;
+    gap: 14px;
+  }
+
+  /* 详情态也一样吃满屏宽（92vw 在手机上会留一道没意义的边） */
+  .search-box-page--detail {
+    width: 100%;
+  }
+
+  .sp-head {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+
+  .sp-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+
+    &__name {
+      font-size: 18px;
+      white-space: nowrap;
+    }
+
+    &__sub {
+      display: none;
+    }
+  }
+
+  .sp-head__right {
+    width: 100%;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .sp-search {
+    max-width: 100%;
+  }
+
+  .sp-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .sp-card {
+    padding: 16px;
+    gap: 8px;
+
+    &__title {
+      font-size: 16px;
+    }
+  }
+
+  .sp-tools {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .sp-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .sp-hint {
+    min-height: 120px;
+    font-size: 14px;
+    padding: 0 8px;
+  }
+
+  .sp-pager {
+    width: 100%;
+    /* width:100% 是内容宽，再加左右 padding 会顶出横向溢出 */
+    box-sizing: border-box;
+    padding: 8px 10px;
+    gap: 4px;
+
+    :deep(.el-pagination__sizes),
+    :deep(.el-pagination__jump) {
+      display: none;
+    }
+
+    :deep(.el-pager li) {
+      min-width: 26px;
+      height: 26px;
+      line-height: 26px;
+      font-size: 12.5px;
+    }
+  }
 }
 </style>

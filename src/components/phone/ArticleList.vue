@@ -43,12 +43,24 @@ function _isMobile() {
 function getArticleByFoldeId(folderId: any) {
   axios.get(`${server_url}/articles?folderid=${folderId}`).then((result) => {
     articles.value = result.data.data //  查询到的信息存储到article数组中
-    ArticleCheckId = ref(articles.value[0].Notebookid) // 选中列表中最新的文章
+    /* 空文件夹时 data 是空数组，原来直接取 [0].Notebookid 会抛 TypeError，
+       列表整块白掉 —— 这里要判空。 */
+    ArticleCheckId.value = articles.value.length ? articles.value[0].Notebookid : 0
     //在信息获取完成后，为其添加控制checkbox 的属性
     articles.value.forEach((element: any) => {
       element.checked = false
     })
   })
+}
+
+/* 列表里只显示到「天」：原来的 createtime 带完整时分秒（2024-10-05 16:41:14），
+   窄屏上一行直接被日期占满。 */
+function fmtDay(s: any) {
+  if (!s) return ''
+  const d = new Date(String(s).replace(' ', 'T'))
+  if (isNaN(d.getTime())) return String(s).slice(0, 10)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
 getArticleByFoldeId(props.folderId) // 初始时调用查询方法，并填充
@@ -167,66 +179,34 @@ function contentHide() {
 <template>
   <div class="article-list-box shadow">
     <div id="left">
-      <van-list id="List-ul">
-        <div
-          v-for="(item, index) in articles.filter((item: any, index: any) => index % 2 == 0)"
-          :key="index"
+      <!-- 手机端单列卡片：原来的「奇偶拆两列」在 390px 宽下每列只剩 195px，
+           标题和摘要全被挤成两三行，读起来很费劲。单列 + 卡片更清楚。 -->
+      <div class="ph-list">
+        <article
+          v-for="item in articles"
+          :key="item.Notebookid"
+          class="ph-card"
+          :class="{ 'is-on': item.Notebookid === ArticleCheckId, 'has-check': CheckedArticles.length > 0 }"
           @click="byIdSelContent(item['Notebookid'])"
-          :class="{
-            'article-list-buttonchecked': item.Notebookid === ArticleCheckId
-          }"
         >
-          <div class="ul-li-item">
-            <input
-              type="checkbox"
-              v-show="CheckedArticles.length > 0"
-              name=""
-              v-model="item.checked"
-              class="checkbox"
-              id=""
-            />
+          <input
+            v-show="CheckedArticles.length > 0"
+            type="checkbox"
+            class="ph-check"
+            v-model="item.checked"
+            @click.stop
+          />
 
-            <div class="ul-list-texts">
-              <span class="p_1" v-text="item.title.substring(0, 14)"></span>
+          <h3 class="ph-card__title" v-text="item.title || '无标题'"></h3>
 
-              <p class="p_2" v-text="item.content.substring(0, 14)"></p>
-              <div class="p3-div">
-                <p class="p_3" v-text="item.createtime"></p>
-              </div>
-            </div>
+          <p class="ph-card__excerpt" v-text="item.content || '（这篇还没有正文）'"></p>
+
+          <div class="ph-card__meta">
+            <span class="ph-card__time">{{ fmtDay(item.createtime) }}</span>
+            <span v-if="item.length" class="ph-card__words">{{ item.length }} 字</span>
           </div>
-        </div>
-      </van-list>
-      <van-list id="List-ul-2">
-        <div
-          v-for="(item, index) in articles.filter((item: any, index: any) => index % 2 != 0)"
-          :key="index"
-          @click="byIdSelContent(item['Notebookid'])"
-          :class="{
-            'article-list-buttonchecked': item.Notebookid === ArticleCheckId
-          }"
-        >
-          <div class="ul-li-item">
-            <input
-              type="checkbox"
-              v-show="CheckedArticles.length > 0"
-              name=""
-              v-model="item.checked"
-              class="checkbox"
-              id=""
-            />
-
-            <div class="ul-list-texts">
-              <span class="p_1" v-text="item.title.substring(0, 14)"></span>
-
-              <p class="p_2" v-text="item.content.substring(0, 14)"></p>
-              <div class="p3-div">
-                <p class="p_3" v-text="item.createtime"></p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </van-list>
+        </article>
+      </div>
 
       <div class="img-add-btn" @click="addArticle()">
         <img src="@/assets/addNewNoteBook.svg" alt="" />

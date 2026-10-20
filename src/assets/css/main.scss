@@ -77,6 +77,17 @@ body.page-scroll {
   }
 }
 
+/* 手机端（<768px）不铺壁纸：原图 2.6MB，移动网络下不值得，
+   而且 background-attachment: fixed 在 iOS 上会跟着地址栏抖。
+   但半透明主题的面板是 rgba(0,0,0,.35) + 白字 —— 压在原生的浅灰底上
+   会变成「白字压中灰」，几乎读不出来，所以这里换成深色底，
+   暗色半透面板 + 白字这套观感在手机上照样成立。 */
+@media (max-width: 767px) {
+  body[data-theme='semiTransparent'] {
+    background-color: #262a30;
+  }
+}
+
 .el-but {
   .el-button--primary {
     :hover {

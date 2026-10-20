@@ -1,35 +1,129 @@
-$black-border: 1px solid black;
-$radius: 10px;
-$box-height: 905px;
-$left-width: 300px;
+/* 手机端顶栏文件夹条
+   原来：每个按钮 width:15vw / height:7vh / font-size:x-small，390px 宽下只剩 58px，
+   「我的文件夹」直接折成三行。现在改成一行横滑胶囊，高度固定 32px。
+   全部选择器都挂在 .phone-box 下 —— phone.scss 是全局引入的，
+   不限定作用域会把电脑端 #folder 一起改掉。 */
 
-@mixin shadow-main {
-  box-shadow: 1px 1px 10px 1px rgba($color: #000000, $alpha: 0.2);
-}
+.phone-box #folder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: auto;
+  min-height: 52px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background-color: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
 
-.buttonchecked {
-  @include shadow-main;
-}
+  /* 顶栏吸顶，滚列表时始终能切文件夹 */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  -webkit-overflow-scrolling: touch;
 
-@media screen and (max-width: 500px) {
-  #folder {
-    height: 8vh;
-    overflow: auto;
-    display: flex;
-    justify-content: flex-start;
+  /* 手机上不需要滚动条 */
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 所有子项都不许被压缩 */
+  > * {
+    flex: 0 0 auto;
+  }
+
+  .van-button {
+    width: auto;
+    height: 32px;
+    padding: 0 14px;
+    font-size: 13px;
+    line-height: 1;
+    border-radius: 999px;
+    color: rgba(31, 31, 31, 0.82);
+    background-color: #f5f6f8;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: none;
+
+    /* 中文按钮不许折行 */
+    .van-button__text {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      white-space: nowrap;
+    }
+
+    /* 里面的 el-dropdown 箭头：缩小一点，别把胶囊撑高 */
+    .dropdown {
+      margin-left: 2px;
+      font-size: 12px;
+    }
+  }
+
+  /* 第 3 个按钮是「我的文件夹」——它是分组标签，不是可点的文件夹 */
+  > .van-button:nth-of-type(3) {
+    padding: 0 2px;
+    font-size: 12px;
+    color: rgba(31, 31, 31, 0.42);
+    background-color: transparent;
+    border-color: transparent;
+  }
+
+  /* 选中态：蓝色系（项目约定，不要琥珀暖黄） */
+  .van-button.buttonchecked {
+    color: #245aa8;
+    font-weight: 600;
+    background-color: #eaf2fd;
+    border-color: rgba(85, 144, 226, 0.55);
+    box-shadow: 0 2px 8px rgba(85, 144, 226, 0.18);
+  }
+
+  /* 新建文件夹：做成圆形小按钮，和胶囊同高 */
+  .create-folder {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 auto;
+    display: inline-flex;
     align-items: center;
-    .create-folder {
-      font-size: x-large;
-      width: 10vw;
-      height: 10vw;
-    }
-    button {
-      padding: 0%;
-      flex-shrink: 0;
-      margin: 1px;
-      width: 15vw;
-      height: 7vh;
-      font-size: x-small;
-    }
+    justify-content: center;
+    font-size: 16px;
+    border-radius: 50%;
+    color: #245aa8;
+    background-color: #eef4fd;
+    border: 1px solid rgba(85, 144, 226, 0.3);
+  }
+}
+
+/* 半透明主题：顶栏跟着变暗，胶囊改成白色半透明 + 白字
+   （手机上不铺壁纸，body 是深色底，见 main.scss 的 <768px 规则） */
+body[data-theme='semiTransparent'] .phone-box #folder {
+  background-color: rgba(0, 0, 0, 0.35);
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+
+  .van-button {
+    color: rgba(255, 255, 255, 0.86);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  > .van-button:nth-of-type(3) {
+    color: rgba(255, 255, 255, 0.45);
+    background-color: transparent;
+    border-color: transparent;
+  }
+
+  /* 暗底上用亮蓝，深蓝发闷 */
+  .van-button.buttonchecked {
+    color: #8ab6f0;
+    background-color: rgba(138, 182, 240, 0.18);
+    border-color: rgba(138, 182, 240, 0.55);
+    box-shadow: none;
+  }
+
+  .create-folder {
+    color: #8ab6f0;
+    background-color: rgba(138, 182, 240, 0.16);
+    border-color: rgba(138, 182, 240, 0.4);
   }
 }

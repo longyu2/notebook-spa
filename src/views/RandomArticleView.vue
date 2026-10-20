@@ -256,4 +256,66 @@ onMounted(async () => {
   --el-button-hover-border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
   --el-button-hover-text-color: var(--color-primary-text);
 }
+
+/* 半透明主题：容器在浅色下把 --word-color 钉成深色，这里要翻回白色，
+   否则「已看 N / M」和主题开关是深字压深底（手机深色底上看不见）。 */
+body[data-theme='semiTransparent'] .random-box {
+  --word-color: #fff;
+  --muted: color-mix(in srgb, #fff 62%, transparent);
+}
+
+/* 「设为公开」按钮在浅色下是深字描边，暗底上要换成白色描边 */
+body[data-theme='semiTransparent'] .random-public {
+  --el-button-border-color: rgba(255, 255, 255, 0.24);
+  --el-button-text-color: rgba(255, 255, 255, 0.86);
+  --el-button-hover-bg-color: rgba(255, 255, 255, 0.1);
+  --el-button-hover-border-color: rgba(255, 255, 255, 0.42);
+  --el-button-hover-text-color: #fff;
+}
+
+/* ===== 手机端（≤860px）=====
+   工具栏一行放不下（已看 N/M + 主题 + 设为公开 + 换一篇），
+   改成「统计占一行，按钮组换到下一行并平分宽度」。 */
+@media (max-width: 860px) {
+  .random-box {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 12px 12px 40px;
+    gap: 12px;
+  }
+
+  .random-bar {
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  .random-stat {
+    font-size: 13px;
+    /* 「已看 1 / 16」不许折成两行 */
+    white-space: nowrap;
+    flex: 1 1 auto;
+  }
+
+  .random-actions {
+    width: 100%;
+    gap: 8px;
+
+    /* 主题开关保持自身宽度，两个按钮平分剩下的空间 */
+    > * {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    .random-theme {
+      flex: 0 0 auto;
+    }
+  }
+
+  .random-public,
+  .random-actions :deep(.el-button) {
+    margin-left: 0;
+  }
+}
 </style>

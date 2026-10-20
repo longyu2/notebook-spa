@@ -17,7 +17,8 @@ const token = localStorage.getItem('token')
 const uploadHeaders = { Authorization: token }
 
 const fileList = ref<UploadUserFile[]>([])
-let user = JSON.parse(localStorage.getItem('user')!)
+// localStorage 里可能没有 user（老会话 / 只存了 token）——别让 JSON.parse(null) 炸掉整页
+let user = JSON.parse(localStorage.getItem('user') || 'null')
 let [title, content] = [ref(''), ref('')]
 let titleUpdateLock = ref(false)
 
@@ -383,7 +384,7 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
   <div class="right-container">
     <div class="article-content-box shadow">
       <div id="TopRight">
-        <span>你好， {{ user.userName }}！</span>
+        <span>你好， {{ user?.userName || '访客' }}！</span>
         <span>
           你当前阅读的是第
           <b>
