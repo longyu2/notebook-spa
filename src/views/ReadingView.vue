@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
+import { toBlob } from 'html-to-image'
 import MdArticle from '@/components/pc/MdArticle.vue'
 import ThemeToggle from '@/components/pc/ThemeToggle.vue'
 import { initTheme } from '@/assets/js/theme'
@@ -43,6 +45,29 @@ const total = ref(0)
 const page = ref(1)
 const loading = ref(false)
 const error = ref('')
+
+/* ===== 列表缓存 + 回退滚动还原 =====
+   从卡片进详情再回来，不能重新拉一遍列表：请求期间只剩 180px 的「加载中」，
+   页面高度先塌再长，滚动条滑块会跟着跳。
+   这里记住「当前列表数据对应的查询」和「点卡片时的滚动位置」，
+   回退时查询没变就直接复用内存里的列表，并原地滚回去。 */
+let loadedListKey = ''
+let savedListState: { key: string; y: number } | null = null
+
+const listKeyOf = (
+  fid: number,
+  p: number,
+  s: number,
+  sort: string,
+  ord: string,
+  q: string,
+  sc: string
+) => [fid, p, s, sort, ord, q, sc].join('|')
+
+/* ===== 详情页的上一篇 / 下一篇 =====
+   由后端按「当前文件夹 + 当前排序」计算，和列表顺序一致；
+   folderid 不带时后端按「全部笔记」处理。 */
+const neighbors = ref<{ prev: any; next: any }>({ prev: null, next: null })
 
 /* ===== 搜索（本页内搜索，不跳 /search） =====
    scope：'all' 搜全站自己的所有文章 / 'folder' 只在当前选中的文件夹里搜。
@@ -90,6 +115,220 @@ async function loadDetail(id: string) {
     detailLoading.value = false
   }
 }
+
+async function loadNeighbors() {
+  const id = aid.value
+  /* 先清空：切文章时按钮短暂置灰，避免拿着上一篇的邻居去跳转 */
+  neighbors.value = { prev: null, next: null }
+  try {
+    const res = await axios.get(`${server_url}/article/neighbors/${id}`, {
+      params: {
+        folderid: folderId.value,
+        sort: sortField.value,
+        order: order.value
+      }
+    })
+    /* 连点「下一篇」时响应可能乱序回来，只认当前这篇的结果 */
+    if (id !== aid.value) return
+    neighbors.value = res.data?.data ?? { prev: null, next: null }
+  } catch {
+    neighbors.value = { prev: null, next: null }
+  }
+}
+
+function goNeighbor(dir: 'prev' | 'next') {
+  const target = neighbors.value[dir]
+  if (!target) return
+  /* 查询参数原样带走：返回列表时还是同一文件夹 / 排序 / 页码 */
+  router.push({ path: `/reading/${target.id}`, query: route.query })
+}
+
+/* ===== 生成手机长图 =====
+   不截当前页面，而是把正文按 420px 宽度离屏重排后再导出 ——
+   桌面版式的行宽放到手机上看字号会又小又挤。
+   普通文章按 2 倍像素密度出图（840px 宽）；特别长的文章按画布上限自动降倍率。 */
+const SHOT_WIDTH = 420
+const shotLoading = ref(false)
+const shotOpen = ref(false)
+const shotUrl = ref('')
+const shotMeta = ref('')
+const shotName = ref('文章.png')
+
+function shotFilename(title: string) {
+  const safe = (title || '无标题')
+    .replace(/[\\/:*?"<>|\r\n\t]+/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 60)
+  return `${safe || '无标题'}.png`
+}
+
+function releaseShot() {
+  if (shotUrl.value) URL.revokeObjectURL(shotUrl.value)
+  shotUrl.value = ''
+  shotMeta.value = ''
+}
+
+async function waitImages(root: HTMLElement) {
+  const imgs = Array.from(root.querySelectorAll('img'))
+  await Promise.all(
+    imgs.map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete) return resolve()
+          img.addEventListener('load', () => resolve(), { once: true })
+          img.addEventListener('error', () => resolve(), { once: true })
+        })
+    )
+  )
+  await Promise.all(
+    imgs.map(async (img) => {
+      try {
+        await img.decode()
+      } catch {
+        /* 解不出来的图片留着占位，不阻断整张图 */
+      }
+    })
+  )
+}
+
+function buildShotSheet(contentHTML: string, row: any) {
+  const sheet = document.createElement('div')
+  sheet.className = 'rd-shot__sheet'
+
+  const h1 = document.createElement('h1')
+  h1.className = 'rd-shot__title'
+  h1.textContent = row.title || '无标题'
+  sheet.appendChild(h1)
+
+  const metaText = [fmtDateTime(row.createtime), `${(row.content || '').length} 字`]
+    .filter(Boolean)
+    .join(' · ')
+  if (metaText) {
+    const meta = document.createElement('div')
+    meta.className = 'rd-shot__meta'
+    meta.textContent = metaText
+    sheet.appendChild(meta)
+  }
+
+  const hr = document.createElement('div')
+  hr.className = 'rd-shot__hr'
+  sheet.appendChild(hr)
+
+  const body = document.createElement('div')
+  body.className = 'rd-shot__body vditor-reset'
+  body.innerHTML = contentHTML
+  sheet.appendChild(body)
+
+  const foot = document.createElement('div')
+  foot.className = 'rd-shot__foot'
+  foot.textContent = '暮观云笔记'
+  sheet.appendChild(foot)
+
+  return sheet
+}
+
+async function generateImage() {
+  if (shotLoading.value || detailLoading.value || !detail.value) return
+  /* Vditor 是异步渲染的：正文还没落进 DOM 时按钮点了也白点 */
+  const source = document.querySelector<HTMLElement>('.rd-detail .md-content')
+  if (!source || !source.innerHTML.trim()) {
+    ElMessage.warning('正文还在渲染，稍等一下再试')
+    return
+  }
+
+  shotLoading.value = true
+  let host: HTMLDivElement | null = null
+  try {
+    host = document.createElement('div')
+    host.className = 'rd-shot'
+    host.style.width = `${SHOT_WIDTH}px`
+    const sheet = buildShotSheet(source.innerHTML, detail.value)
+    host.appendChild(sheet)
+    document.body.appendChild(host)
+
+    await waitImages(sheet)
+    /* 等一帧把图片尺寸/字体排版稳定下来再截 */
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+
+    const height = Math.ceil(sheet.getBoundingClientRect().height)
+    /* 画布高度上限 16384px：超高文章自动降倍率，先把 2 倍压低到不触顶，
+       比让截图库自己按比例缩更可控（普通文章仍然保持 840px 宽）。 */
+    const pixelRatio = Math.min(2, Math.max(1, 16000 / height))
+    const blob = await toBlob(sheet, {
+      width: SHOT_WIDTH,
+      height,
+      pixelRatio,
+      backgroundColor: '#ffffff',
+      cacheBust: false,
+      /* 正文用的都是系统字体，不需要把全站 webfont 内联进 SVG；
+         跳过还能避开跨域样式表读 cssRules 的报错，出图更快。 */
+      skipFonts: true
+    })
+    if (!blob) throw new Error('导出失败')
+
+    releaseShot()
+    shotUrl.value = URL.createObjectURL(blob)
+    shotName.value = shotFilename(detail.value.title)
+    /* 尺寸以真实产物为准：超长文章的画布可能被库再缩小一点 */
+    let outW = Math.round(SHOT_WIDTH * pixelRatio)
+    let outH = Math.round(height * pixelRatio)
+    try {
+      const bmp = await createImageBitmap(blob)
+      outW = bmp.width
+      outH = bmp.height
+      bmp.close()
+    } catch {
+      /* 拿不到位图信息就用理论值兜底 */
+    }
+    shotMeta.value = `${outW} × ${outH} px`
+    shotOpen.value = true
+  } catch (e: any) {
+    ElMessage.error('生成图片失败：' + (e?.message || e))
+  } finally {
+    host?.remove()
+    shotLoading.value = false
+  }
+}
+
+function downloadShot() {
+  if (!shotUrl.value) return
+  const a = document.createElement('a')
+  a.href = shotUrl.value
+  a.download = shotName.value
+  document.body.appendChild(a)
+  a.click()
+  /* 点完立刻 remove 会让 Chrome 把 blob 下载判成「取消」，延后再摘 */
+  setTimeout(() => a.remove(), 1000)
+}
+
+/* 方向键翻篇：←/↑ 上一篇，→/↓ 下一篇。
+   只在详情态接管，输入框 / 可编辑区域、带修饰键、长按连发都不拦；
+   已经在第一篇 / 最后一篇时也不拦 —— 方向键退回正常滚动。
+   生成图片的过程中也不拦：翻篇会把正在截的文章换掉。 */
+function onKeydown(e: KeyboardEvent) {
+  if (!aid.value || shotOpen.value || shotLoading.value) return
+  if (e.defaultPrevented || e.repeat) return
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
+
+  const el = e.target as HTMLElement | null
+  const tag = el?.tagName
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || el?.isContentEditable) return
+
+  const dir =
+    e.key === 'ArrowLeft' || e.key === 'ArrowUp'
+      ? 'prev'
+      : e.key === 'ArrowRight' || e.key === 'ArrowDown'
+        ? 'next'
+        : null
+  if (!dir || !neighbors.value[dir]) return
+
+  e.preventDefault()
+  goNeighbor(dir)
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 /* ===== 摘要：把 Markdown 压成纯文本预览（阅览模式不涉及高亮，不需要居中裁窗） ===== */
 function toPlainText(md: string) {
@@ -192,6 +431,15 @@ async function fetchPage(targetPage: number) {
 
   const q = activeQ.value
   const isSearch = !!q
+  const key = listKeyOf(
+    folderId.value,
+    targetPage,
+    pageSize.value,
+    sortField.value,
+    order.value,
+    q,
+    scope.value
+  )
 
   try {
     const res = await axios.get(isSearch ? `${server_url}/search` : `${server_url}/article/list`, {
@@ -208,6 +456,21 @@ async function fetchPage(targetPage: number) {
     list.value = data.list ?? []
     total.value = data.total ?? (data.list ?? []).length
     page.value = targetPage
+    /* 只有响应回来时查询没再变，才算「这份列表就是当前查询的数据」 */
+    if (
+      key ===
+      listKeyOf(
+        folderId.value,
+        targetPage,
+        pageSize.value,
+        sortField.value,
+        order.value,
+        activeQ.value,
+        scope.value
+      )
+    ) {
+      loadedListKey = key
+    }
   } catch (e: any) {
     error.value = (isSearch ? '搜索失败：' : '加载失败：') + (e?.message || e)
     list.value = []
@@ -264,6 +527,16 @@ function resolveFolderName(fid: number) {
   return hit ? hit.folder_name : '笔记'
 }
 
+/* 回到同一份列表时，把点卡片前的滚动位置还原。
+   只认「查询也一致」的那次记录：从详情里换了文件夹再回来，就不该弹回旧位置。 */
+function restoreListScroll(key: string) {
+  const saved = savedListState
+  savedListState = null
+  if (!saved || saved.key !== key) return
+  /* 等列表这一帧真正显示出来再滚，否则会被详情页的矮页面夹成 0 */
+  nextTick(() => window.scrollTo(0, saved.y))
+}
+
 function syncListFromRoute() {
   const { fid, p, s, sort, ord, q, sc } = readQuery()
   folderId.value = fid
@@ -276,7 +549,19 @@ function syncListFromRoute() {
   keyword.value = q
   activeQ.value = q
   scope.value = sc
-  fetchPage(p)
+
+  const key = listKeyOf(fid, p, s, sort, ord, q, sc)
+  if (key === loadedListKey) {
+    /* 从详情返回：内存里的列表就是这份查询的数据，直接复用。
+       重新请求会先渲染「加载中」的矮提示，页面高度塌一下，滚动条跟着跳。 */
+    loading.value = false
+    error.value = ''
+    restoreListScroll(key)
+  } else {
+    /* 换了文件夹 / 页码 / 排序 / 关键词：旧位置没有意义，重新拉 */
+    savedListState = null
+    fetchPage(p)
+  }
 }
 
 /* 列表态 / 详情态共用一个组件，靠 :aid 是否存在切换 */
@@ -293,7 +578,11 @@ function sync() {
     keyword.value = q
     activeQ.value = q
     scope.value = sc
+    /* 从列表点进来 / 翻上一篇下一篇，正文都从顶部开始读；
+       原列表的滚动位置存在 savedListState 里，回退时再还原。 */
+    window.scrollTo({ top: 0 })
     loadDetail(aid.value)
+    loadNeighbors()
     return
   }
 
@@ -341,6 +630,8 @@ function setScope(next: 'all' | 'folder') {
 }
 
 function openArticle(row: any) {
+  /* 记下「哪份列表 + 滚到哪」：回退时查询一致就直接复用列表并原地滚回去 */
+  savedListState = { key: loadedListKey, y: window.scrollY }
   router.push({ path: `/reading/${row.Notebookid}`, query: route.query })
 }
 
@@ -443,11 +734,51 @@ watch(() => route.fullPath, sync)
 
       <!-- ===== 右栏 ===== -->
       <main class="rd-main">
-        <!-- 详情态：只读全文（和随机推荐/公开页/搜索详情同一套 MdArticle） -->
-        <template v-if="aid">
+        <!-- 详情态：只读全文（和随机推荐/公开页/搜索详情同一套 MdArticle）
+             用 v-show 而不是 v-if：回列表时列表 DOM 原样还在，
+             不会因为重新挂载/重新请求让页面高度抖一下、滚动条跳一下。 -->
+        <div v-show="aid" class="rd-detail">
           <nav class="rd-bar">
             <button class="rd-back" @click="backToList">← 返回列表</button>
             <span class="rd-bar__tip">只读阅览 · 与编辑模式同一份内容</span>
+
+            <div class="rd-nav">
+              <button
+                type="button"
+                class="rd-navbtn"
+                :disabled="shotLoading || detailLoading || !detail?.content"
+                title="按手机宽度生成竖长图（420px 宽）"
+                @click="generateImage"
+              >
+                {{ shotLoading ? '生成中…' : '生成图片' }}
+              </button>
+              <button
+                type="button"
+                class="rd-navbtn"
+                :disabled="!neighbors.prev"
+                :title="
+                  neighbors.prev
+                    ? `上一篇：${neighbors.prev.title || '无标题'}（← / ↑）`
+                    : '已经是第一篇'
+                "
+                @click="goNeighbor('prev')"
+              >
+                ← 上一篇
+              </button>
+              <button
+                type="button"
+                class="rd-navbtn"
+                :disabled="!neighbors.next"
+                :title="
+                  neighbors.next
+                    ? `下一篇：${neighbors.next.title || '无标题'}（→ / ↓）`
+                    : '已经是最后一篇'
+                "
+                @click="goNeighbor('next')"
+              >
+                下一篇 →
+              </button>
+            </div>
           </nav>
 
           <MdArticle
@@ -457,10 +788,10 @@ watch(() => route.fullPath, sync)
             :loading="detailLoading"
             :error="detailError"
           />
-        </template>
+        </div>
 
         <!-- 列表态 -->
-        <template v-else>
+        <div v-show="!aid" class="rd-list">
           <!-- 搜索栏：范围可选「全站 / 当前文件夹」，回车即搜，不跳转 -->
           <!-- 范围下拉独立成一项（不放进 prepend，避免吃不到宽度溢出到组外） -->
           <div class="rd-searchrow">
@@ -617,9 +948,30 @@ watch(() => route.fullPath, sync)
               background
             />
           </template>
-        </template>
+        </div>
       </main>
     </div>
+
+    <!-- 生成的长图预览：确认效果后再下载 -->
+    <el-dialog
+      v-model="shotOpen"
+      title="长图已生成"
+      width="min(92vw, 540px)"
+      append-to-body
+      class="rd-shotdlg"
+      @closed="releaseShot"
+    >
+      <div class="rd-shotdlg__view">
+        <img :src="shotUrl" alt="文章长图预览" />
+      </div>
+      <div class="rd-shotdlg__meta">
+        手机宽度 420px · 实际尺寸 {{ shotMeta }}
+      </div>
+      <template #footer>
+        <el-button @click="shotOpen = false">关闭</el-button>
+        <el-button type="primary" @click="downloadShot">下载图片</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -781,6 +1133,16 @@ watch(() => route.fullPath, sync)
   min-width: 0;
 }
 
+/* 详情 / 列表两个分支用 v-show 切换，各自充当原来的 flex 容器，
+   间距和直接挂在 .rd-main 下时保持一致 */
+.rd-detail,
+.rd-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
 /* 搜索栏：范围下拉在左，输入框（带搜索按钮）在右，两个独立控件并排 */
 .rd-searchrow {
   display: flex;
@@ -926,6 +1288,43 @@ watch(() => route.fullPath, sync)
 .rd-bar__tip {
   font-size: 13px;
   color: var(--muted);
+}
+
+/* 详情页右侧的上/下篇按钮：和「返回列表」同样的药丸语言，
+   但用品牌蓝区分「翻页」和「返回」两种方向 */
+.rd-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.rd-navbtn {
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 6px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 999px;
+  color: var(--color-primary-text);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
+    border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.38;
+  }
 }
 
 .rd-hint {
@@ -1360,6 +1759,18 @@ body[data-theme='semiTransparent'] .rd-bar__tip {
   color: rgba(255, 255, 255, 0.78);
 }
 
+/* 暗底上用亮蓝，和文件夹选中态、返回按钮保持同一套半透明白底 */
+body[data-theme='semiTransparent'] .rd-navbtn {
+  color: #8ab6f0;
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(138, 182, 240, 0.5);
+
+  &:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(138, 182, 240, 0.75);
+  }
+}
+
 /* ===== 手机端（≤860px）=====
    窄屏不再「左栏 + 右栏」并排，改成上下：文件夹收成一行可横滑的胶囊，
    文章列表/正文拿满宽度；详情态直接把文件夹栏收起（已经选过了，白占地方）。 */
@@ -1452,6 +1863,11 @@ body[data-theme='semiTransparent'] .rd-bar__tip {
     gap: 12px;
   }
 
+  .rd-detail,
+  .rd-list {
+    gap: 12px;
+  }
+
   .rd-searchrow {
     gap: 8px;
   }
@@ -1498,6 +1914,15 @@ body[data-theme='semiTransparent'] .rd-bar__tip {
     gap: 8px;
   }
 
+  .rd-nav {
+    margin-left: auto;
+  }
+
+  .rd-navbtn {
+    font-size: 13px;
+    padding: 5px 12px;
+  }
+
   .rd-bar__tip {
     font-size: 12px;
   }
@@ -1521,5 +1946,159 @@ body[data-theme='semiTransparent'] .rd-bar__tip {
       font-size: 12.5px;
     }
   }
+}
+</style>
+
+<style lang="scss">
+/* ===== 生成手机长图 =====
+   离屏长图节点和预览弹窗都挂在 body 下（scoped 作用域选不到），只能写全局。
+   导读：宿主 .rd-shot 移出屏幕，但真正被截的是里面的 .rd-shot__sheet；
+   宽度钉死 420px（2 倍导出 = 840px 宽），排版按手机阅读习惯重排，
+   不跟随页面当前主题 —— 半透明主题的「暗底白字」截成图片在手机上很难读。 */
+.rd-shot {
+  position: fixed;
+  top: 0;
+  left: -100000px;
+  z-index: -1;
+  pointer-events: none;
+  --word-color: #1f1f1f;
+  color: #1f1f1f;
+  background-color: #fff;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', sans-serif;
+}
+
+.rd-shot__sheet {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 30px 26px 24px;
+  background-color: #fff;
+}
+
+.rd-shot__title {
+  margin: 0;
+  font-size: 23px;
+  line-height: 1.45;
+  font-weight: 700;
+  color: #1f1f1f;
+  word-break: break-word;
+}
+
+.rd-shot__meta {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: rgba(31, 31, 31, 0.55);
+}
+
+.rd-shot__hr {
+  height: 1px;
+  margin: 18px 0 20px;
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* 正文沿用 Vditor 渲染结果的 .vditor-reset 排版，这里只补「窄屏长图」需要的约束 */
+.rd-shot__body {
+  font-size: 16px;
+  line-height: 1.85;
+  color: #1f1f1f;
+  word-break: break-word;
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+  }
+
+  /* 长图里表格不能横向滚动：压进宽度，单元格自己折行 */
+  table {
+    width: 100%;
+    table-layout: fixed;
+    font-size: 14px;
+
+    th,
+    td {
+      word-break: break-word;
+    }
+  }
+
+  /* 代码块同理：长行折行显示，截出来的图才完整 */
+  pre {
+    padding: 12px 14px;
+    border-radius: 6px;
+    background-color: #f6f8fa;
+    overflow: visible;
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    > code {
+      padding: 0;
+      background: none;
+      font-size: 13.5px;
+      line-height: 1.7;
+      white-space: inherit;
+    }
+  }
+
+  /* 行内代码给一点底色，和正文区分开 */
+  :not(pre) > code {
+    padding: 1px 5px;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.05);
+    font-size: 14px;
+  }
+
+  blockquote {
+    margin: 0 0 16px;
+    padding: 8px 12px;
+    border-left: 3px solid #d9d9de;
+    background-color: #f7f7f8;
+    color: #4a4a4a;
+  }
+
+  a {
+    color: #2f6fd0;
+  }
+}
+
+.rd-shot__foot {
+  margin-top: 26px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+  text-align: center;
+  color: rgba(31, 31, 31, 0.42);
+}
+
+/* 预览弹窗：长图缩进弹窗里看整体比例，点「下载图片」拿原图 */
+.rd-shotdlg {
+  .el-dialog__body {
+    padding-top: 10px;
+  }
+}
+
+.rd-shotdlg__view {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  max-height: 60vh;
+  padding: 10px;
+  overflow: auto;
+  border-radius: 8px;
+  background-color: #f4f4f6;
+
+  img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.rd-shotdlg__meta {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: #8a8a91;
 }
 </style>
