@@ -78,128 +78,15 @@ const modelName = ref('')
 const listEl = ref<HTMLElement | null>(null)
 let abortCtrl: AbortController | null = null
 
-/* ---- 设置面板（多服务商；key 存服务端，不落浏览器） ----
- *
- * 每个服务商就是一条 OpenAI 兼容的「接口地址 + key + 模型」，
- * 后端按它去请求 /chat/completions。同时在用的只有一条（activeId）。
- * 面板里的 draft 是一份待编辑副本：改完点「保存并使用」才写回服务端。
- */
-interface ProviderView {
-  id: string
-  name: string
-  kind: string
-  baseUrl: string
-  model: string
-  maxTokens: number
-  temperature: number
-  reasoning: string
-  tokenField: string
-  hasKey: boolean
-  apiKeyMasked: string
-}
-
-interface ProviderDraft {
-  id: string
-  name: string
-  baseUrl: string
-  model: string
-  apiKey: string
-  kind: string
-  reasoning: string
-  tokenField: string
-  maxTokens: string
-  temperature: string
-}
-
-function emptyDraft(): ProviderDraft {
-  return {
-    id: '',
-    name: '',
-    baseUrl: '',
-    model: '',
-    apiKey: '',
-    kind: 'custom',
-    reasoning: 'auto',
-    tokenField: 'auto',
-    maxTokens: '',
-    temperature: ''
-  }
-}
-
+/* ---- 设置面板（key 存服务端，不落浏览器） ---- */
 const showSettings = ref(false)
-const providers = ref<ProviderView[]>([])
-const activeId = ref('')
-/** 正在编辑的服务商 id；空串表示「正在新增」 */
-const editId = ref('')
-const draft = ref<ProviderDraft>(emptyDraft())
-const modelList = ref<string[]>([])
+const keyDraft = ref('')
+const keyMasked = ref('')
+/* 用别家的 OpenAI 兼容 key 时，地址和模型名也要能改 —— 默认就是 DeepSeek */
+const baseUrlDraft = ref('')
+const modelDraft = ref('')
 const saving = ref(false)
 const testing = ref(false)
-const loadingModels = ref(false)
-
-const activeProvider = computed(
-  () => providers.value.find((p) => p.id === activeId.value) || null
-)
-const editingSaved = computed(() => Boolean(editId.value))
-const draftKeyPlaceholder = computed(() => {
-  // 编辑中的是新建草稿时退回当前服务商，别让提示语空着
-  const id = editId.value && editId.value !== '__new' ? editId.value : activeId.value
-  const p = providers.value.find((x) => x.id === id)
-  return p && p.hasKey ? `已保存 ${p.apiKeyMasked}，留空则不改` : 'sk-...'
-})
-
-/** 常见兼容服务的预设：只是把地址和模型名填好，省得去翻文档抄 */
-const PRESETS: {
-  key: string
-  label: string
-  name: string
-  kind: string
-  baseUrl: string
-  model: string
-  reasoning: string
-  tokenField: string
-}[] = [
-  {
-    key: 'openai',
-    label: 'OpenAI',
-    name: 'OpenAI',
-    kind: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-4o-mini',
-    reasoning: 'openai',
-    tokenField: 'auto'
-  },
-  {
-    key: 'siliconflow',
-    label: '硅基流动',
-    name: '硅基流动',
-    kind: 'custom',
-    baseUrl: 'https://api.siliconflow.cn/v1',
-    model: 'deepseek-ai/DeepSeek-V3',
-    reasoning: 'none',
-    tokenField: 'max_tokens'
-  },
-  {
-    key: 'openrouter',
-    label: 'OpenRouter',
-    name: 'OpenRouter',
-    kind: 'custom',
-    baseUrl: 'https://openrouter.ai/api/v1',
-    model: 'openai/gpt-4o-mini',
-    reasoning: 'none',
-    tokenField: 'max_tokens'
-  },
-  {
-    key: 'deepseek',
-    label: 'DeepSeek',
-    name: 'DeepSeek',
-    kind: 'deepseek',
-    baseUrl: 'https://api.deepseek.com',
-    model: 'deepseek-flash',
-    reasoning: 'deepseek',
-    tokenField: 'auto'
-  }
-]
 
 /* ---- 深度思考档位（对应 DeepSeek 的 thinking.type + reasoning_effort） ----
  *
@@ -824,140 +711,42 @@ function authHeaders(extra?: Record<string, string>) {
   }
 }
 
-/** 把某个服务商填进编辑草稿 */
-function fillDraft(p: ProviderView | null) {
-  if (!p) {
-    draft.value = emptyDraft()
-    return
-  }
-  draft.value = {
-    id: p.id,
-    name: p.name,
-    baseUrl: p.baseUrl,
-    model: p.model,
-    apiKey: '',
-    kind: p.kind,
-    reasoning: p.reasoning,
-    tokenField: p.tokenField,
-    maxTokens: String(p.maxTokens ?? ''),
-    temperature: String(p.temperature ?? '')
-  }
-}
-
 /** 拉取后端配置状态；没配 key 就自动把设置面板展开，省一次点击 */
 async function loadStatus() {
   try {
     const res = await fetch(`${apiBase()}/ai/status`, { headers: authHeaders() })
     const j = await res.json()
     configured.value = Boolean(j?.configured)
-    providers.value = Array.isArray(j?.providers) ? j.providers : []
-    activeId.value = j?.activeId || providers.value[0]?.id || ''
-    const a = providers.value.find((p) => p.id === activeId.value)
-    modelName.value = a ? `${a.name} · ${a.model}` : ''
-    // 正在新增时不打断用户；否则跟着当前服务商走
-    if (!editId.value) {
-      // 首次加载：让下拉指向当前在用的那条，而不是空着
-      editId.value = activeId.value
-      fillDraft(a || null)
-    } else if (editId.value !== '__new') {
-      const editing = providers.value.find((p) => p.id === editId.value)
-      if (editing) fillDraft(editing)
-    }
+    modelName.value = j?.model || ''
+    keyMasked.value = j?.apiKeyMasked || ''
+    baseUrlDraft.value = j?.baseUrl || ''
+    modelDraft.value = j?.model || ''
     if (configured.value === false) showSettings.value = true
   } catch {
     configured.value = null
   }
 }
 
-/** 切换编辑对象：某个已有服务商，或新增 */
-function pickProvider(id: string) {
-  editId.value = id === '__new' ? '__new' : id
-  modelList.value = []
-  if (id === '__new') draft.value = emptyDraft()
-  else fillDraft(providers.value.find((p) => p.id === id) || null)
-}
-
-function onSelectChange(e: Event) {
-  pickProvider((e.target as HTMLSelectElement).value)
-}
-
-function newProvider() {
-  pickProvider('__new')
-}
-
-function applyPreset(p: (typeof PRESETS)[number]) {
-  draft.value = {
-    ...draft.value,
-    name: p.name,
-    kind: p.kind,
-    baseUrl: p.baseUrl,
-    model: p.model,
-    reasoning: p.reasoning,
-    tokenField: p.tokenField
-  }
-}
-
-/** 组给后端的 provider 补丁：空字符串一律不发，避免把已存的 key 冲掉 */
-function draftPayload() {
-  const d = draft.value
-  const out: Record<string, unknown> = {}
-  if (d.id) out.id = d.id
-  if (d.name.trim()) out.name = d.name.trim()
-  if (d.baseUrl.trim()) out.baseUrl = d.baseUrl.trim()
-  if (d.model.trim()) out.model = d.model.trim()
-  if (d.apiKey.trim()) out.apiKey = d.apiKey.trim()
-  if (d.kind) out.kind = d.kind
-  if (d.reasoning) out.reasoning = d.reasoning
-  if (d.tokenField) out.tokenField = d.tokenField
-  if (d.maxTokens.trim()) out.maxTokens = Number(d.maxTokens)
-  if (d.temperature.trim()) out.temperature = Number(d.temperature)
-  return out
-}
-
-/** 只校验不保存，方便用户先确认参数是对的再存 */
-async function testProvider() {
-  if (testing.value) return
-  const payload = draftPayload()
-  if (editId.value !== '__new' && !payload.baseUrl && !payload.apiKey && !payload.model) {
-    // 什么都没改，测已保存的那条
-    testing.value = true
-    try {
-      const res = await fetch(`${apiBase()}/ai/verify`, {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({ id: editId.value })
-      })
-      const j = await res.json().catch(() => null)
-      if (res.ok) ElMessage.success(j?.message || '连通正常')
-      else ElMessage.error(j?.detail ? `${j.message}：${j.detail}` : j?.message || `校验失败（HTTP ${res.status}）`)
-    } catch (err: any) {
-      ElMessage.error(`请求失败：${err?.message || err}`)
-    } finally {
-      testing.value = false
-    }
-    return
-  }
-
-  if (!payload.baseUrl && editId.value === '__new') {
-    ElMessage.warning('先填接口地址')
-    return
-  }
-
+/** 只校验不保存，方便用户先确认能连通再存 */
+async function testKey() {
+  const key = keyDraft.value.trim()
+  if (!key || testing.value) return
   testing.value = true
   try {
     const res = await fetch(`${apiBase()}/ai/verify`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ provider: payload })
+      body: JSON.stringify({
+        apiKey: key,
+        baseUrl: baseUrlDraft.value.trim(),
+        model: modelDraft.value.trim()
+      })
     })
     const j = await res.json().catch(() => null)
     if (res.ok) {
-      const extra = Array.isArray(j?.degraded) && j.degraded.length
-        ? `（已自动兼容：不发送 ${j.degraded.join('/')}）`
-        : ''
-      ElMessage.success(`${j?.message || '连通正常'} · ${j?.model || ''} · ${j?.latencyMs ?? '?'}ms ${extra}`)
+      ElMessage.success(j?.message || 'Key 有效')
     } else {
-      // detail 里是上游原始报错，比 HTTP 状态码有用得多
+      // detail 里是 DeepSeek 的原始报错，比 HTTP 状态码有用得多
       ElMessage.error(j?.detail ? `${j.message}：${j.detail}` : j?.message || `校验失败（HTTP ${res.status}）`)
     }
   } catch (err: any) {
@@ -967,35 +756,29 @@ async function testProvider() {
   }
 }
 
-async function saveProvider() {
-  if (saving.value) return
-  const payload = draftPayload()
-  if (!payload.baseUrl) {
-    ElMessage.warning('接口地址不能为空')
-    return
-  }
-  if (!payload.model) {
-    ElMessage.warning('模型名不能为空')
-    return
-  }
+async function saveKey() {
+  const key = keyDraft.value.trim()
+  if (!key || saving.value) return
   saving.value = true
   try {
     const res = await fetch(`${apiBase()}/ai/config`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ provider: payload, activate: true })
+      body: JSON.stringify({
+        apiKey: key,
+        baseUrl: baseUrlDraft.value.trim(),
+        model: modelDraft.value.trim()
+      })
     })
     const j = await res.json().catch(() => null)
     if (!res.ok) {
       ElMessage.error(j?.message || `保存失败（HTTP ${res.status}）`)
       return
     }
-    // 保存后跟随刚存的这条
-    const saved = j?.active
-    editId.value = saved?.id || ''
+    keyDraft.value = ''
     await loadStatus()
     showSettings.value = false
-    ElMessage.success(`${saved?.name || '已保存'} · ${saved?.model || ''}`)
+    ElMessage.success(`已保存（${j?.apiKeyMasked || ''}）`)
   } catch (err: any) {
     ElMessage.error(`请求失败：${err?.message || err}`)
   } finally {
@@ -1003,73 +786,26 @@ async function saveProvider() {
   }
 }
 
-async function activateProvider(id: string) {
-  if (saving.value || id === activeId.value) return
+async function clearKey() {
+  if (saving.value) return
   saving.value = true
   try {
     const res = await fetch(`${apiBase()}/ai/config`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ activate: id })
+      body: JSON.stringify({ clear: true })
     })
     if (!res.ok) {
-      ElMessage.error('切换失败')
+      ElMessage.error('清除失败')
       return
     }
     await loadStatus()
-    ElMessage.success('已切换')
+    showSettings.value = true
+    ElMessage.success('已清除')
   } catch (err: any) {
     ElMessage.error(`请求失败：${err?.message || err}`)
   } finally {
     saving.value = false
-  }
-}
-
-async function removeProvider() {
-  const id = editId.value
-  if (!id || id === '__new' || saving.value) return
-  const p = providers.value.find((x) => x.id === id)
-  saving.value = true
-  try {
-    const res = await fetch(`${apiBase()}/ai/config`, {
-      method: 'POST',
-      headers: authHeaders({ 'Content-Type': 'application/json' }),
-      body: JSON.stringify({ remove: id })
-    })
-    if (!res.ok) {
-      ElMessage.error('删除失败')
-      return
-    }
-    editId.value = ''
-    await loadStatus()
-    ElMessage.success(`已删除 ${p?.name || ''}`)
-  } catch (err: any) {
-    ElMessage.error(`请求失败：${err?.message || err}`)
-  } finally {
-    saving.value = false
-  }
-}
-
-/** 拉上游的模型列表，填进 datalist；拿不到就算了，手填也行 */
-async function loadModels() {
-  if (loadingModels.value) return
-  if (!editingSaved.value) {
-    ElMessage.info('先保存这个服务商，才能拉它的模型列表')
-    return
-  }
-  loadingModels.value = true
-  try {
-    const res = await fetch(`${apiBase()}/ai/models?id=${encodeURIComponent(editId.value)}`, {
-      headers: authHeaders()
-    })
-    const j = await res.json().catch(() => null)
-    modelList.value = Array.isArray(j?.models) ? j.models : []
-    if (modelList.value.length) ElMessage.success(`拉到 ${modelList.value.length} 个模型`)
-    else ElMessage.warning(j?.message || '这个服务没有提供模型列表，手填模型名即可')
-  } catch (err: any) {
-    ElMessage.error(`请求失败：${err?.message || err}`)
-  } finally {
-    loadingModels.value = false
   }
 }
 
@@ -1077,7 +813,7 @@ onMounted(loadStatus)
 </script>
 
 <template>
-  <div class="ai-card" :class="{ 'ai-card--config': showSettings }">
+  <div class="ai-card">
     <div class="ai-card__header">
       <el-icon class="ai-card__icon"><Promotion /></el-icon>
       <span class="ai-card__title">AI 助手</span>
@@ -1085,7 +821,7 @@ onMounted(loadStatus)
       <el-icon
         class="ai-card__gear"
         :class="{ 'ai-card__gear--on': showSettings }"
-        title="AI 服务商设置"
+        title="API Key 设置"
         @click="showSettings = !showSettings"
       >
         <Setting />
@@ -1095,131 +831,65 @@ onMounted(loadStatus)
       </el-icon>
     </div>
 
-    <!-- 服务商配置：key 直接在前端填，不用去改 json 再重启后端 -->
+    <!-- key 直接在前端填，不用去改 json 再重启后端 -->
     <div v-if="showSettings" class="ai-config">
-      <div class="ai-config__row">
-        <span class="ai-config__label">服务商</span>
-        <select class="ai-config__select" :value="editId" @change="onSelectChange">
-          <option v-for="p in providers" :key="p.id" :value="p.id">
-            {{ p.name }}（{{ p.model || '未填模型' }}{{ p.hasKey ? '' : ' · 缺 key' }}）
-          </option>
-          <option value="__new">＋ 新增服务商…</option>
-        </select>
+      <div class="ai-config__label">
+        API Key
+        <span v-if="keyMasked" class="ai-config__current" :title="`当前 ${keyMasked}`">
+          {{ keyMasked }}
+        </span>
       </div>
-
-      <!-- 字段区自己滚动，右上角的服务商下拉和下面的按钮始终可见 -->
-      <div class="ai-config__scroll">
-        <!-- 预设只负责填地址和模型名，key 还是要自己填 -->
-        <div class="ai-config__presets">
-          <button v-for="p in PRESETS" :key="p.key" class="ai-preset" @click="applyPreset(p)">
-            {{ p.label }}
-          </button>
-          <span class="ai-config__presets-tip">← 一键填好地址/模型</span>
-        </div>
-
-        <input v-model="draft.name" class="ai-config__input" placeholder="名称（留空按域名取）" />
-        <input
-          v-model="draft.baseUrl"
-          class="ai-config__input"
-          placeholder="接口地址，如 https://api.openai.com/v1"
-          spellcheck="false"
-          autocomplete="off"
-        />
-        <div class="ai-config__field">
-          <input
-            v-model="draft.model"
-            class="ai-config__input"
-            placeholder="模型名，如 gpt-4o-mini"
-            list="ai-model-list"
-            spellcheck="false"
-            autocomplete="off"
-          />
-          <button
-            class="ai-config__mini"
-            :disabled="loadingModels"
-            title="从服务商拉模型列表（需先保存）"
-            @click="loadModels"
-          >
-            {{ loadingModels ? '…' : '列表' }}
-          </button>
-        </div>
-        <datalist id="ai-model-list">
-          <option v-for="m in modelList" :key="m" :value="m" />
-        </datalist>
-        <input
-          v-model="draft.apiKey"
-          class="ai-config__input"
-          type="password"
-          autocomplete="off"
-          spellcheck="false"
-          :placeholder="draftKeyPlaceholder"
-          @keydown.enter="saveProvider"
-        />
-
-        <!-- 高级项默认收起：绝大多数情况自动就能跑通 -->
-        <details class="ai-config__adv">
-          <summary>高级：思考参数 / 输出上限字段 / 温度</summary>
-          <div class="ai-config__grid">
-            <label>
-              思考参数
-              <select v-model="draft.reasoning" class="ai-config__select">
-                <option value="auto">自动</option>
-                <option value="deepseek">DeepSeek 风格</option>
-                <option value="openai">OpenAI 风格</option>
-                <option value="none">不发送</option>
-              </select>
-            </label>
-            <label>
-              上限字段
-              <select v-model="draft.tokenField" class="ai-config__select">
-                <option value="auto">自动</option>
-                <option value="max_tokens">max_tokens</option>
-                <option value="max_completion_tokens">max_completion_tokens</option>
-              </select>
-            </label>
-            <label>
-              最大输出
-              <input v-model="draft.maxTokens" class="ai-config__input" placeholder="32768" inputmode="numeric" />
-            </label>
-            <label>
-              温度
-              <input v-model="draft.temperature" class="ai-config__input" placeholder="1" inputmode="decimal" />
-            </label>
-          </div>
-          <p class="ai-config__hint">上游不认某个参数时，后端会自动去掉它重试，通常不用手动改。</p>
-        </details>
+      <input
+        v-model="keyDraft"
+        class="ai-config__input"
+        type="password"
+        autocomplete="off"
+        spellcheck="false"
+        :placeholder="keyMasked ? '输入新 Key 可覆盖' : 'sk-...'"
+        @keydown.enter="saveKey"
+      />
+      <input
+        v-model="baseUrlDraft"
+        class="ai-config__input"
+        placeholder="接口地址，默认 https://api.deepseek.com"
+        spellcheck="false"
+        autocomplete="off"
+      />
+      <input
+        v-model="modelDraft"
+        class="ai-config__input"
+        placeholder="模型名，默认 deepseek-flash"
+        spellcheck="false"
+        autocomplete="off"
+      />
+      <div class="ai-config__hint">
+        默认连 DeepSeek；换成别家的 OpenAI 兼容 key 时，把上面两个也一起改。
       </div>
-
       <div class="ai-config__btns">
-        <button class="ai-op" :disabled="testing" @click="testProvider">
-          {{ testing ? '测试中…' : '测试' }}
-        </button>
-        <button class="ai-op ai-op--primary" :disabled="saving" @click="saveProvider">
-          {{ saving ? '保存中…' : '保存并使用' }}
+        <button class="ai-op" :disabled="testing || !keyDraft.trim()" @click="testKey">
+          {{ testing ? '校验中…' : '测试' }}
         </button>
         <button
-          v-if="editingSaved && editId !== activeId"
-          class="ai-op"
-          :disabled="saving"
-          @click="activateProvider(editId)"
+          class="ai-op ai-op--primary"
+          :disabled="saving || !keyDraft.trim()"
+          @click="saveKey"
         >
-          设为当前
+          {{ saving ? '保存中…' : '保存' }}
         </button>
         <button
-          v-if="editingSaved && providers.length > 1"
+          v-if="configured"
           class="ai-op ai-op--danger"
           :disabled="saving"
-          @click="removeProvider"
+          @click="clearKey"
         >
-          删除
+          清除
         </button>
       </div>
-      <div class="ai-config__hint">key 只存在服务端，不会写进浏览器。</div>
     </div>
 
     <!-- 没配 key 时给出明确指引，而不是让用户对着报错猜 -->
     <div v-if="configured === false && !showSettings" class="ai-card__notice" @click="showSettings = true">
-      还没配置 AI 服务商，<u>点这里填写</u>。
+      还没配置 API Key，<u>点这里填写</u>。
     </div>
 
     <div ref="listEl" class="ai-card__list">
@@ -1438,9 +1108,9 @@ onMounted(loadStatus)
 
   &__list {
     flex: 1;
-    /* 设置面板展开时不要把它压成 0：留一条缝，用户能看出来对话还在下面 */
-    min-height: 64px;
-    overflow-y: auto;    display: flex;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
     flex-direction: column;
     gap: 12px;
     padding-right: 2px;
@@ -1518,30 +1188,6 @@ onMounted(loadStatus)
   background-color: color-mix(in srgb, var(--word-color) 7%, transparent);
   border: 1px solid color-mix(in srgb, var(--word-color) 16%, transparent);
 
-  /* 面板变高（多服务商要填地址/模型/key/高级项）以后，1366×768 这类矮屏上
-     会把底部输入框整个顶出卡片。这里给它一个上限，字段区自己内滚，
-     但「测试/保存」那一排始终留在面板底部 —— 让用户滚半天才能点保存太别扭。 */
-  flex: 0 1 auto;
-  min-height: 0;
-  max-height: 52vh;
-
-  &__scroll {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    min-height: 0;
-    overflow-y: auto;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background-color: color-mix(in srgb, var(--word-color) 22%, transparent);
-      border-radius: 3px;
-    }
-  }
-
   &__label {
     display: flex;
     align-items: baseline;
@@ -1558,104 +1204,6 @@ onMounted(loadStatus)
     text-overflow: ellipsis;
     font-size: 13px;
     color: color-mix(in srgb, var(--word-color) 62%, transparent);
-  }
-
-  /* 服务商下拉：原生 select 就够，配一套主题色比塞 el-select 轻 */
-  &__row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  &__select {
-    flex: 1;
-    min-width: 0;
-    font-family: inherit;
-    font-size: 14.5px;
-    color: var(--word-color);
-    background-color: var(--all-backcolor);
-    border: 1px solid color-mix(in srgb, var(--word-color) 24%, transparent);
-    border-radius: var(--radius-item);
-    padding: 7px 8px;
-    outline: none;
-    cursor: pointer;
-
-    &:focus {
-      border-color: var(--color-primary);
-    }
-  }
-
-  /* 模型名 + 「列表」按钮 */
-  &__field {
-    display: flex;
-    align-items: stretch;
-    gap: 6px;
-
-    .ai-config__input {
-      flex: 1;
-      min-width: 0;
-    }
-  }
-
-  &__mini {
-    flex-shrink: 0;
-    font-family: inherit;
-    font-size: 13.5px;
-    padding: 0 10px;
-    color: var(--color-primary-text);
-    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
-    border-radius: var(--radius-item);
-    cursor: pointer;
-    white-space: nowrap;
-
-    &:disabled {
-      opacity: 0.55;
-      cursor: default;
-    }
-  }
-
-  &__presets {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-  }
-
-  &__presets-tip {
-    font-size: 12.5px;
-    color: color-mix(in srgb, var(--word-color) 56%, transparent);
-  }
-
-  &__adv {
-    font-size: 13.5px;
-    color: color-mix(in srgb, var(--word-color) 78%, transparent);
-
-    summary {
-      cursor: pointer;
-      padding: 2px 0;
-      color: color-mix(in srgb, var(--word-color) 72%, transparent);
-      white-space: nowrap;
-
-      &:hover {
-        color: var(--word-color);
-      }
-    }
-  }
-
-  &__grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 8px;
-
-    label {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 13px;
-      color: color-mix(in srgb, var(--word-color) 72%, transparent);
-    }
   }
 
   &__input {
@@ -1691,29 +1239,6 @@ onMounted(loadStatus)
     flex-wrap: wrap;
     gap: 6px;
     margin-top: 2px;
-  }
-}
-
-/* 配置态：把对话区的高度让给设置面板 —— 1366×768 上这点高度很金贵 */
-.ai-card--config .ai-card__list {
-  min-height: 0;
-}
-
-/* 预设胶囊：点一下把地址和模型名填好 */
-.ai-preset {
-  font-family: inherit;
-  font-size: 13px;
-  padding: 3px 9px;
-  color: var(--color-primary-text);
-  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-primary) 26%, transparent);
-  border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: color-mix(in srgb, var(--color-primary) 20%, transparent);
   }
 }
 
