@@ -8,6 +8,7 @@ import { initTheme } from '@/assets/js/theme'
 import type { UploadProps, UploadUserFile } from 'element-plus'
 import Vditor from 'vditor'
 import 'vditor/src/assets/less/index.less'
+import { VDITOR_CDN } from '@/assets/constants/vditor'
 import { ElMessage } from 'element-plus'
 import ArticleContentTool from '@/components/pc/ArticleContentTool.vue'
 
@@ -73,6 +74,9 @@ function showSavedTip() {
 // 用于初始化编辑器的函数，传入参数
 const initEditor = async (initValue: string) => {
   vditor.value = new Vditor('vditor', {
+    /* lute 解析器、工具栏图标、代码高亮主题都从这个地址按需拉。
+       默认是 unpkg.com，国内拉不到就会「工具栏没图标、正文不渲染」，改成本地。 */
+    cdn: VDITOR_CDN,
     outline: {
       position: 'left',
       enable: true

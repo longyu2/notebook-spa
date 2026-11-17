@@ -29,3 +29,6 @@ coverage
 *.sln
 *.sw?
 deploy.key
+
+# Vditor 运行时资源：由 scripts/vendor-vditor.mjs 从 node_modules 拷进来，不入库
+public/vditor/

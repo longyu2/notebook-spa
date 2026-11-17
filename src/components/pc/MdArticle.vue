@@ -7,10 +7,10 @@ import Vditor from 'vditor'
    直接刷新 /random、/public 这类独立路由时样式不会加载，正文会完全没有排版。
    这里补一次引入，让组件自给自足。 */
 import 'vditor/src/assets/less/index.less'
+import { VDITOR_CDN } from '@/assets/constants/vditor'
 
-/* Vditor 的 lute 解析器是运行时按需从 cdn 拉的（编辑器本身也是这么跑的），
-   显式写死版本，避免以后升级 vditor 时预览和编辑器用的解析器版本对不上。 */
-const VDITOR_CDN = 'https://unpkg.com/vditor@4.0.0'
+/* Vditor 的 lute 解析器、图标、代码高亮主题都是运行时按需拉取的，
+   VDITOR_CDN 指向随包发布的本地目录 /vditor（见该常量文件的注释）。 */
 
 const props = defineProps<{
   title?: string
