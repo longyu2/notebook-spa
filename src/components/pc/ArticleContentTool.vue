@@ -6,6 +6,10 @@ import { getTheme, toggleTheme } from '@/assets/js/theme'
 // AI 面板不直接碰编辑器：正文靠这个回调取，回写靠 apply 事件抛回 ArticleContent.vue
 defineProps<{
   getContext: () => { title: string; content: string; selection: string }
+  /* 私密笔记：AI 请求要经过服务端转发（再发给 DeepSeek），
+     正文一送出去就等于把明文交给了服务器，和「服务器只存密文」冲突，
+     所以整块 AI 面板直接换成一句说明。 */
+  aiLocked?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -46,7 +50,18 @@ const nextThemeLabel = computed(() => (theme === 'semiTransparent' ? '浅色' : 
       </button>
     </div>
 
-    <AiAssistant :get-context="getContext" @apply="emit('apply', $event)" />
+    <!-- 私密笔记不给 AI：见 props 里的说明 -->
+    <div v-if="aiLocked" class="ai-locked">
+      <el-icon class="ai-locked__icon" :size="28"><Lock /></el-icon>
+      <p class="ai-locked__title">AI 助手已停用</p>
+      <p class="ai-locked__text">
+        这是一篇私密笔记。AI 请求要经过服务器转发，正文一旦发出去就等于以明文落到服务器上，
+        和「服务器只存密文」冲突，所以这里不提供 AI 改写。
+      </p>
+      <p class="ai-locked__text">想用 AI 的话，先把这篇「取消私密」。</p>
+    </div>
+
+    <AiAssistant v-else :get-context="getContext" @apply="emit('apply', $event)" />
   </div>
 </template>
 
@@ -154,6 +169,35 @@ const nextThemeLabel = computed(() => (theme === 'semiTransparent' ? '浅色' : 
     &__hint {
       font-size: 12px;
       color: color-mix(in srgb, var(--word-color) 60%, transparent);
+    }
+  }
+
+  /* 私密笔记的 AI 占位卡：高度撑满原来 AI 面板的位置，免得右边栏塌一半 */
+  .ai-locked {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 20px 18px;
+    border-radius: var(--radius-panel);
+    background-color: color-mix(in srgb, var(--word-color) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--word-color) 18%, transparent);
+    color: var(--word-color);
+
+    &__icon {
+      color: var(--color-primary);
+    }
+
+    &__title {
+      margin: 10px 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    &__text {
+      margin: 0 0 10px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: color-mix(in srgb, var(--word-color) 82%, transparent);
     }
   }
 }

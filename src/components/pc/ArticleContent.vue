@@ -3,13 +3,27 @@ import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import axios from 'axios'
 const server_url = localStorage.getItem('server_url')
 
-import { saveArticle } from '@/assets/js/ArticlesTools'
+import { saveArticle, savePrivateBlob } from '@/assets/js/ArticlesTools'
+import {
+  createPrivateBlob,
+  decryptPrivateBlob,
+  decryptWithKey,
+  encryptWithKey,
+  passwordProblem,
+  WrongPasswordError,
+  type PrivateKey
+} from '@/assets/js/privateNote'
+import {
+  forgetPrivate,
+  getPrivateKey,
+  rememberPrivate
+} from '@/assets/js/privateSession'
 import { initTheme } from '@/assets/js/theme'
 import type { UploadProps, UploadUserFile } from 'element-plus'
 import Vditor from 'vditor'
 import 'vditor/src/assets/less/index.less'
 import { VDITOR_CDN } from '@/assets/constants/vditor'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import ArticleContentTool from '@/components/pc/ArticleContentTool.vue'
 
 // 文件上传
@@ -128,8 +142,26 @@ const props = defineProps(['articleId', 'articleCheckedIndex'])
 const emit = defineEmits(['contentUpdate', 'contentHide'])
 
 // 将内容的变化通知父组件，使其修改列表中的显示
+/* 落盘分两条路：
+     普通笔记 → PUT /article 明文
+     私密笔记 → 先用会话里的密钥重新加密，PUT /article/private 只送密文
+   锁着的时候直接 return —— 那时编辑器是空的，存一次就把密文覆盖成空串。 */
 function save() {
-  saveArticle(props.articleId, title.value, content.value)
+  if (locked.value) return
+
+  if (isPrivate.value) {
+    const cached = getPrivateKey(props.articleId)
+    if (!cached) {
+      // 理论上走不到（unlocked 才可能非 locked）；真到了就退回去锁住，宁可不存
+      lockEditor()
+      return
+    }
+    const blob = encryptWithKey(cached, { title: title.value, content: content.value })
+    savePrivateBlob(props.articleId, blob)
+  } else {
+    saveArticle(props.articleId, title.value, content.value)
+  }
+
   contentUpdate(title, content)
   showSavedTip()
 }
@@ -212,12 +244,207 @@ async function setPublicFlag(on: boolean) {
 
 const togglePublic = () => setPublicFlag(!isPublic.value)
 
+/* ===== 「设为私密」=====
+   库里只有密文：content 是 {"__nbx":1,...} 信封，title 是空串，口令从不离开浏览器。
+   三种状态：
+     - 普通笔记      isPrivate=false
+     - 私密 · 已解锁  isPrivate=true, unlocked=true（内存里有密钥：可编辑，每次改动都重新加密保存）
+     - 私密 · 锁着    isPrivate=true, unlocked=false（编辑器禁用，页面上一片空白） */
+const isPrivate = ref(false)
+const unlocked = ref(false)
+const locked = computed(() => isPrivate.value && !unlocked.value)
+
+/** 把解密结果铺到界面上：这一条同时负责「解锁」和「切回已解锁的笔记」 */
+function showDecrypted(key: PrivateKey, payload: { title: string; content: string }) {
+  title.value = payload.title
+  content.value = payload.content
+  titleUpdateLock.value = false
+  unlocked.value = true
+  rememberPrivate(props.articleId, key, payload.title)
+  applyToEditor(payload.content, false)
+}
+
+/** 清空页面上的明文并禁用编辑器（切走、手动锁定、解密失败都走这里） */
+function lockEditor() {
+  title.value = ''
+  content.value = ''
+  unlocked.value = false
+  titleUpdateLock.value = true
+  applyToEditor('', true)
+}
+
+/* ---- 设私密对话框 ---- */
+const privDialog = ref(false)
+const privPassword = ref('')
+const privConfirm = ref('')
+const privBusy = ref(false)
+const privError = ref('')
+
+function togglePrivate() {
+  if (!hasArticle.value) return
+  if (!isPrivate.value) {
+    privPassword.value = ''
+    privConfirm.value = ''
+    privError.value = ''
+    privDialog.value = true
+    return
+  }
+  removePrivate()
+}
+
+/** 设私密：先派生密钥、再加密标题+正文，最后只把信封交给服务器 */
+async function confirmPrivate() {
+  if (privBusy.value) return
+  const problem = passwordProblem(privPassword.value)
+  if (problem) {
+    privError.value = problem
+    return
+  }
+  if (privPassword.value !== privConfirm.value) {
+    privError.value = '两次输入的密码不一致'
+    return
+  }
+
+  privBusy.value = true
+  privError.value = ''
+  try {
+    // 先把「正在加密…」画出来：PBKDF2 是同步的，会卡住 0.3~1 秒
+    await nextTick()
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    const { blob, key } = createPrivateBlob(privPassword.value, {
+      title: title.value,
+      content: content.value
+    })
+    const res = await axios.put(`${server_url}/article/private`, {
+      Notebookid: props.articleId,
+      is_private: 1,
+      title: '',
+      content: blob
+    })
+    if (res.data?.status !== '200') throw new Error(res.data?.message || '保存失败')
+
+    isPrivate.value = true
+    isPublic.value = false
+    unlocked.value = true
+    rememberPrivate(props.articleId, key, title.value)
+    privDialog.value = false
+    privPassword.value = ''
+    privConfirm.value = ''
+    // 列表卡片上的「字/私密」标记也要跟着变
+    contentUpdate(title, content)
+    ElMessage({ showClose: true, message: '已加密保存，服务器上只有密文', type: 'success' })
+  } catch (err: any) {
+    privError.value = err?.message || '加密失败，请重试'
+  } finally {
+    privBusy.value = false
+  }
+}
+
+/** 取消私密：把内存里的明文写回服务器（要先解锁才能拿到明文） */
+async function removePrivate() {
+  if (locked.value) {
+    openUnlock()
+    return
+  }
+  try {
+    await ElMessageBox.confirm(
+      '取消私密后，这篇笔记会以明文存回服务器，任何登上这个账号的人都能直接看到。',
+      '取消私密',
+      {
+        confirmButtonText: '取消私密',
+        cancelButtonText: '再想想',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    const res = await axios.put(`${server_url}/article/private`, {
+      Notebookid: props.articleId,
+      is_private: 0,
+      title: title.value,
+      content: content.value
+    })
+    if (res.data?.status !== '200') throw new Error(res.data?.message || '保存失败')
+    isPrivate.value = false
+    forgetPrivate(props.articleId)
+    contentUpdate(title, content)
+    ElMessage({ showClose: true, message: '已取消私密，正文改回明文保存', type: 'success' })
+  } catch (err: any) {
+    ElMessage({
+      showClose: true,
+      message: err?.message || '取消失败，请重试',
+      type: 'error'
+    })
+  }
+}
+
+/* ---- 解锁对话框 ---- */
+const unlockDialog = ref(false)
+const unlockPassword = ref('')
+const unlockBusy = ref(false)
+const unlockError = ref('')
+
+function openUnlock() {
+  unlockPassword.value = ''
+  unlockError.value = ''
+  unlockDialog.value = true
+}
+
+async function doUnlock() {
+  if (unlockBusy.value) return
+  if (!unlockPassword.value) {
+    unlockError.value = '请输入密码'
+    return
+  }
+
+  unlockBusy.value = true
+  unlockError.value = ''
+  try {
+    await nextTick()
+    await new Promise((resolve) => setTimeout(resolve, 30))
+
+    // 重新拉一次密文，避免拿到别人刚改过的旧副本
+    const res = await axios.get(`${server_url}/article/${props.articleId}`)
+    const blob = res.data?.[0]?.content
+    if (typeof blob !== 'string' || !blob) throw new Error('这篇笔记没有密文')
+
+    const { payload, key } = decryptPrivateBlob(unlockPassword.value, blob)
+    showDecrypted(key, payload)
+    unlockDialog.value = false
+    unlockPassword.value = ''
+    ElMessage({ showClose: true, message: '已解锁', type: 'success' })
+  } catch (err: any) {
+    unlockError.value =
+      err instanceof WrongPasswordError
+        ? '密码错误'
+        : err?.message || '解密失败，密文可能已损坏'
+  } finally {
+    unlockBusy.value = false
+  }
+}
+
+/** 手动锁定：把明文和密钥都从这一页清掉 */
+function lockNow() {
+  forgetPrivate(props.articleId)
+  lockEditor()
+  ElMessage({ showClose: true, message: '已锁定，明文已从页面清除', type: 'success' })
+}
+
 /* ===== AI 助手与编辑器的接口 =====
    正文优先问 vditor 实例要（getValue 比响应式的 content 更实时，
    比如用户刚敲完还没触发 input 回调时也不会拿到旧值）。
    但编辑器没就绪时 getValue 会抛异常，这时退回 content ——
    那里存的始终是「当前这篇文章」的正文，也就是用户正在看的 content view。 */
 const getAiContext = () => {
+  /* 私密笔记一律不给 AI 上下文：AI 请求要经过服务端转发，
+     正文一旦发出去就等于把明文交给了服务器，和「服务器只存密文」直接冲突。 */
+  if (isPrivate.value) {
+    return { title: '', content: '', selection: '' }
+  }
   let md = ''
   let selection = ''
   try {
@@ -297,7 +524,10 @@ const contentUpdate = (title: any, content: any) => {
   emit('contentUpdate', {
     articleId: props.articleId,
     title: title.value,
-    content: content.value
+    content: content.value,
+    /* 卡片要跟着知道「这篇刚被设成私密了」：否则列表里那张卡还按明文渲染，
+       标题和字数会一直挂在那儿，直到刷新。 */
+    isPrivate: isPrivate.value
   })
 }
 
@@ -314,6 +544,12 @@ watch(
     savedTip.value = false
     if (tipTimer) clearTimeout(tipTimer)
 
+    // 切走时把没关的密码框收掉，免得在下一篇上误提交
+    unlockDialog.value = false
+    privDialog.value = false
+    unlockError.value = ''
+    privError.value = ''
+
     axios.get(`${server_url}/article/${props.articleId}`).then((results) => {
       const row = results.data?.[0]
       // 查不到对应文章（例如 articleId 是 -9999）就直接返回，
@@ -321,18 +557,41 @@ watch(
       if (!row) {
         isAiGenerated.value = false
         isPublic.value = false
+        isPrivate.value = false
+        unlocked.value = false
         return
       }
 
-      title.value = row.title
-      content.value = row.content
+      isAiGenerated.value = !!row.is_ai_generated
       /* 列表卡片的时间只显示到「天」了，完整时间（含时分秒）挪到这里显示；
          有更新时间就显示更新时间，否则退回创建时间。 */
       articleTime.value = row.updatetime || row.createtime || ''
-      // MySQL 的 tinyint(1) 经 axios 回来是 0 / 1，也可能是 null（老数据）
-      isAiGenerated.value = !!row.is_ai_generated
-      isPublic.value = !!row.is_public
       titleUpdateLock.value = false
+
+      /* 私密笔记：库里本来就没有明文，先按「锁着」处理。
+         如果这次会话已经解锁过（内存里有密钥），直接静默解密，不用再问一次口令。 */
+      if (row.is_private == 1) {
+        isPrivate.value = true
+        isPublic.value = false
+        const cached = getPrivateKey(props.articleId)
+        if (cached) {
+          try {
+            showDecrypted(cached, decryptWithKey(cached, row.content))
+            return
+          } catch {
+            // 密钥对不上（换过密码 / 密文被改）→ 丢掉缓存，老老实实要口令
+            forgetPrivate(props.articleId)
+          }
+        }
+        lockEditor()
+        return
+      }
+
+      isPrivate.value = false
+      unlocked.value = false
+      isPublic.value = !!row.is_public
+      title.value = row.title
+      content.value = row.content
 
       /* 这里原来会按 queryStr 往正文里插 `***~~词~~***` 高亮标记，并把编辑器 disable 掉。
          两个问题：① replace 只替第一处；② 标记是写进 content.value 的，
@@ -419,8 +678,36 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
           {{ isAiGenerated ? 'AI 生成' : '非 AI 生成' }}
         </button>
 
+        <!-- 设为私密：点一次输入密码，正文+标题就地加密，服务器只收密文 -->
         <button
           v-if="hasArticle"
+          class="ai-flag"
+          :class="{ 'ai-flag--on': isPrivate }"
+          :disabled="privBusy"
+          :title="
+            isPrivate
+              ? '这篇是私密笔记（库里只有 AES-256 密文），点击取消私密'
+              : '设为私密：输入密码后正文和标题在本机加密，服务器只存密文'
+          "
+          @click="togglePrivate"
+        >
+          <span class="ai-flag__dot"></span>
+          {{ isPrivate ? '已私密' : '设为私密' }}
+        </button>
+
+        <!-- 已解锁时给一个「立刻锁上」的出口，不用切文章也能把明文清掉 -->
+        <button
+          v-if="hasArticle && isPrivate && unlocked"
+          class="ai-flag"
+          title="把明文和密钥从这个页面清掉，再看要重新输密码"
+          @click="lockNow"
+        >
+          <span class="ai-flag__dot"></span>
+          锁定
+        </button>
+
+        <button
+          v-if="hasArticle && !isPrivate"
           class="ai-flag"
           :class="{ 'ai-flag--on': isPublic }"
           :disabled="pubFlagSaving"
@@ -442,7 +729,10 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
         <router-link to="reading">阅览模式</router-link>
 
         <router-link to="public">公开页</router-link>
+        <!-- 私密笔记不让传图：图片是明文躺在服务器 public 目录里的，
+             一张截图就够把正文的关键信息带出去，和「只存密文」冲突 -->
         <el-upload
+          v-if="!isPrivate"
           v-model:file-list="fileList"
           class="upload-demo"
           :action="`${server_url}/upload`"
@@ -453,7 +743,23 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
         >
           <button class="btn" size="large">上传图片</button>
         </el-upload>
-        <button class="btn" size="large" @click="pubArticle">复制外部链接</button>
+        <button
+          v-else
+          class="btn btn--off"
+          size="large"
+          title="私密笔记不支持上传图片：图片会以明文存在服务器上"
+        >
+          上传图片
+        </button>
+        <button
+          class="btn"
+          size="large"
+          :disabled="isPrivate"
+          :title="isPrivate ? '私密笔记不能导出公开页面' : ''"
+          @click="pubArticle"
+        >
+          复制外部链接
+        </button>
         <router-link to="disk"><button class="btn" size="large">网盘</button></router-link>
 
         <div class="space"></div>
@@ -468,8 +774,8 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
 
       <input
         id="input-title"
-        :placeholder="titlePlaceholder"
-        :disabled="titleUpdateLock"
+        :placeholder="locked ? '这篇笔记已加密' : titlePlaceholder"
+        :disabled="titleUpdateLock || locked"
         :value="title"
         @input="onInput"
       />
@@ -479,10 +785,97 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
 
       <div id="vditor-box">
         <div id="vditor" class="vditor"></div>
+
+        <!-- 锁着的时候盖一层：编辑器虽然 disabled，但里面是空的，
+             不如直接告诉用户为什么什么都没有、以及怎么开 -->
+        <div v-if="locked" class="lock-mask">
+          <div class="lock-card">
+            <el-icon class="lock-card__icon" :size="42"><Lock /></el-icon>
+            <h3 class="lock-card__title">这篇笔记已加密</h3>
+            <p class="lock-card__text">
+              服务器上只有 AES-256 密文，密码从来没有上传过。<br />
+              输入密码后在这台设备上解密查看，关闭页面即失效。
+            </p>
+            <el-button type="primary" size="large" @click="openUnlock">输入密码解锁</el-button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <ArticleContentTool :get-context="getAiContext" @apply="applyAiResult" />
+    <ArticleContentTool
+      :get-context="getAiContext"
+      :ai-locked="isPrivate"
+      @apply="applyAiResult"
+    />
+
+    <!-- 设私密：两次输入密码，确认后本机加密 -->
+    <el-dialog
+      v-model="privDialog"
+      title="设为私密"
+      width="420px"
+      append-to-body
+      :close-on-click-modal="!privBusy"
+      :close-on-press-escape="!privBusy"
+      :show-close="!privBusy"
+    >
+      <p class="priv-tip">
+        密码只在这一页输入，用来派生 AES-256 密钥。标题和正文会一起加密，
+        服务器上只留密文 —— <b>密码丢了谁也解不开，包括管理员</b>。
+      </p>
+      <el-input
+        v-model="privPassword"
+        type="password"
+        show-password
+        size="large"
+        placeholder="密码（至少 8 位）"
+        @keyup.enter="confirmPrivate"
+      />
+      <el-input
+        v-model="privConfirm"
+        type="password"
+        show-password
+        size="large"
+        class="priv-input"
+        placeholder="再输一次"
+        @keyup.enter="confirmPrivate"
+      />
+      <p v-if="privError" class="priv-error">{{ privError }}</p>
+      <template #footer>
+        <el-button :disabled="privBusy" @click="privDialog = false">取消</el-button>
+        <el-button type="primary" :loading="privBusy" @click="confirmPrivate">
+          {{ privBusy ? '正在加密…' : '加密保存' }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 解锁：口令 → 派生密钥 → GCM 解密，全程在本机 -->
+    <el-dialog
+      v-model="unlockDialog"
+      title="解锁私密笔记"
+      width="400px"
+      append-to-body
+      :close-on-click-modal="!unlockBusy"
+      :close-on-press-escape="!unlockBusy"
+      :show-close="!unlockBusy"
+    >
+      <p class="priv-tip">输入这篇笔记的密码。密码不会发送到服务器。</p>
+      <el-input
+        v-model="unlockPassword"
+        type="password"
+        show-password
+        size="large"
+        placeholder="密码"
+        autofocus
+        @keyup.enter="doUnlock"
+      />
+      <p v-if="unlockError" class="priv-error">{{ unlockError }}</p>
+      <template #footer>
+        <el-button :disabled="unlockBusy" @click="unlockDialog = false">关闭</el-button>
+        <el-button type="primary" :loading="unlockBusy" @click="doUnlock">
+          {{ unlockBusy ? '正在解密…' : '解锁' }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -569,5 +962,86 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
 .save-tip-fade-leave-to {
   opacity: 0;
   transform: translateY(-4px);
+}
+
+/* ===== 私密笔记 =====
+   锁定遮罩要盖在编辑器上，所以 #vditor-box 得是定位父级。
+   底色不跟 --word-color 走：半透明主题下 --word-color 是白字，
+   拿它混出来的卡片底几乎全透，壁纸一亮字就没了。这里按主题给两种实底，
+   文字颜色仍然吃 --word-color（浅色黑字 / 半透明白字）。 */
+#vditor-box {
+  position: relative;
+}
+
+.lock-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-panel);
+  background-color: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(3px);
+}
+
+body[data-theme='semiTransparent'] .lock-mask {
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.lock-card {
+  max-width: 420px;
+  padding: 28px 30px;
+  text-align: center;
+  border-radius: var(--radius-panel);
+  background-color: rgba(255, 255, 255, 0.94);
+  border: 1px solid color-mix(in srgb, var(--word-color) 14%, transparent);
+  box-shadow: var(--shadow-panel);
+}
+
+body[data-theme='semiTransparent'] .lock-card {
+  background-color: rgba(20, 20, 24, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.lock-card__icon {
+  color: var(--color-primary);
+}
+
+.lock-card__title {
+  margin: 12px 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--word-color);
+}
+
+.lock-card__text {
+  margin: 0 0 18px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: color-mix(in srgb, var(--word-color) 82%, transparent);
+}
+
+/* 下面几个在 el-dialog 里：弹窗自带白底，不跟页面主题走，用中性色 */
+.priv-tip {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--el-text-color-regular);
+}
+
+.priv-input {
+  margin-top: 10px;
+}
+
+.priv-error {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--el-color-danger);
+}
+
+.btn--off {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 </style>

@@ -139,7 +139,8 @@ onMounted(async () => {
        （ShowView 里写的 ?folder=-2 是拼错的，参数被忽略后走默认值 -2，
        结果碰巧一样，别照抄）。返回的 content 只截了前 16 个字，正文要单独取。 */
     const res = await axios.get(`${server_url}/articles?folderid=-2`)
-    list = res.data?.data ?? []
+    /* 私密笔记不进随机池：随机到它只会看到一堆密文 */
+    list = (res.data?.data ?? []).filter((item: any) => item.is_private != 1)
     total.value = list.length
 
     if (list.length === 0) {

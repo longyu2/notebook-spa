@@ -107,6 +107,12 @@ async function loadDetail(id: string) {
       detailError.value = '这篇笔记取不到了'
       return
     }
+    /* 私密笔记在阅览模式里没有解密入口（解密要口令，那是编辑器的事），
+       直接给一句人话，别把密文当正文渲染出来。 */
+    if (row.is_private == 1) {
+      detailError.value = '这篇笔记已加密，请回笔记页输入密码查看'
+      return
+    }
     detail.value = row
     document.title = `${row.title || '无标题'} - 阅览`
   } catch (e: any) {

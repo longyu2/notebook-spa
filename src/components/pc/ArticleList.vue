@@ -8,6 +8,7 @@ import { computed } from 'vue'
 import MoveToFolder from '@/components/pc/MoveToFolder.vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
+import { privateTitleOf } from '@/assets/js/privateSession'
 
 const router = useRouter()
 
@@ -399,14 +400,29 @@ const addArticle = () => {
 }
 
 // 接收子组件传来的值
-const contentUpdate = (data: { articleId: any; content: any; title: any }) => {
+const contentUpdate = (data: {
+  articleId: any
+  content: any
+  title: any
+  isPrivate?: boolean
+}) => {
   // 对articleList 进行遍历，找到Notebookid 与 子组件传来的articleId 相同的那一项，更改其内容
-  articleList.value.forEach((element: { Notebookid: any; title: any; content: any }) => {
-    if (element.Notebookid == data.articleId) {
-      element.title = data.title
-      element.content = data.content
+  articleList.value.forEach(
+    (element: { Notebookid: any; title: any; content: any; is_private: any; length: number }) => {
+      if (element.Notebookid == data.articleId) {
+        /* 私密笔记：卡片只显示「已加密」，标题和字数都不能露 ——
+           字数是密文的长度，标题在库里是空串。 */
+        element.is_private = data.isPrivate ? 1 : 0
+        if (data.isPrivate) {
+          element.length = 0
+        } else {
+          element.title = data.title
+          element.content = data.content
+          element.length = (data.content || '').length
+        }
+      }
     }
-  })
+  )
   // 同时修改累计字数显示
   setTimeout(() => {
     getWordCount()
@@ -523,9 +539,20 @@ onMounted(() => {
         >
           <el-checkbox v-model="item.checked" class="checkbox" size="large" />
           <div class="ul-list-texts">
-            <p class="p_1" v-html="item.title != '' ? visibleSlice(item.title, 14) : '无标题'"></p>
+            <!-- 私密笔记：库里 title / content 都不可读（标题也在密文里），
+                 解锁过就显示解密出来的标题，否则只给一把锁 -->
+            <p class="p_1" v-if="item.is_private">
+              <el-icon class="private-lock"><Lock /></el-icon>
+              {{ privateTitleOf(item.Notebookid) }}
+            </p>
+            <p
+              v-else
+              class="p_1"
+              v-html="item.title != '' ? visibleSlice(item.title, 14) : '无标题'"
+            ></p>
             <!-- 按可见字符数截断（visibleSlice），标签不占长度，搜索前后显示长度一致 -->
-            <p class="p_2" v-html="visibleSlice(item.content, 14)"></p>
+            <p class="p_2" v-if="item.is_private">已加密 · 解锁后可见</p>
+            <p v-else class="p_2" v-html="visibleSlice(item.content, 14)"></p>
             <p class="p_3" id="p_3">
               <span class="p_3__date">
                 {{ cardDate(item) }}
@@ -536,7 +563,9 @@ onMounted(() => {
               <!-- 时分秒挪到了右侧编辑器头部，这里空出来的位置显示字数。
                    注意用 item.length（后端给的真实字数），不是 item.content.length
                    —— 列表接口的 content 只截了前 16 字。 -->
-              <span class="p_3__words">{{ item.length || 0 }} 字</span>
+              <span class="p_3__words">{{
+                item.is_private ? '私密' : (item.length || 0) + ' 字'
+              }}</span>
             </p>
           </div>
 
@@ -566,3 +595,13 @@ onMounted(() => {
     :articleId="articleChecked.id"
   ></ArticleContent>
 </template>
+
+<style>
+/* 私密笔记卡片上的小锁：跟 p_1 的字号走，往下压 1px 和汉字对齐 */
+.private-lock {
+  font-size: 12px;
+  margin-right: 3px;
+  vertical-align: -1px;
+  opacity: 0.75;
+}
+</style>

@@ -22,3 +22,22 @@ const saveArticle = async (articleId: string, title: string, content: string) =>
 }
 
 export { saveArticle }
+
+/* 私密笔记的保存：body 里只有密文信封，标题已经在密文里面（库里 title 存空串）。
+   单独一个函数而不是给 saveArticle 加参数：普通保存和加密保存是两条不能混的路，
+   一旦混用就会出现「标着私密、躺着明文」的行。 */
+const savePrivateBlob = async (articleId: string, blob: string) => {
+  const server_url = localStorage.getItem('server_url')
+  const res = await axios.put(server_url + '/article/private', {
+    Notebookid: articleId,
+    is_private: 1,
+    title: '',
+    content: blob
+  })
+  if (res.data?.status !== '200') {
+    console.error('私密笔记保存失败', res.data)
+  }
+  return res.data
+}
+
+export { savePrivateBlob }
