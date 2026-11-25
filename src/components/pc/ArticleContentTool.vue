@@ -28,13 +28,14 @@ const nextThemeLabel = computed(() => (theme === 'semiTransparent' ? '浅色' : 
 
 <template>
   <div id="right">
+    <!-- 主题切换：一行「主题 + 小药丸」。以前按钮占满整行、右边还挂个「点击切换」，
+         在右栏里显得特别笨重；现在和独立页的 ThemeToggle 统一成同一个小尺寸。 -->
     <div class="theme-card">
-      <div class="theme-card__header">
+      <span class="theme-card__label">
         <el-icon class="theme-card__icon"><MagicStick /></el-icon>
-        <span class="theme-card__title">主题切换</span>
-      </div>
+        <span class="theme-card__title">主题</span>
+      </span>
 
-      <!-- 一个按钮一个动作：显示当前主题，点一下切到另一种 -->
       <button
         type="button"
         class="theme-btn"
@@ -46,7 +47,6 @@ const nextThemeLabel = computed(() => (theme === 'semiTransparent' ? '浅色' : 
           <Sunny v-else />
         </el-icon>
         <span class="theme-btn__label">{{ themeLabel }}</span>
-        <span class="theme-btn__hint">点击切换</span>
       </button>
     </div>
 
@@ -98,77 +98,73 @@ const nextThemeLabel = computed(() => (theme === 'semiTransparent' ? '浅色' : 
     border: 1px solid var(--color-border);
     border-color: color-mix(in srgb, var(--word-color) 18%, transparent);
     border-radius: var(--radius-panel);
-    padding: 16px 14px;
+    /* 一行：左边标题、右边按钮，高度从原来的 ~110px 收到 ~44px */
+    padding: 8px 10px 8px 12px;
     display: flex;
-    flex-direction: column;
-    gap: 14px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
 
-    &__header {
-      display: flex;
+    &__label {
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      min-width: 0;
     }
 
     &__icon {
       /* 蓝字压浅底必须用 --color-primary-text：#5590e2 在白底上只有 2.5:1，看不清 */
       color: var(--color-primary-text);
-      font-size: 22px;
+      font-size: 17px;
     }
 
     &__title {
       color: var(--word-color);
-      font-size: 18px;
+      font-size: 13px;
       font-weight: 600;
       letter-spacing: 0.5px;
+      white-space: nowrap;
     }
   }
 
-  /* 主题按钮：占满整行，两个主题下都要能看清 ——
-     底色/边框/文字全部走主题令牌，不写死颜色（半透明主题下写死 #fff 就是白底白字） */
+  /* 主题按钮：小药丸，宽度跟着文字走（不再 width:100%）。
+     底色/边框/文字全部走主题令牌，不写死颜色（半透明主题下写死 #fff 就是白底白字）。 */
   .theme-btn {
-    width: 100%;
-    font-family: inherit;
-    font-size: 15px;
-    display: flex;
+    flex-shrink: 0;
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
+    gap: 6px;
+    padding: 6px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
     cursor: pointer;
-    text-align: left;
-    border-radius: var(--radius-item);
-    color: var(--word-color);
-    background-color: #fff;
+    border-radius: 999px;
+    color: color-mix(in srgb, var(--word-color) 86%, transparent);
     background-color: var(--all-backcolor);
-    border: 1px solid var(--color-border);
-    border-color: color-mix(in srgb, var(--word-color) 24%, transparent);
+    border: 1px solid color-mix(in srgb, var(--word-color) 20%, transparent);
     transition:
-      border-color 0.2s ease,
-      box-shadow 0.2s ease,
-      background-color 0.2s ease;
+      background-color 0.18s ease,
+      border-color 0.18s ease;
 
     &:hover {
-      border-color: var(--color-primary);
-      box-shadow: 0 0 0 3px rgba(85, 144, 226, 0.15);
+      background-color: color-mix(in srgb, var(--word-color) 12%, transparent);
+      border-color: color-mix(in srgb, var(--color-primary) 52%, transparent);
     }
 
     &:active {
-      background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+      background-color: color-mix(in srgb, var(--color-primary) 14%, transparent);
     }
 
     &__icon {
       /* 蓝字压浅底必须用 --color-primary-text，理由同上面的卡片图标 */
       color: var(--color-primary-text);
-      font-size: 18px;
+      font-size: 14px;
     }
 
     &__label {
-      flex: 1;
-      font-weight: 600;
-    }
-
-    &__hint {
-      font-size: 12px;
-      color: color-mix(in srgb, var(--word-color) 60%, transparent);
+      font-weight: 500;
     }
   }
 
