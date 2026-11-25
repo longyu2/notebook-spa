@@ -763,9 +763,16 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
         <router-link to="disk"><button class="btn" size="large">网盘</button></router-link>
 
         <div class="space"></div>
-        <Transition name="save-tip-fade">
-          <span v-if="savedTip" class="save-tip">已保存 ✓</span>
-        </Transition>
+
+        <!-- 「已保存」常驻占位槽：提示在槽里淡入淡出，槽本身宽度固定，
+             所以出现/消失都不会让顶栏重新分配空间（以前它是流里的普通项，
+             一出现齿轮能横跳 100 多像素，整条顶栏跟着抖）。
+             用 div 而不是 span：scss 里 `#TopRight span { margin: 5px }` 会连带槽一起撑开。 -->
+        <div class="save-slot">
+          <Transition name="save-tip-fade">
+            <span v-if="savedTip" class="save-tip">已保存</span>
+          </Transition>
+        </div>
 
         <router-link to="admin" class="setting">
           <el-icon size="25"><Setting /></el-icon>
@@ -880,11 +887,42 @@ const handleSuccess: UploadProps['onSuccess'] = (response, uploadFile) => {
 </template>
 
 <style>
-.save-tip {
-  font-size: 13px;
-  margin-left: 8px;
-  display: inline-block;
-  color: rgba(120, 220, 150, 0.85);
+/* ===== 「已保存」提示 =====
+   以前它是 #TopRight 里的一个普通 flex 子项：每次敲字（save() → showSavedTip()）
+   出现一次、1.5s 后消失一次，space-around 就把剩余宽度重算一遍，
+   实测齿轮会横向跳 106px，整条顶栏看着在抖。
+   现在给它一个**固定宽度的常驻槽**：槽一直在流里，提示只在槽里淡入淡出，
+   别的项一次都不会被挤动；也不做绝对定位 —— 那样在窄屏会盖住「数据统计」这些链接。 */
+#TopRight > .save-slot {
+  flex: 0 0 auto;
+  width: 62px;
+  height: 20px;
+  /* margin-left:auto 顶掉 justify-content: space-around 的均分：
+     顶栏换行后这一行只剩「提示 + 齿轮」，均分会把两个东西甩到两头（中间空 150px）；
+     交给 auto margin 之后它们贴在一起、一起钉在右端。 */
+  margin: 0 2px 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 特异性要压过 scss 里的 `#TopRight > span`（带 margin），所以写成子选择器 */
+#TopRight > .save-slot > .save-tip {
+  padding: 1px 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  border-radius: 999px;
+  color: #1f8a52;
+  background-color: color-mix(in srgb, var(--all-backcolor) 92%, #fff);
+  border: 1px solid color-mix(in srgb, #1f8a52 32%, transparent);
+}
+
+/* 半透明主题是深底，深绿读不清，换成亮绿 + 暗底 */
+body[data-theme='semiTransparent'] #TopRight > .save-slot > .save-tip {
+  color: #86e2a8;
+  background-color: rgba(20, 20, 24, 0.82);
+  border-color: rgba(134, 226, 168, 0.42);
 }
 
 /* ===== 顶部状态栏的「是否 AI 生成」药丸 =====
